@@ -1,0 +1,191 @@
+<section class="workspace-shell">
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Resume Generator</p>
+      <h1>Upload, preview, and download resumes</h1>
+    </div>
+    <div class="status-pill" [class.status-ready]="uploadState() === 'success'">
+      {{ uploadState() === 'success' ? 'Resume saved' : 'Parser ready' }}
+    </div>
+  </header>
+
+  <main class="resume-grid">
+    <section class="upload-panel" aria-labelledby="upload-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Step 1</p>
+          <h2 id="upload-title">Resume upload</h2>
+        </div>
+        <span>POST /api/resumes/parse</span>
+      </div>
+
+      <form class="upload-form" (ngSubmit)="submitResume()">
+        <label class="drop-zone" for="resumeFile" [class.has-file]="selectedFile()">
+          <input
+            #fileInput
+            id="resumeFile"
+            type="file"
+            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            (change)="onFileSelected($event)"
+          />
+          <span class="upload-icon" aria-hidden="true">+</span>
+          <strong>{{ selectedFile() ? 'Resume selected' : 'Choose a resume file' }}</strong>
+          <small>PDF, DOC, or DOCX. The file is sent as multipart/form-data.</small>
+        </label>
+
+        @if (fileMeta(); as file) {
+          <div class="file-summary">
+            <div>
+              <strong>{{ file.name }}</strong>
+              <span>{{ file.type }} - {{ file.size }}</span>
+            </div>
+            <button type="button" class="text-button" (click)="clearForm(fileInput)">Remove</button>
+          </div>
+        }
+
+        <label class="field">
+          <span>Job description</span>
+          <textarea
+            name="jobDescription"
+            rows="7"
+            [(ngModel)]="jobDescription"
+            placeholder="Paste an optional target job description for better resume parsing."
+          ></textarea>
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="primary-button" [disabled]="!selectedFile() || uploadState() === 'uploading'">
+            {{ uploadState() === 'uploading' ? 'Uploading...' : 'Save resume' }}
+          </button>
+          <button type="button" class="secondary-button" (click)="clearForm(fileInput)">Clear</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="preview-panel" aria-labelledby="preview-title">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Step 2</p>
+          <h2 id="preview-title">Saved resumes</h2>
+        </div>
+        <button type="button" class="secondary-button compact-button" (click)="loadSavedResumes()" [disabled]="savedResumesState() === 'loading'">
+          {{ savedResumesState() === 'loading' ? 'Refreshing...' : 'Refresh' }}
+        </button>
+      </div>
+
+      @if (uploadState() === 'error') {
+        <div class="message error-message">
+          <strong>Upload failed</strong>
+          <p>{{ errorMessage() }}</p>
+        </div>
+      }
+
+      @if (parsedResume(); as resume) {
+        <div class="message success-message">
+          <strong>Resume saved successfully</strong>
+          <p>Use the parsed resume id below to request HTML previews.</p>
+        </div>
+
+        <details class="api-response">
+          <summary>Parser response</summary>
+          <pre>{{ resume | json }}</pre>
+        </details>
+      }
+
+      @if (previewState() === 'error') {
+        <div class="message error-message">
+          <strong>Preview failed</strong>
+          <p>{{ previewErrorMessage() }}</p>
+        </div>
+      }
+
+      @if (savedResumesState() === 'error') {
+        <div class="message error-message">
+          <strong>Could not load saved resumes</strong>
+          <p>{{ savedResumesErrorMessage() }}</p>
+        </div>
+      }
+
+      @if (savedResumes().length > 0) {
+        <div class="resume-list">
+          @for (resume of savedResumes(); track resume.id) {
+            <article class="resume-row" [class.selected]="selectedSavedResumeId() === resume.id">
+              <button type="button" class="resume-main" (click)="previewSavedResume(resume)">
+                <strong>{{ resume.candidateName || resume.filename }}</strong>
+                <span>{{ resume.currentTitle || 'No current title' }}</span>
+                <small>{{ resume.candidateEmail || resume.filename }}</small>
+                <small>{{ formatDate(resume.createdAt) }}</small>
+              </button>
+              <div class="resume-actions">
+                <button type="button" class="history-preview-link" (click)="previewSavedResume(resume)">
+                  {{ previewState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Preview' }}
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      } @else if (savedResumesState() !== 'loading') {
+        <div class="empty-state">
+          <strong>No saved resumes found</strong>
+          <p>Upload a resume or refresh after the parser API has saved one.</p>
+        </div>
+      }
+    </section>
+  </main>
+
+  @if (previewResponse(); as preview) {
+    @if (isPreviewModalOpen()) {
+      <section class="modal-backdrop" aria-label="Resume template previews">
+        <div class="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title">
+          <header class="modal-header">
+            <div>
+              <p class="eyebrow">Template preview</p>
+              <h2 id="preview-modal-title">Rendered resume templates</h2>
+            </div>
+            @if (preview.templates[activeTemplateIndex()]; as activeTemplate) {
+              <div class="modal-actions">
+                <button type="button" class="secondary-button" (click)="downloadPdfTemplate(activeTemplate.templateId, activeTemplate.html)">
+                  Download PDF
+                </button>
+                <button type="button" class="secondary-button" (click)="downloadWordTemplate(activeTemplate.templateId, activeTemplate.html)">
+                  Download Word
+                </button>
+                <button type="button" class="secondary-button" (click)="closePreviewModal()">Close</button>
+              </div>
+            }
+          </header>
+
+          <div class="single-preview-shell">
+            @if (preview.templates.length > 1) {
+              <button type="button" class="nav-arrow nav-arrow-left" (click)="showPreviousTemplate()" aria-label="Previous template">
+                &lt;
+              </button>
+            }
+
+            @if (preview.templates[activeTemplateIndex()]; as template) {
+              <article class="template-card single-template-card">
+                <header>
+                  <div>
+                    <strong>{{ template.templateId }}</strong>
+                    <span>{{ activeTemplateIndex() + 1 }} of {{ preview.templates.length }}</span>
+                  </div>
+                </header>
+                <iframe
+                  title="Resume template preview {{ template.templateId }}"
+                  sandbox=""
+                  [srcdoc]="trustedPreviewHtml(template.html)"
+                ></iframe>
+              </article>
+            }
+
+            @if (preview.templates.length > 1) {
+              <button type="button" class="nav-arrow nav-arrow-right" (click)="showNextTemplate()" aria-label="Next template">
+                &gt;
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  }
+</section>
