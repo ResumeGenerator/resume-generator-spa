@@ -2,10 +2,7 @@
   <header class="app-header">
     <div>
       <p class="eyebrow">Resume Generator</p>
-      <h1>Upload, preview, and download resumes</h1>
-    </div>
-    <div class="status-pill" [class.status-ready]="uploadState() === 'success'">
-      {{ uploadState() === 'success' ? 'Resume saved' : 'Parser ready' }}
+      <h1>Resume workspace</h1>
     </div>
   </header>
 
@@ -16,7 +13,6 @@
           <p class="eyebrow">Step 1</p>
           <h2 id="upload-title">Resume upload</h2>
         </div>
-        <span>POST /api/resumes/parse</span>
       </div>
 
       <form class="upload-form" (ngSubmit)="submitResume()">
@@ -120,6 +116,12 @@
                 <button type="button" class="history-preview-link" (click)="previewSavedResume(resume)">
                   {{ previewState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Preview' }}
                 </button>
+                <button type="button" class="history-preview-link" (click)="editSavedResume(resume)">
+                  {{ editState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Edit' }}
+                </button>
+                <button type="button" class="history-preview-link" (click)="regenerateSavedResume(resume)">
+                  Regenerate
+                </button>
               </div>
             </article>
           }
@@ -132,6 +134,274 @@
       }
     </section>
   </main>
+
+  @if (isEditModalOpen()) {
+    <section class="modal-backdrop" aria-label="Edit saved resume">
+      <div class="edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+        <header class="modal-header">
+          <div>
+            <p class="eyebrow">Edit copy</p>
+            <h2 id="edit-modal-title">Update resume fields</h2>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="secondary-button" (click)="closeEditModal()" [disabled]="editState() === 'saving'">
+              Close
+            </button>
+          </div>
+        </header>
+
+        @if (editState() === 'loading') {
+          <div class="edit-loading">Loading resume fields...</div>
+        } @else if (editingResume(); as editResume) {
+          <form class="edit-form" (ngSubmit)="saveEditedResume()">
+            @if (editErrorMessage()) {
+              <div class="message error-message edit-message">
+                <strong>Edit failed</strong>
+                <p>{{ editErrorMessage() }}</p>
+              </div>
+            }
+
+            @if (editSuccessMessage()) {
+              <div class="message success-message edit-message">
+                <strong>Edited copy saved</strong>
+                <p>{{ editSuccessMessage() }}</p>
+              </div>
+            }
+
+            <div class="edit-fields-grid">
+              <label class="field">
+                <span>Candidate name</span>
+                <input name="editCandidateName" [(ngModel)]="editCandidateName" />
+              </label>
+
+              <label class="field">
+                <span>Email</span>
+                <input name="editCandidateEmail" type="email" [(ngModel)]="editCandidateEmail" />
+              </label>
+
+              <label class="field">
+                <span>Phone</span>
+                <input name="editCandidatePhone" [(ngModel)]="editCandidatePhone" />
+              </label>
+
+              <label class="field">
+                <span>Location</span>
+                <input name="editCandidateLocation" [(ngModel)]="editCandidateLocation" />
+              </label>
+
+              <label class="field">
+                <span>Current title</span>
+                <input name="editCurrentTitle" [(ngModel)]="editCurrentTitle" />
+              </label>
+
+              <label class="field">
+                <span>Professional headline</span>
+                <input name="editProfessionalHeadline" [(ngModel)]="editProfessionalHeadline" />
+              </label>
+
+              <label class="field">
+                <span>Experience years</span>
+                <input name="editTotalExperienceYears" inputmode="decimal" [(ngModel)]="editTotalExperienceYears" />
+              </label>
+            </div>
+
+            <label class="field">
+              <span>Job description</span>
+              <textarea name="editJobDescription" rows="4" [(ngModel)]="editJobDescription"></textarea>
+            </label>
+
+            <section class="edit-section">
+              <div class="edit-section-heading">
+                <h3>Professional summary</h3>
+              </div>
+              <label class="field">
+                <span>Summary points</span>
+                <textarea name="editProfessionalSummary" rows="6" [(ngModel)]="editProfessionalSummary"></textarea>
+              </label>
+            </section>
+
+            <section class="edit-section">
+              <div class="edit-section-heading">
+                <h3>Skills</h3>
+              </div>
+              <div class="edit-fields-grid">
+                <label class="field">
+                  <span>Hard skills</span>
+                  <textarea name="editHardSkills" rows="5" [(ngModel)]="editHardSkills"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Tools and software</span>
+                  <textarea name="editToolsAndSoftware" rows="5" [(ngModel)]="editToolsAndSoftware"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Methodologies</span>
+                  <textarea name="editMethodologies" rows="5" [(ngModel)]="editMethodologies"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Soft skills</span>
+                  <textarea name="editSoftSkills" rows="5" [(ngModel)]="editSoftSkills"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Languages</span>
+                  <textarea name="editLanguages" rows="4" [(ngModel)]="editLanguages"></textarea>
+                </label>
+              </div>
+            </section>
+
+            <section class="edit-section">
+              <div class="edit-section-heading">
+                <h3>Work experience</h3>
+                <button type="button" class="add-item-button" (click)="addWorkExperience()">+ Add experience</button>
+              </div>
+
+              <div class="edit-stack">
+                @for (experience of editWorkExperience; track $index) {
+                  <article class="edit-item">
+                    <div class="edit-item-heading">
+                      <strong>Experience {{ $index + 1 }}</strong>
+                      <button type="button" class="remove-item-button" (click)="removeWorkExperience($index)">Remove experience</button>
+                    </div>
+                    <div class="edit-fields-grid">
+                      <label class="field">
+                        <span>Company</span>
+                        <input name="experienceCompany{{ $index }}" [(ngModel)]="experience.companyOrOrganization" />
+                      </label>
+
+                      <label class="field">
+                        <span>Role</span>
+                        <input name="experienceRole{{ $index }}" [(ngModel)]="experience.role" />
+                      </label>
+
+                      <label class="field">
+                        <span>Location</span>
+                        <input name="experienceLocation{{ $index }}" [(ngModel)]="experience.location" />
+                      </label>
+
+                      <label class="field">
+                        <span>Start date</span>
+                        <input name="experienceStartDate{{ $index }}" [(ngModel)]="experience.startDate" />
+                      </label>
+
+                      <label class="field">
+                        <span>End date</span>
+                        <input name="experienceEndDate{{ $index }}" [(ngModel)]="experience.endDate" />
+                      </label>
+                    </div>
+                    <label class="field">
+                      <span>Responsibilities</span>
+                      <textarea name="experienceResponsibilities{{ $index }}" rows="5" [(ngModel)]="experience.responsibilities"></textarea>
+                    </label>
+                    <label class="field">
+                      <span>Achievements</span>
+                      <textarea name="experienceAchievements{{ $index }}" rows="5" [(ngModel)]="experience.achievements"></textarea>
+                    </label>
+                  </article>
+                }
+              </div>
+            </section>
+
+            <section class="edit-section">
+              <div class="edit-section-heading">
+                <h3>Education</h3>
+                <button type="button" class="add-item-button" (click)="addEducation()">+ Add education</button>
+              </div>
+
+              <div class="edit-stack">
+                @for (education of editEducation; track $index) {
+                  <article class="edit-item">
+                    <div class="edit-item-heading">
+                      <strong>Education {{ $index + 1 }}</strong>
+                      <button type="button" class="remove-item-button" (click)="removeEducation($index)">Remove education</button>
+                    </div>
+                    <div class="edit-fields-grid">
+                      <label class="field">
+                        <span>Degree</span>
+                        <input name="educationDegree{{ $index }}" [(ngModel)]="education.degree" />
+                      </label>
+
+                      <label class="field">
+                        <span>Major</span>
+                        <input name="educationMajor{{ $index }}" [(ngModel)]="education.majorOrFieldOfStudy" />
+                      </label>
+
+                      <label class="field">
+                        <span>Institution</span>
+                        <input name="educationInstitution{{ $index }}" [(ngModel)]="education.institution" />
+                      </label>
+
+                      <label class="field">
+                        <span>Location</span>
+                        <input name="educationLocation{{ $index }}" [(ngModel)]="education.location" />
+                      </label>
+
+                      <label class="field">
+                        <span>End date</span>
+                        <input name="educationEndDate{{ $index }}" [(ngModel)]="education.endDate" />
+                      </label>
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+
+            <section class="edit-section">
+              <div class="edit-section-heading">
+                <h3>Certifications</h3>
+                <button type="button" class="add-item-button" (click)="addCertification()">+ Add certification</button>
+              </div>
+
+              <div class="edit-stack">
+                @for (certification of editCertifications; track $index) {
+                  <article class="edit-item">
+                    <div class="edit-item-heading">
+                      <strong>Certification {{ $index + 1 }}</strong>
+                      <button type="button" class="remove-item-button" (click)="removeCertification($index)">Remove certification</button>
+                    </div>
+                    <div class="edit-fields-grid">
+                      <label class="field">
+                        <span>Name</span>
+                        <input name="certificationName{{ $index }}" [(ngModel)]="certification.name" />
+                      </label>
+
+                      <label class="field">
+                        <span>Issuer</span>
+                        <input name="certificationIssuer{{ $index }}" [(ngModel)]="certification.issuer" />
+                      </label>
+
+                      <label class="field">
+                        <span>Year</span>
+                        <input name="certificationYear{{ $index }}" inputmode="numeric" [(ngModel)]="certification.year" />
+                      </label>
+                    </div>
+                  </article>
+                }
+              </div>
+            </section>
+
+            <div class="edit-meta">
+              Original resume id: {{ editResume.id }}
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="primary-button" [disabled]="editState() === 'saving'">
+                {{ editState() === 'saving' ? 'Saving...' : 'Save edited copy' }}
+              </button>
+              <button type="button" class="primary-button" (click)="saveEditedResume(true)" [disabled]="editState() === 'saving'">
+                {{ editState() === 'saving' ? 'Saving...' : 'Save & regenerate' }}
+              </button>
+              <button type="button" class="secondary-button" (click)="closeEditModal()" [disabled]="editState() === 'saving'">
+                Cancel
+              </button>
+            </div>
+          </form>
+        }
+      </div>
+    </section>
+  }
 
   @if (previewResponse(); as preview) {
     @if (isPreviewModalOpen()) {

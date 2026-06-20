@@ -4,11 +4,42 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
-import { ParsedResumeResponse, ResumeApi, ResumePreviewResponse, SavedResume } from '../services/resume-api';
+import {
+  ParsedResumeResponse,
+  ResumeApi,
+  ResumeDocumentResponse,
+  ResumePreviewResponse,
+  SavedResume,
+} from '../services/resume-api';
 
 type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 type PreviewState = 'idle' | 'loading' | 'success' | 'error';
 type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
+type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
+
+interface WorkExperienceEditItem {
+  companyOrOrganization: string;
+  role: string;
+  location: string;
+  startDate: string;
+  endDate: string;
+  responsibilities: string;
+  achievements: string;
+}
+
+interface EducationEditItem {
+  degree: string;
+  majorOrFieldOfStudy: string;
+  institution: string;
+  location: string;
+  endDate: string;
+}
+
+interface CertificationEditItem {
+  name: string;
+  issuer: string;
+  year: string;
+}
 
 @Component({
   selector: 'app-resume-upload',
@@ -29,10 +60,33 @@ export class ResumeUpload implements OnInit {
   protected readonly savedResumesErrorMessage = signal<string | null>(null);
   protected readonly selectedSavedResumeId = signal<string | null>(null);
   protected readonly isPreviewModalOpen = signal(false);
+  protected readonly isEditModalOpen = signal(false);
+  protected readonly editState = signal<EditState>('idle');
+  protected readonly editingResume = signal<ResumeDocumentResponse | null>(null);
+  protected readonly editErrorMessage = signal<string | null>(null);
+  protected readonly editSuccessMessage = signal<string | null>(null);
+  protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
   private readonly defaultTemplateIds = ['modern-minimal', 'professional-dark-blue'];
   protected jobDescription = '';
   protected resumeId = '';
+  protected editCandidateName = '';
+  protected editCandidateEmail = '';
+  protected editCandidatePhone = '';
+  protected editCandidateLocation = '';
+  protected editCurrentTitle = '';
+  protected editProfessionalHeadline = '';
+  protected editTotalExperienceYears = '';
+  protected editJobDescription = '';
+  protected editProfessionalSummary = '';
+  protected editHardSkills = '';
+  protected editToolsAndSoftware = '';
+  protected editMethodologies = '';
+  protected editSoftSkills = '';
+  protected editLanguages = '';
+  protected editWorkExperience: WorkExperienceEditItem[] = [];
+  protected editEducation: EducationEditItem[] = [];
+  protected editCertifications: CertificationEditItem[] = [];
 
   protected readonly fileMeta = computed(() => {
     const file = this.selectedFile();
@@ -126,13 +180,156 @@ export class ResumeUpload implements OnInit {
   }
 
   protected previewSavedResume(resume: SavedResume): void {
-    this.resumeId = resume.id;
     this.selectedSavedResumeId.set(resume.id);
     this.parsedResume.set(null);
     this.previewResponse.set(null);
     this.previewErrorMessage.set(null);
     this.previewState.set('idle');
-    this.previewResume();
+    this.previewResumeById(resume.id);
+  }
+
+  protected editSavedResume(resume: SavedResume): void {
+    if (this.editState() === 'loading' || this.editState() === 'saving') {
+      return;
+    }
+
+    this.selectedSavedResumeId.set(resume.id);
+    this.editState.set('loading');
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
+    this.editingResume.set(null);
+    this.isEditModalOpen.set(true);
+
+    this.resumeApi
+      .getResume(resume.id)
+      .pipe(finalize(() => this.editState.update((state) => (state === 'loading' ? 'idle' : state))))
+      .subscribe({
+        next: (response) => {
+          this.editingResume.set(response);
+          this.populateEditForm(response);
+          this.editState.set('idle');
+        },
+        error: (error) => {
+          this.editErrorMessage.set(this.resolveErrorMessage(error, 'edit'));
+          this.editState.set('error');
+        },
+      });
+  }
+
+  protected saveEditedResume(regenerate = false): void {
+    const resume = this.editingResume();
+
+    if (!resume || this.editState() === 'saving') {
+      return;
+    }
+
+    const profile = this.buildEditedProfile(resume);
+
+    const metadata = {
+      ...resume.metadata,
+      filename: this.asString(resume.metadata['filename']) || `${this.editCandidateName.trim() || 'edited-resume'}.json`,
+    };
+    const source = {
+      ...resume.source,
+      jobDescription: this.editJobDescription.trim() || null,
+    };
+
+    this.editState.set('saving');
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
+
+    this.resumeApi
+      .saveEditedResume(resume.id, {
+        profile,
+        metadata,
+        source,
+      })
+      .pipe(finalize(() => this.editState.update((state) => (state === 'saving' ? 'idle' : state))))
+      .subscribe({
+        next: (response) => {
+          this.latestEditedResumeIds.update((ids) => ({
+            ...ids,
+            [resume.id]: response.id,
+          }));
+          this.editSuccessMessage.set(`Edited copy saved to edited_resumes with id ${response.id}.`);
+          this.editState.set('success');
+
+          if (regenerate) {
+            this.closeEditModal();
+            this.previewResumeById(response.id);
+          }
+        },
+        error: (error) => {
+          this.editErrorMessage.set(this.resolveErrorMessage(error, 'edit'));
+          this.editState.set('error');
+        },
+      });
+  }
+
+  protected regenerateSavedResume(resume: SavedResume): void {
+    const editedResumeId = this.latestEditedResumeIds()[resume.id];
+
+    if (editedResumeId) {
+      this.selectedSavedResumeId.set(resume.id);
+      this.previewResumeById(editedResumeId);
+      return;
+    }
+
+    this.editSavedResume(resume);
+  }
+
+  protected addWorkExperience(): void {
+    this.editWorkExperience.push({
+      companyOrOrganization: '',
+      role: '',
+      location: '',
+      startDate: '',
+      endDate: '',
+      responsibilities: '',
+      achievements: '',
+    });
+  }
+
+  protected removeWorkExperience(index: number): void {
+    this.editWorkExperience.splice(index, 1);
+  }
+
+  protected addEducation(): void {
+    this.editEducation.push({
+      degree: '',
+      majorOrFieldOfStudy: '',
+      institution: '',
+      location: '',
+      endDate: '',
+    });
+  }
+
+  protected removeEducation(index: number): void {
+    this.editEducation.splice(index, 1);
+  }
+
+  protected addCertification(): void {
+    this.editCertifications.push({
+      name: '',
+      issuer: '',
+      year: '',
+    });
+  }
+
+  protected removeCertification(index: number): void {
+    this.editCertifications.splice(index, 1);
+  }
+
+  protected closeEditModal(): void {
+    if (this.editState() === 'saving') {
+      return;
+    }
+
+    this.isEditModalOpen.set(false);
+    this.editingResume.set(null);
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
+    this.editState.set('idle');
   }
 
   protected previewResume(): void {
@@ -166,6 +363,15 @@ export class ResumeUpload implements OnInit {
           this.previewState.set('error');
         },
       });
+  }
+
+  private previewResumeById(resumeId: string): void {
+    this.resumeId = resumeId;
+    this.parsedResume.set(null);
+    this.previewResponse.set(null);
+    this.previewErrorMessage.set(null);
+    this.previewState.set('idle');
+    this.previewResume();
   }
 
   protected downloadWordTemplate(templateId: string): void {
@@ -237,11 +443,15 @@ export class ResumeUpload implements OnInit {
     this.previewResponse.set(null);
     this.errorMessage.set(null);
     this.previewErrorMessage.set(null);
+    this.editErrorMessage.set(null);
+    this.editSuccessMessage.set(null);
     this.selectedSavedResumeId.set(null);
     this.isPreviewModalOpen.set(false);
+    this.isEditModalOpen.set(false);
     this.activeTemplateIndex.set(0);
     this.uploadState.set('idle');
     this.previewState.set('idle');
+    this.editState.set('idle');
   }
 
   protected formatDate(value?: string): string {
@@ -283,6 +493,159 @@ export class ResumeUpload implements OnInit {
 
   private asString(value: unknown): string {
     return typeof value === 'string' ? value : '';
+  }
+
+  private populateEditForm(resume: ResumeDocumentResponse): void {
+    const candidateProfile = this.asRecord(resume.profile['candidateProfile']);
+    const resumeBlocks = this.asRecord(resume.profile['resumeBlocks']);
+    const coreSkills = this.asRecord(resume.profile['coreSkills']);
+    const source = this.asRecord(resume.source);
+
+    this.editCandidateName = this.asString(candidateProfile['fullName']);
+    this.editCandidateEmail = this.asString(candidateProfile['email']);
+    this.editCandidatePhone = this.asString(candidateProfile['phone']);
+    this.editCandidateLocation = this.asString(candidateProfile['location']);
+    this.editCurrentTitle = this.asString(candidateProfile['currentTitle']);
+    this.editProfessionalHeadline = this.asString(candidateProfile['professionalHeadline']);
+    this.editTotalExperienceYears = this.asEditableNumber(candidateProfile['totalExperienceYears']);
+    this.editJobDescription = this.asString(source['jobDescription']);
+    this.editProfessionalSummary = this.asEditableLines([
+      ...this.asStringArray(resumeBlocks['executiveSummary']),
+      ...this.asStringArray(resume.profile['professionalSummaryPoints']),
+    ]);
+    this.editHardSkills = this.asEditableLines(coreSkills['hardSkills']);
+    this.editToolsAndSoftware = this.asEditableLines(coreSkills['toolsAndSoftware']);
+    this.editMethodologies = this.asEditableLines(coreSkills['methodologiesAndFrameworks']);
+    this.editSoftSkills = this.asEditableLines(coreSkills['softSkills']);
+    this.editLanguages = this.asEditableLines(coreSkills['languages']);
+    this.editWorkExperience = this.asRecordArray(resume.profile['workExperience']).map((item) => ({
+      companyOrOrganization: this.asString(item['companyOrOrganization']),
+      role: this.asString(item['role']),
+      location: this.asString(item['location']),
+      startDate: this.asString(item['startDate']),
+      endDate: this.asString(item['endDate']),
+      responsibilities: this.asEditableLines(item['responsibilities']),
+      achievements: this.asEditableLines(item['achievements']),
+    }));
+    this.editEducation = this.asRecordArray(resume.profile['education']).map((item) => ({
+      degree: this.asString(item['degree']),
+      majorOrFieldOfStudy: this.asString(item['majorOrFieldOfStudy']),
+      institution: this.asString(item['institution']),
+      location: this.asString(item['location']),
+      endDate: this.asString(item['endDate']),
+    }));
+    this.editCertifications = this.asRecordArray(resume.profile['certificationsAndLicenses']).map((item) => ({
+      name: this.asString(item['name']),
+      issuer: this.asString(item['issuer']),
+      year: this.asEditableNumber(item['year']),
+    }));
+  }
+
+  private buildEditedProfile(resume: ResumeDocumentResponse): Record<string, unknown> {
+    const profile = structuredClone(resume.profile) as Record<string, unknown>;
+    const summaryPoints = this.toLines(this.editProfessionalSummary);
+
+    profile['candidateProfile'] = {
+      ...this.asRecord(profile['candidateProfile']),
+      fullName: this.editCandidateName.trim(),
+      email: this.editCandidateEmail.trim(),
+      phone: this.editCandidatePhone.trim(),
+      location: this.editCandidateLocation.trim(),
+      currentTitle: this.editCurrentTitle.trim(),
+      professionalHeadline: this.editProfessionalHeadline.trim(),
+      totalExperienceYears: this.toOptionalNumber(this.editTotalExperienceYears),
+    };
+    profile['professionalSummaryPoints'] = summaryPoints;
+    profile['resumeBlocks'] = {
+      ...this.asRecord(profile['resumeBlocks']),
+      executiveSummary: summaryPoints,
+    };
+    profile['coreSkills'] = {
+      ...this.asRecord(profile['coreSkills']),
+      hardSkills: this.toLines(this.editHardSkills),
+      toolsAndSoftware: this.toLines(this.editToolsAndSoftware),
+      methodologiesAndFrameworks: this.toLines(this.editMethodologies),
+      softSkills: this.toLines(this.editSoftSkills),
+      languages: this.toLines(this.editLanguages),
+    };
+    profile['workExperience'] = this.mergeRecordArray(profile['workExperience'], this.editWorkExperience, (original, edited) => ({
+      ...original,
+      companyOrOrganization: edited.companyOrOrganization.trim(),
+      role: edited.role.trim(),
+      location: edited.location.trim(),
+      startDate: edited.startDate.trim() || null,
+      endDate: edited.endDate.trim() || null,
+      isCurrent: !edited.endDate.trim(),
+      responsibilities: this.toLines(edited.responsibilities),
+      achievements: this.toLines(edited.achievements),
+    }));
+    profile['education'] = this.mergeRecordArray(profile['education'], this.editEducation, (original, edited) => ({
+      ...original,
+      degree: edited.degree.trim(),
+      majorOrFieldOfStudy: edited.majorOrFieldOfStudy.trim(),
+      institution: edited.institution.trim(),
+      location: edited.location.trim(),
+      endDate: edited.endDate.trim() || null,
+    }));
+    profile['certificationsAndLicenses'] = this.mergeRecordArray(
+      profile['certificationsAndLicenses'],
+      this.editCertifications,
+      (original, edited) => ({
+        ...original,
+        name: edited.name.trim(),
+        issuer: edited.issuer.trim() || null,
+        year: this.toOptionalNumber(edited.year),
+      }),
+    );
+
+    return profile;
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  }
+
+  private asRecordArray(value: unknown): Record<string, unknown>[] {
+    return Array.isArray(value) ? value.map((item) => this.asRecord(item)) : [];
+  }
+
+  private asStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  }
+
+  private asEditableLines(value: unknown): string {
+    return this.asStringArray(value).join('\n');
+  }
+
+  private asEditableNumber(value: unknown): string {
+    return typeof value === 'number' || typeof value === 'string' ? String(value) : '';
+  }
+
+  private toLines(value: string): string[] {
+    return value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+
+  private toOptionalNumber(value: string): number | null {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return null;
+    }
+
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  private mergeRecordArray<T>(
+    originalValue: unknown,
+    editedItems: T[],
+    mapItem: (original: Record<string, unknown>, edited: T) => Record<string, unknown>,
+  ): Record<string, unknown>[] {
+    const originalItems = this.asRecordArray(originalValue);
+    return editedItems.map((edited, index) => mapItem(originalItems[index] ?? {}, edited));
   }
 
   private formatFileSize(bytes: number): string {
@@ -353,7 +716,7 @@ export class ResumeUpload implements OnInit {
     URL.revokeObjectURL(url);
   }
 
-  private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' = 'upload'): string {
+  private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' | 'edit' = 'upload'): string {
     if (typeof error === 'object' && error !== null && 'error' in error) {
       const payload = (error as { error?: unknown }).error;
       const status = (error as { status?: unknown }).status;
@@ -383,6 +746,10 @@ export class ResumeUpload implements OnInit {
 
     if (action === 'saved') {
       return 'Unable to load saved resumes. Please check the parser API server and try again.';
+    }
+
+    if (action === 'edit') {
+      return 'Unable to save the edited resume copy. Please check the parser API server and try again.';
     }
 
     return 'Unable to upload the resume. Please check the API server and try again.';

@@ -7,7 +7,37 @@ export interface ParsedResumeResponse {
   resumeId?: string;
   fileName?: string;
   message?: string;
+  profile?: ResumeProfile;
+  metadata?: Record<string, unknown>;
   [key: string]: unknown;
+}
+
+export interface CandidateProfile {
+  fullName?: string;
+  email?: string;
+  currentTitle?: string;
+  professionalHeadline?: string;
+  [key: string]: unknown;
+}
+
+export interface ResumeProfile {
+  candidateProfile?: CandidateProfile;
+  [key: string]: unknown;
+}
+
+export interface ResumeDocumentResponse {
+  id: string;
+  profile: ResumeProfile;
+  metadata: Record<string, unknown>;
+  source: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ResumeEditRequest {
+  profile: ResumeProfile;
+  metadata: Record<string, unknown>;
+  source: Record<string, unknown>;
 }
 
 export interface ResumePreviewRequest {
@@ -62,6 +92,14 @@ export class ResumeApi {
         skip,
       },
     });
+  }
+
+  getResume(resumeId: string): Observable<ResumeDocumentResponse> {
+    return this.http.get<ResumeDocumentResponse>(`${this.resumesUrl}/${resumeId}`);
+  }
+
+  saveEditedResume(resumeId: string, request: ResumeEditRequest): Observable<ResumeDocumentResponse> {
+    return this.http.post<ResumeDocumentResponse>(`${this.resumesUrl}/${resumeId}/edits`, request);
   }
 
   parseResume(file: File, jobDescription?: string): Observable<ParsedResumeResponse> {
