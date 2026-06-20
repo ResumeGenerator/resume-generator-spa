@@ -2,6 +2,15 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+declare global {
+  interface Window {
+    __RESUME_GENERATOR_CONFIG__?: {
+      parserApiUrl?: string;
+      templateApiUrl?: string;
+    };
+  }
+}
+
 export interface ParsedResumeResponse {
   id?: string;
   resumeId?: string;
@@ -77,11 +86,16 @@ export interface SavedResumesResponse {
   providedIn: 'root',
 })
 export class ResumeApi {
-  private readonly resumesUrl = 'http://localhost:8000/api/resumes';
-  private readonly parseResumeUrl = 'http://localhost:8000/api/resumes/parse';
-  private readonly previewResumeUrl = 'http://localhost:8080/api/Resumes/preview';
-  private readonly pdfResumeUrl = 'http://localhost:8080/api/Resumes/pdf';
-  private readonly wordResumeUrl = 'http://localhost:8080/api/Resumes/word';
+  private readonly parserApiUrl = this.resolveBaseUrl(window.__RESUME_GENERATOR_CONFIG__?.parserApiUrl, 'http://localhost:8000');
+  private readonly templateApiUrl = this.resolveBaseUrl(
+    window.__RESUME_GENERATOR_CONFIG__?.templateApiUrl,
+    'http://localhost:8080',
+  );
+  private readonly resumesUrl = `${this.parserApiUrl}/api/resumes`;
+  private readonly parseResumeUrl = `${this.parserApiUrl}/api/resumes/parse`;
+  private readonly previewResumeUrl = `${this.templateApiUrl}/api/Resumes/preview`;
+  private readonly pdfResumeUrl = `${this.templateApiUrl}/api/Resumes/pdf`;
+  private readonly wordResumeUrl = `${this.templateApiUrl}/api/Resumes/word`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -141,5 +155,10 @@ export class ResumeApi {
         responseType: 'blob',
       },
     );
+  }
+
+  private resolveBaseUrl(value: string | undefined, fallback: string): string {
+    const resolved = value?.trim() || fallback;
+    return resolved.replace(/\/+$/, '');
   }
 }
