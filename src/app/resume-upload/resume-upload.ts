@@ -79,6 +79,12 @@ export class ResumeUpload implements OnInit, OnDestroy {
   protected editCurrentTitle = '';
   protected editProfessionalHeadline = '';
   protected editTotalExperienceYears = '';
+  protected editCareerLevel = '';
+  protected editIndustry = '';
+  protected editSpecialization = '';
+  protected editIndustryFocus = '';
+  protected editPrimarySpecialization = '';
+  protected editSecondarySpecialization = '';
   protected editJobDescription = '';
   protected editProfessionalSummary = '';
   protected editHardSkills = '';
@@ -527,6 +533,8 @@ export class ResumeUpload implements OnInit, OnDestroy {
 
   private populateEditForm(resume: ResumeDocumentResponse): void {
     const candidateProfile = this.asRecord(resume.profile['candidateProfile']);
+    const careerClassification = this.asRecord(resume.profile['careerClassification']);
+    const careerProgression = this.asRecord(resume.profile['careerProgression']);
     const resumeBlocks = this.asRecord(resume.profile['resumeBlocks']);
     const coreSkills = this.asRecord(resume.profile['coreSkills']);
     const source = this.asRecord(resume.source);
@@ -538,11 +546,17 @@ export class ResumeUpload implements OnInit, OnDestroy {
     this.editCurrentTitle = this.asString(candidateProfile['currentTitle']);
     this.editProfessionalHeadline = this.asString(candidateProfile['professionalHeadline']);
     this.editTotalExperienceYears = this.asEditableNumber(candidateProfile['totalExperienceYears']);
+    this.editCareerLevel = this.asString(careerProgression['careerLevel']) || this.asString(careerClassification['seniorityLevel']);
+    this.editIndustry = this.asString(careerClassification['industry']);
+    this.editSpecialization = this.asString(careerClassification['subSpecialization']);
+    this.editIndustryFocus = this.asEditableLines(careerProgression['industryFocus']);
+    this.editPrimarySpecialization = this.asEditableLines(careerProgression['primarySpecialization']);
+    this.editSecondarySpecialization = this.asEditableLines(careerProgression['secondarySpecialization']);
     this.editJobDescription = this.asString(source['jobDescription']);
-    this.editProfessionalSummary = this.asEditableLines([
+    this.editProfessionalSummary = this.asEditableLines(this.uniqueLines([
       ...this.asStringArray(resumeBlocks['executiveSummary']),
       ...this.asStringArray(resume.profile['professionalSummaryPoints']),
-    ]);
+    ]));
     this.editHardSkills = this.asEditableLines(coreSkills['hardSkills']);
     this.editToolsAndSoftware = this.asEditableLines(coreSkills['toolsAndSoftware']);
     this.editMethodologies = this.asEditableLines(coreSkills['methodologiesAndFrameworks']);
@@ -586,6 +600,19 @@ export class ResumeUpload implements OnInit, OnDestroy {
       totalExperienceYears: this.toOptionalNumber(this.editTotalExperienceYears),
     };
     profile['professionalSummaryPoints'] = summaryPoints;
+    profile['careerClassification'] = {
+      ...this.asRecord(profile['careerClassification']),
+      industry: this.editIndustry.trim(),
+      subSpecialization: this.editSpecialization.trim(),
+      seniorityLevel: this.editCareerLevel.trim(),
+    };
+    profile['careerProgression'] = {
+      ...this.asRecord(profile['careerProgression']),
+      careerLevel: this.editCareerLevel.trim(),
+      industryFocus: this.toLines(this.editIndustryFocus),
+      primarySpecialization: this.toLines(this.editPrimarySpecialization),
+      secondarySpecialization: this.toLines(this.editSecondarySpecialization),
+    };
     profile['resumeBlocks'] = {
       ...this.asRecord(profile['resumeBlocks']),
       executiveSummary: summaryPoints,
@@ -652,10 +679,25 @@ export class ResumeUpload implements OnInit, OnDestroy {
   }
 
   private toLines(value: string): string[] {
-    return value
+    return this.uniqueLines(value
       .split(/\r?\n/)
       .map((line) => line.trim())
-      .filter(Boolean);
+      .filter(Boolean));
+  }
+
+  private uniqueLines(lines: string[]): string[] {
+    const seen = new Set<string>();
+
+    return lines.filter((line) => {
+      const normalized = line.trim().replace(/\s+/g, ' ').toLowerCase();
+
+      if (!normalized || seen.has(normalized)) {
+        return false;
+      }
+
+      seen.add(normalized);
+      return true;
+    });
   }
 
   private toOptionalNumber(value: string): number | null {

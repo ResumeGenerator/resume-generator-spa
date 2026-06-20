@@ -215,6 +215,44 @@
               </label>
             </div>
 
+            <section class="edit-section">
+              <div class="edit-section-heading">
+                <h3>Career snapshot</h3>
+              </div>
+              <div class="edit-fields-grid">
+                <label class="field">
+                  <span>Career level</span>
+                  <input name="editCareerLevel" [(ngModel)]="editCareerLevel" />
+                </label>
+
+                <label class="field">
+                  <span>Industry</span>
+                  <input name="editIndustry" [(ngModel)]="editIndustry" />
+                </label>
+
+                <label class="field">
+                  <span>Specialization</span>
+                  <input name="editSpecialization" [(ngModel)]="editSpecialization" />
+                </label>
+              </div>
+              <div class="edit-fields-grid">
+                <label class="field">
+                  <span>Industry focus</span>
+                  <textarea name="editIndustryFocus" rows="4" [(ngModel)]="editIndustryFocus"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Primary specialization</span>
+                  <textarea name="editPrimarySpecialization" rows="4" [(ngModel)]="editPrimarySpecialization"></textarea>
+                </label>
+
+                <label class="field">
+                  <span>Secondary specialization</span>
+                  <textarea name="editSecondarySpecialization" rows="4" [(ngModel)]="editSecondarySpecialization"></textarea>
+                </label>
+              </div>
+            </section>
+
             <label class="field">
               <span>Job description</span>
               <textarea name="editJobDescription" rows="4" [(ngModel)]="editJobDescription"></textarea>
