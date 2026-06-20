@@ -282,6 +282,42 @@ input:focus {
   flex-wrap: wrap;
 }
 
+.ai-loader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid #cdbbeb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ai-loader strong {
+  display: block;
+  color: #34264d;
+}
+
+.ai-loader p {
+  margin-top: 4px;
+  color: #6f6282;
+}
+
+.ai-loader-orbit {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 4px solid #f2eaff;
+  border-top-color: #7c3aed;
+  animation: ai-loader-spin 0.9s linear infinite;
+}
+
+@keyframes ai-loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 button {
   min-height: 44px;
   border-radius: 8px;
@@ -589,6 +625,7 @@ pre {
 
   .panel-heading,
   .file-summary,
+  .ai-loader,
   .resume-row,
   .resume-actions,
   .modal-header,

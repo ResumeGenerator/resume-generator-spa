@@ -51,10 +51,20 @@
 
         <div class="actions">
           <button type="submit" class="primary-button" [disabled]="!selectedFile() || uploadState() === 'uploading'">
-            {{ uploadState() === 'uploading' ? 'Uploading...' : 'Save resume' }}
+            {{ uploadState() === 'uploading' ? 'Saving...' : 'Save resume' }}
           </button>
           <button type="button" class="secondary-button" (click)="clearForm(fileInput)">Clear</button>
         </div>
+
+        @if (uploadState() === 'uploading') {
+          <div class="ai-loader" role="status" aria-live="polite">
+            <div class="ai-loader-orbit" aria-hidden="true"></div>
+            <div>
+              <strong>{{ uploadLoaderMessage() }}</strong>
+              <p>Keep this page open while the parser reads, structures, and saves the resume.</p>
+            </div>
+          </div>
+        }
       </form>
     </section>
 

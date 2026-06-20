@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
@@ -47,7 +47,7 @@ interface CertificationEditItem {
   templateUrl: './resume-upload.html',
   styleUrl: './resume-upload.css',
 })
-export class ResumeUpload implements OnInit {
+export class ResumeUpload implements OnInit, OnDestroy {
   protected readonly selectedFile = signal<File | null>(null);
   protected readonly uploadState = signal<UploadState>('idle');
   protected readonly previewState = signal<PreviewState>('idle');
@@ -58,6 +58,7 @@ export class ResumeUpload implements OnInit {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly previewErrorMessage = signal<string | null>(null);
   protected readonly savedResumesErrorMessage = signal<string | null>(null);
+  protected readonly uploadLoaderMessage = signal('AI is analyzing your resume...');
   protected readonly selectedSavedResumeId = signal<string | null>(null);
   protected readonly isPreviewModalOpen = signal(false);
   protected readonly isEditModalOpen = signal(false);
@@ -68,6 +69,7 @@ export class ResumeUpload implements OnInit {
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
   private readonly defaultTemplateIds = ['modern-minimal', 'professional-dark-blue'];
+  private uploadLoaderTimer: ReturnType<typeof setTimeout> | null = null;
   protected jobDescription = '';
   protected resumeId = '';
   protected editCandidateName = '';
@@ -109,6 +111,10 @@ export class ResumeUpload implements OnInit {
 
   ngOnInit(): void {
     this.loadSavedResumes();
+  }
+
+  ngOnDestroy(): void {
+    this.clearUploadLoaderTimer();
   }
 
   protected loadSavedResumes(): void {
@@ -155,6 +161,7 @@ export class ResumeUpload implements OnInit {
     }
 
     this.uploadState.set('uploading');
+    this.startUploadLoader();
     this.errorMessage.set(null);
     this.previewErrorMessage.set(null);
     this.parsedResume.set(null);
@@ -163,7 +170,12 @@ export class ResumeUpload implements OnInit {
 
     this.resumeApi
       .parseResume(file, this.jobDescription)
-      .pipe(finalize(() => this.uploadState.update((state) => (state === 'uploading' ? 'idle' : state))))
+      .pipe(
+        finalize(() => {
+          this.clearUploadLoaderTimer();
+          this.uploadState.update((state) => (state === 'uploading' ? 'idle' : state));
+        }),
+      )
       .subscribe({
         next: (response) => {
           this.parsedResume.set(response);
@@ -450,6 +462,7 @@ export class ResumeUpload implements OnInit {
     this.isEditModalOpen.set(false);
     this.activeTemplateIndex.set(0);
     this.uploadState.set('idle');
+    this.clearUploadLoaderTimer();
     this.previewState.set('idle');
     this.editState.set('idle');
   }
@@ -489,6 +502,23 @@ export class ResumeUpload implements OnInit {
     }
 
     return '';
+  }
+
+  private startUploadLoader(): void {
+    this.clearUploadLoaderTimer();
+    this.uploadLoaderMessage.set('AI is analyzing your resume...');
+    this.uploadLoaderTimer = setTimeout(() => {
+      if (this.uploadState() === 'uploading') {
+        this.uploadLoaderMessage.set('Still working. Extracting experience, skills, and profile details...');
+      }
+    }, 5000);
+  }
+
+  private clearUploadLoaderTimer(): void {
+    if (this.uploadLoaderTimer) {
+      clearTimeout(this.uploadLoaderTimer);
+      this.uploadLoaderTimer = null;
+    }
   }
 
   private asString(value: unknown): string {
