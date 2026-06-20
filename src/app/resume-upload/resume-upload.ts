@@ -87,6 +87,10 @@ export class ResumeUpload implements OnInit, OnDestroy {
   protected editSecondarySpecialization = '';
   protected editJobDescription = '';
   protected editProfessionalSummary = '';
+  protected editTechnicalHighlights = '';
+  protected editLeadershipHighlights = '';
+  protected editProjectHighlights = '';
+  protected editIndustryHighlights = '';
   protected editHardSkills = '';
   protected editToolsAndSoftware = '';
   protected editMethodologies = '';
@@ -557,6 +561,10 @@ export class ResumeUpload implements OnInit, OnDestroy {
       ...this.asStringArray(resumeBlocks['executiveSummary']),
       ...this.asStringArray(resume.profile['professionalSummaryPoints']),
     ]));
+    this.editTechnicalHighlights = this.asEditableLines(resumeBlocks['technicalHighlights']);
+    this.editLeadershipHighlights = this.asEditableLines(resumeBlocks['leadershipHighlights']);
+    this.editProjectHighlights = this.asEditableLines(resumeBlocks['projectHighlights']);
+    this.editIndustryHighlights = this.asEditableLines(resumeBlocks['industryHighlights']);
     this.editHardSkills = this.asEditableLines(coreSkills['hardSkills']);
     this.editToolsAndSoftware = this.asEditableLines(coreSkills['toolsAndSoftware']);
     this.editMethodologies = this.asEditableLines(coreSkills['methodologiesAndFrameworks']);
@@ -616,6 +624,10 @@ export class ResumeUpload implements OnInit, OnDestroy {
     profile['resumeBlocks'] = {
       ...this.asRecord(profile['resumeBlocks']),
       executiveSummary: summaryPoints,
+      technicalHighlights: this.toLines(this.editTechnicalHighlights),
+      leadershipHighlights: this.toLines(this.editLeadershipHighlights),
+      projectHighlights: this.toLines(this.editProjectHighlights),
+      industryHighlights: this.toLines(this.editIndustryHighlights),
     };
     profile['coreSkills'] = {
       ...this.asRecord(profile['coreSkills']),
