@@ -144,10 +144,10 @@
             </div>
             @if (preview.templates[activeTemplateIndex()]; as activeTemplate) {
               <div class="modal-actions">
-                <button type="button" class="secondary-button" (click)="downloadPdfTemplate(activeTemplate.templateId, activeTemplate.html)">
+                <button type="button" class="secondary-button" (click)="downloadPdfTemplate(activeTemplate.templateId)">
                   Download PDF
                 </button>
-                <button type="button" class="secondary-button" (click)="downloadWordTemplate(activeTemplate.templateId, activeTemplate.html)">
+                <button type="button" class="secondary-button" (click)="downloadWordTemplate(activeTemplate.templateId)">
                   Download Word
                 </button>
                 <button type="button" class="secondary-button" (click)="closePreviewModal()">Close</button>

@@ -50,6 +50,8 @@ export class ResumeApi {
   private readonly resumesUrl = 'http://localhost:8000/api/resumes';
   private readonly parseResumeUrl = 'http://localhost:8000/api/resumes/parse';
   private readonly previewResumeUrl = 'http://localhost:8080/api/Resumes/preview';
+  private readonly pdfResumeUrl = 'http://localhost:8080/api/Resumes/pdf';
+  private readonly wordResumeUrl = 'http://localhost:8080/api/Resumes/word';
 
   constructor(private readonly http: HttpClient) {}
 
@@ -75,5 +77,31 @@ export class ResumeApi {
 
   previewResume(request: ResumePreviewRequest): Observable<ResumePreviewResponse> {
     return this.http.post<ResumePreviewResponse>(this.previewResumeUrl, request);
+  }
+
+  downloadResumePdf(resumeId: string, templateId: string): Observable<Blob> {
+    return this.http.post(
+      this.pdfResumeUrl,
+      {
+        resumeId,
+        templateId,
+      },
+      {
+        responseType: 'blob',
+      },
+    );
+  }
+
+  downloadResumeWord(resumeId: string, templateId: string): Observable<Blob> {
+    return this.http.post(
+      this.wordResumeUrl,
+      {
+        resumeId,
+        templateId,
+      },
+      {
+        responseType: 'blob',
+      },
+    );
   }
 }

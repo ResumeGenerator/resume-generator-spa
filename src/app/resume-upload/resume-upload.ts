@@ -168,56 +168,36 @@ export class ResumeUpload implements OnInit {
       });
   }
 
-  protected async downloadWordTemplate(templateId: string, html: string): Promise<void> {
-    const { asBlob } = await import('html-docx-js-typescript');
-    const blob = await asBlob(this.asExportDocument(templateId, html), {
-      margins: {
-        top: 360,
-        right: 360,
-        bottom: 360,
-        left: 360,
+  protected downloadWordTemplate(templateId: string): void {
+    const resumeId = this.resumeId.trim();
+
+    if (!resumeId || !templateId) {
+      this.previewErrorMessage.set('Unable to download Word document. Select a saved resume and template first.');
+      return;
+    }
+
+    this.resumeApi.downloadResumeWord(resumeId, templateId).subscribe({
+      next: (blob) => this.saveBlob(blob, `${this.slugify(templateId || 'resume-template')}.docx`),
+      error: (error) => {
+        this.previewErrorMessage.set(this.resolveErrorMessage(error, 'preview'));
       },
     });
-    const fileBlob = blob instanceof Blob ? blob : new Blob([blob]);
-    const url = URL.createObjectURL(fileBlob);
-    const anchor = document.createElement('a');
-
-    anchor.href = url;
-    anchor.download = `${this.slugify(templateId || 'resume-template')}.docx`;
-    anchor.click();
-
-    URL.revokeObjectURL(url);
   }
 
-  protected async downloadPdfTemplate(templateId: string, html: string): Promise<void> {
-    const html2pdf = (await import('html2pdf.js')).default;
-    const element = this.createExportElement(html);
+  protected downloadPdfTemplate(templateId: string): void {
+    const resumeId = this.resumeId.trim();
 
-    document.body.appendChild(element);
-
-    try {
-      const pdfOptions = {
-          filename: `${this.slugify(templateId || 'resume-template')}.pdf`,
-          margin: 0,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-          jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['css', 'legacy'] },
-        };
-
-      await (html2pdf as unknown as () => {
-        set: (options: Record<string, unknown>) => {
-          from: (element: HTMLElement) => {
-            save: () => Promise<void>;
-          };
-        };
-      })()
-        .set(pdfOptions)
-        .from(element)
-        .save();
-    } finally {
-      element.remove();
+    if (!resumeId || !templateId) {
+      this.previewErrorMessage.set('Unable to download PDF. Select a saved resume and template first.');
+      return;
     }
+
+    this.resumeApi.downloadResumePdf(resumeId, templateId).subscribe({
+      next: (blob) => this.saveBlob(blob, `${this.slugify(templateId || 'resume-template')}.pdf`),
+      error: (error) => {
+        this.previewErrorMessage.set(this.resolveErrorMessage(error, 'preview'));
+      },
+    });
   }
 
   protected trustedPreviewHtml(html: string): SafeHtml {
@@ -355,23 +335,22 @@ export class ResumeUpload implements OnInit {
     `;
   }
 
-  private createExportElement(html: string): HTMLElement {
-    const element = document.createElement('div');
-    element.style.position = 'fixed';
-    element.style.left = '-10000px';
-    element.style.top = '0';
-    element.style.width = '816px';
-    element.style.background = '#ffffff';
-    element.innerHTML = this.extractBodyHtml(html);
-
-    return element;
-  }
-
   private extractBodyHtml(html: string): string {
     const parser = new DOMParser();
     const documentNode = parser.parseFromString(html, 'text/html');
 
     return documentNode.body.innerHTML || html;
+  }
+
+  private saveBlob(blob: Blob, fileName: string): void {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+
+    anchor.href = url;
+    anchor.download = fileName;
+    anchor.click();
+
+    URL.revokeObjectURL(url);
   }
 
   private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' = 'upload'): string {
