@@ -5,6 +5,16 @@ set -eu
 : "${PARSER_API_URL:=http://localhost:8000}"
 : "${TEMPLATE_API_URL:=http://localhost:8080}"
 
+normalize_url() {
+  case "$1" in
+    http://*|https://*) printf '%s' "$1" ;;
+    *) printf 'https://%s' "$1" ;;
+  esac
+}
+
+PARSER_API_URL="$(normalize_url "$PARSER_API_URL")"
+TEMPLATE_API_URL="$(normalize_url "$TEMPLATE_API_URL")"
+
 cat > /usr/share/nginx/html/runtime-config.js <<EOF
 window.__RESUME_GENERATOR_CONFIG__ = {
   parserApiUrl: '${PARSER_API_URL}',

@@ -159,6 +159,7 @@ export class ResumeApi {
 
   private resolveBaseUrl(value: string | undefined, fallback: string): string {
     const resolved = value?.trim() || fallback;
-    return resolved.replace(/\/+$/, '');
+    const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(resolved) ? resolved : `https://${resolved}`;
+    return withProtocol.replace(/\/+$/, '');
   }
 }
