@@ -1,4 +1,4 @@
-name: OpenAI issue to PR
+name: OpenAI issue to main
 
 on:
   issues:
@@ -13,10 +13,9 @@ on:
 permissions:
   contents: write
   issues: write
-  pull-requests: write
 
 jobs:
-  openai_issue_to_pr:
+  openai_issue_to_main:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -45,12 +44,6 @@ jobs:
             core.setOutput('body', issue.body || '');
             core.setOutput('url', issue.html_url);
             core.setOutput('author', issue.user?.login || 'unknown');
-            core.setOutput('branch', `openai/issue-${issue.number}-${context.runId}`);
-
-      - name: Create working branch
-        env:
-          BRANCH_NAME: ${{ steps.issue.outputs.branch }}
-        run: git switch -c "$BRANCH_NAME"
 
       - name: Generate OpenAI prompt
         run: |
@@ -65,11 +58,6 @@ jobs:
           4. Keep API calls centralized in src/app/services/resume-api.ts.
           5. Add/update tests when logic or UI changes.
           6. Run npm run build when feasible.
-          7. Do not commit; workflow will handle commit/PR.
-          ## PR expectations
-          - What changed
-          - What validation was run
-          - Any backend-dependent behavior not verified
           ## GitHub issue
           Issue: #${{ steps.issue.outputs.number }}
           Title: ${{ steps.issue.outputs.title }}
@@ -104,57 +92,14 @@ jobs:
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Commit and push changes
+      - name: Commit and push changes directly to main
         if: steps.changes.outputs.has_changes == 'true'
-        env:
-          BRANCH_NAME: ${{ steps.issue.outputs.branch }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "Implement issue #${{ steps.issue.outputs.number }} with OpenAI GPT‑4.1"
-          git push --set-upstream origin "$BRANCH_NAME"
-
-      - name: Debug repo context
-        run: |
-          echo "Repo from context: ${{ github.repository }}"
-          git remote -v
-
-      - name: Create pull request
-        if: steps.changes.outputs.has_changes == 'true'
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
-          ISSUE_URL: ${{ steps.issue.outputs.url }}
-          BRANCH_NAME: ${{ steps.issue.outputs.branch }}
-          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final_message }}
-        run: |
-          {
-            echo "Implemented by OpenAI GPT‑4.1 from issue #${ISSUE_NUMBER}."
-            echo
-            echo "Closes #${ISSUE_NUMBER}"
-            echo
-            echo "Issue: ${ISSUE_URL}"
-            echo
-            echo "## OpenAI summary"
-            echo
-            if [ -n "$OPENAI_FINAL_MESSAGE" ]; then
-              printf '%s\n' "$OPENAI_FINAL_MESSAGE"
-            else
-              echo "OpenAI did not return a final summary."
-            fi
-          } > pr-body.md
-
-          # Force gh to use the PAT
-          export GITHUB_TOKEN=$GH_PAT
-
-          gh pr create \
-            --repo "${{ github.repository }}" \
-            --head "$BRANCH_NAME" \
-            --base "${{ github.event.repository.default_branch || 'main' }}" \
-            --title "OpenAI: ${ISSUE_TITLE}" \
-            --body-file pr-body.md
+          git push origin HEAD:main
 
       - name: Comment when no changes were made
         if: steps.changes.outputs.has_changes == 'false'
