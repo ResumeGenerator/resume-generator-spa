@@ -37,7 +37,8 @@ jobs:
               context.payload.inputs?.issue_number ??
               context.payload.issue?.number ??
               clientPayload.issue_number ??
-              clientPayload.issue?.number;
+              clientPayload.issue?.number ??
+              clientPayload.orchestrator_issue_number;
 
             const issueNumber = Number(rawIssueNumber);
             if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
@@ -47,6 +48,25 @@ jobs:
                 `For manual runs, pass the issue_number workflow input. ` +
                 `For repository_dispatch, send client_payload.issue_number or client_payload.issue.number.`
               );
+              return;
+            }
+
+            if (context.eventName === 'repository_dispatch') {
+              const issueRepository =
+                clientPayload.issue_repository ||
+                clientPayload.source_repository ||
+                clientPayload.repository ||
+                clientPayload.orchestrator_repo ||
+                `${context.repo.owner}/${context.repo.repo}`;
+
+              core.setOutput('number', String(issueNumber));
+              core.setOutput('title', clientPayload.issue?.title || clientPayload.orchestrator_issue_title || '');
+              core.setOutput('body', clientPayload.issue?.body || clientPayload.orchestrator_issue_body || '');
+              core.setOutput('url', clientPayload.issue?.url || clientPayload.orchestrator_issue_url || '');
+              core.setOutput('author', clientPayload.issue?.author || clientPayload.orchestrator_issue_author || 'unknown');
+              core.setOutput('repository', issueRepository);
+              core.setOutput('target_role', clientPayload.target_role || 'frontend');
+              core.setOutput('is_local_issue', String(issueRepository === `${context.repo.owner}/${context.repo.repo}`));
               return;
             }
 
@@ -175,7 +195,7 @@ jobs:
       - name: Create implementation pull request
         if: steps.changes.outputs.has_changes == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.REPO_AUTOMATION_TOKEN || github.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_REPOSITORY: ${{ steps.issue.outputs.repository }}
           ISSUE_URL: ${{ steps.issue.outputs.url }}
@@ -231,11 +251,12 @@ jobs:
               echo "Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests."
             } > "$pr_body"
 
-            gh issue comment "${ISSUE_NUMBER}" --repo "${ISSUE_REPOSITORY}" --body-file "$pr_body"
+            gh issue comment "${ISSUE_NUMBER}" --repo "${ISSUE_REPOSITORY}" --body-file "$pr_body" || cat "$pr_body"
           fi
 
       - name: Comment when no changes were made
         if: steps.changes.outputs.has_changes == 'false'
+        continue-on-error: true
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
@@ -243,7 +264,7 @@ jobs:
           CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
           CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.REPO_AUTOMATION_TOKEN || github.token }}
           script: |
             const body = [
               'Codex ran for this issue but did not produce any file changes.',
@@ -264,12 +285,13 @@ jobs:
 
       - name: Comment when workflow failed
         if: failure()
+        continue-on-error: true
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_REPOSITORY: ${{ steps.issue.outputs.repository }}
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.REPO_AUTOMATION_TOKEN || github.token }}
           script: |
             const issueNumber = Number(process.env.ISSUE_NUMBER);
             if (!issueNumber) {
