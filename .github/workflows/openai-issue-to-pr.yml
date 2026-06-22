@@ -145,6 +145,10 @@ jobs:
               echo "OpenAI did not return a final summary."
             fi
           } > pr-body.md
+
+          # Force gh to use the PAT
+          export GITHUB_TOKEN=$GH_TOKEN
+
           gh pr create \
             --repo "${{ github.repository }}" \
             --head "$BRANCH_NAME" \
