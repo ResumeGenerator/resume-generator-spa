@@ -117,7 +117,7 @@ jobs:
 
       - name: Debug repo context
         run: |
-          pwd
+          echo "Repo from context: ${{ github.repository }}"
           git remote -v
 
       - name: Create pull request
@@ -146,6 +146,7 @@ jobs:
             fi
           } > pr-body.md
           gh pr create \
+            --repo "${{ github.repository }}" \
             --head "$BRANCH_NAME" \
             --base "${{ github.event.repository.default_branch || 'main' }}" \
             --title "OpenAI: ${ISSUE_TITLE}" \
