@@ -115,6 +115,11 @@ jobs:
           git commit -m "Implement issue #${{ steps.issue.outputs.number }} with OpenAI GPT‑4.1"
           git push --set-upstream origin "$BRANCH_NAME"
 
+      - name: Debug repo context
+        run: |
+          pwd
+          git remote -v
+
       - name: Create pull request
         if: steps.changes.outputs.has_changes == 'true'
         env:
