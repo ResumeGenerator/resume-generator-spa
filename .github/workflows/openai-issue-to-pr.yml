@@ -1,4 +1,4 @@
-name: Codex issue to PR
+name: OpenAI issue to PR
 
 on:
   issues:
@@ -16,7 +16,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  codex_issue_to_pr:
+  openai_issue_to_pr:
     name: Generate code from issue
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'issues'
@@ -25,15 +25,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
-
-      - name: Validate issue number
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            if ! [[ "${{ github.event.inputs.issue_number }}" =~ ^[1-9][0-9]*$ ]]; then
-              echo "Invalid issue_number input"
-              exit 1
-            fi
-          fi
 
       - name: Resolve issue context
         id: issue
@@ -60,22 +51,14 @@ jobs:
             core.setOutput('body', issue.body || '');
             core.setOutput('url', issue.html_url);
             core.setOutput('author', issue.user?.login || 'unknown');
-            core.setOutput('branch', `codex/issue-${issue.number}-${context.runId}`);
+            core.setOutput('branch', `openai/issue-${issue.number}-${context.runId}`);
 
       - name: Create working branch
         env:
           BRANCH_NAME: ${{ steps.issue.outputs.branch }}
         run: git switch -c "$BRANCH_NAME"
 
-      - name: Prepare Codex scratch
-        run: mkdir -p /home/runner/.codex
-
-      - name: Write Codex server info
-        run: |
-          echo '{"id":${{ github.run_id }},"status":"ready"}' > /home/runner/.codex/${{ github.run_id }}.json
-
-
-      - name: Generate Codex prompt
+      - name: Generate OpenAI prompt
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
@@ -87,25 +70,22 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const promptPath = '.github/codex/generated/issue-prompt.md';
+            const promptPath = '.github/openai/generated/issue-prompt.md';
             fs.mkdirSync(path.dirname(promptPath), { recursive: true });
-            const prompt = `You are Codex running in GitHub Actions for the resume-generator-spa repository.
-            Read AGENTS.md first and follow its project guidance.
+            const prompt = `You are GPT‑4.1 running in GitHub Actions for the resume-generator-spa repository.
             Implement the GitHub issue below as a complete, production-quality code change.
-            ## Required workflow
-            1. Inspect the relevant source files before editing.
-            2. Infer the smallest safe implementation that satisfies the issue.
-            3. Preserve existing Angular 21 standalone component and signal patterns.
-            4. Keep API calls centralized in src/app/services/resume-api.ts when backend behavior is involved.
-            5. Update or add focused tests when the change affects logic or user-visible behavior.
+            ## Workflow
+            1. Inspect relevant source files.
+            2. Implement the smallest safe change.
+            3. Preserve Angular 21 standalone component and signal patterns.
+            4. Keep API calls centralized in src/app/services/resume-api.ts.
+            5. Add/update tests when logic or UI changes.
             6. Run npm run build when feasible.
-            7. Keep unrelated files unchanged.
-            8. Do not commit changes; the workflow will create the commit and pull request.
-            ## Pull request expectations
-            Leave a concise final message with:
-            - What changed.
-            - What validation was run.
-            - Any backend-dependent behavior that could not be verified.
+            7. Do not commit; workflow will handle commit/PR.
+            ## PR expectations
+            - What changed
+            - What validation was run
+            - Any backend-dependent behavior not verified
             ## GitHub issue
             Issue: #${process.env.ISSUE_NUMBER}
             Title: ${process.env.ISSUE_TITLE}
@@ -114,25 +94,19 @@ jobs:
             Body:
             ${process.env.ISSUE_BODY || ''}`;
             fs.writeFileSync(promptPath, prompt.replace(/^ {12}/gm, ''));
-            
-      - name: Prepare Codex scratch
-        run: mkdir -p /home/runner/.codex
 
-      - name: Write Codex server info
-        run: |
-          echo '{"id":${{ github.run_id }},"status":"ready"}' > /home/runner/.codex/${{ github.run_id }}.json
-
-      - name: Run Codex
-        id: run_codex
-        uses: openai/codex-action@v1
+      - name: Run OpenAI
+        id: run_openai
+        uses: openai/openai-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: .github/codex/generated/issue-prompt.md
+          model: gpt-4.1
+          prompt-file: .github/openai/generated/issue-prompt.md
           sandbox: workspace-write
-          output-file: codex-output.md
+          output-file: openai-output.md
 
       - name: Remove workflow scratch files
-        run: rm -rf .github/codex/generated codex-output.md
+        run: rm -rf .github/openai/generated openai-output.md
 
       - name: Detect changes
         id: changes
@@ -151,7 +125,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Implement issue #${{ steps.issue.outputs.number }} with Codex"
+          git commit -m "Implement issue #${{ steps.issue.outputs.number }} with OpenAI"
           git push --set-upstream origin "$BRANCH_NAME"
 
       - name: Create pull request
@@ -162,27 +136,27 @@ jobs:
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
           ISSUE_URL: ${{ steps.issue.outputs.url }}
           BRANCH_NAME: ${{ steps.issue.outputs.branch }}
-          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final-message }}
         run: |
           {
-            echo "Implemented by Codex from issue #${ISSUE_NUMBER}."
+            echo "Implemented by OpenAI from issue #${ISSUE_NUMBER}."
             echo
             echo "Closes #${ISSUE_NUMBER}"
             echo
             echo "Issue: ${ISSUE_URL}"
             echo
-            echo "## Codex summary"
+            echo "## OpenAI summary"
             echo
-            if [ -n "$CODEX_FINAL_MESSAGE" ]; then
-              printf '%s\n' "$CODEX_FINAL_MESSAGE"
+            if [ -n "$OPENAI_FINAL_MESSAGE" ]; then
+              printf '%s\n' "$OPENAI_FINAL_MESSAGE"
             else
-              echo "Codex did not return a final summary."
+              echo "OpenAI did not return a final summary."
             fi
           } > pr-body.md
           gh pr create \
             --head "$BRANCH_NAME" \
             --base "${{ github.event.repository.default_branch || 'main' }}" \
-            --title "Codex: ${ISSUE_TITLE}" \
+            --title "OpenAI: ${ISSUE_TITLE}" \
             --body-file pr-body.md
 
       - name: Comment when no changes were made
@@ -190,14 +164,14 @@ jobs:
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final-message }}
         with:
           github-token: ${{ github.token }}
           script: |
             const body = [
-              'Codex ran for this issue but did not produce any file changes.',
+              'OpenAI ran for this issue but did not produce any file changes.',
               '',
-              process.env.CODEX_FINAL_MESSAGE || 'No final Codex message was returned.',
+              process.env.OPENAI_FINAL_MESSAGE || 'No final OpenAI message was returned.',
             ].join('\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner,
