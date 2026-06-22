@@ -32,9 +32,19 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const issueNumber = context.eventName === 'workflow_dispatch'
-              ? Number(context.payload.inputs.issue_number)
-              : context.payload.issue.number;
+            const rawIssueNumber =
+              context.payload.inputs?.issue_number ??
+              context.payload.issue?.number;
+
+            const issueNumber = Number(rawIssueNumber);
+            if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+              core.setFailed(
+                `Could not resolve a valid issue number. ` +
+                `Event: ${context.eventName}. ` +
+                `For manual runs, pass the issue_number workflow input.`
+              );
+              return;
+            }
 
             const { data: issue } = await github.rest.issues.get({
               owner: context.repo.owner,
