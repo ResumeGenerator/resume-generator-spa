@@ -1,0 +1,210 @@
+name: Codex issue to PR
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: GitHub issue number to implement
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  codex_issue_to_pr:
+    name: Generate code from issue
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve issue context
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.eventName === 'workflow_dispatch'
+              ? Number(core.getInput('issue_number'))
+              : context.payload.issue.number;
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            if (issue.pull_request) {
+              core.setFailed(`Issue #${issueNumber} is a pull request, not an issue.`);
+              return;
+            }
+
+            const trustedAssociations = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+            if (!trustedAssociations.has(issue.author_association)) {
+              core.setFailed(`Issue #${issueNumber} was opened by ${issue.author_association}; refusing automatic code generation.`);
+              return;
+            }
+
+            core.setOutput('number', String(issue.number));
+            core.setOutput('title', issue.title);
+            core.setOutput('body', issue.body || '');
+            core.setOutput('url', issue.html_url);
+            core.setOutput('author', issue.user?.login || 'unknown');
+            core.setOutput('branch', `codex/issue-${issue.number}-${context.runId}`);
+
+      - name: Create working branch
+        env:
+          BRANCH_NAME: ${{ steps.issue.outputs.branch }}
+        run: |
+          git switch -c "$BRANCH_NAME"
+
+      - name: Generate Codex prompt
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          ISSUE_BODY: ${{ steps.issue.outputs.body }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const promptPath = '.github/codex/generated/issue-prompt.md';
+            fs.mkdirSync(path.dirname(promptPath), { recursive: true });
+
+            const prompt = `You are Codex running in GitHub Actions for the resume-generator-spa repository.
+
+            Read AGENTS.md first and follow its project guidance.
+
+            Implement the GitHub issue below as a complete, production-quality code change.
+
+            ## Required workflow
+
+            1. Inspect the relevant source files before editing.
+            2. Infer the smallest safe implementation that satisfies the issue.
+            3. Preserve existing Angular 21 standalone component and signal patterns.
+            4. Keep API calls centralized in src/app/services/resume-api.ts when backend behavior is involved.
+            5. Update or add focused tests when the change affects logic or user-visible behavior.
+            6. Run npm run build when feasible.
+            7. Keep unrelated files unchanged.
+            8. Do not commit changes; the workflow will create the commit and pull request.
+
+            ## Pull request expectations
+
+            Leave a concise final message with:
+
+            - What changed.
+            - What validation was run.
+            - Any backend-dependent behavior that could not be verified.
+
+            ## GitHub issue
+
+            Issue: #${process.env.ISSUE_NUMBER}
+            Title: ${process.env.ISSUE_TITLE}
+            Author: @${process.env.ISSUE_AUTHOR}
+            URL: ${process.env.ISSUE_URL}
+
+            Body:
+
+            ${process.env.ISSUE_BODY || ''}
+            `;
+
+            fs.writeFileSync(promptPath, prompt.replace(/^ {12}/gm, ''));
+
+      - name: Run Codex
+        id: run_codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/codex/generated/issue-prompt.md
+          sandbox: workspace-write
+          output-file: codex-output.md
+
+      - name: Remove workflow scratch files
+        run: |
+          rm -rf .github/codex/generated codex-output.md
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git status --porcelain | grep .; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push changes
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          BRANCH_NAME: ${{ steps.issue.outputs.branch }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Implement issue #${{ steps.issue.outputs.number }} with Codex"
+          git push --set-upstream origin "$BRANCH_NAME"
+
+      - name: Create pull request
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
+          BRANCH_NAME: ${{ steps.issue.outputs.branch }}
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        run: |
+          {
+            echo "Implemented by Codex from issue #${ISSUE_NUMBER}."
+            echo
+            echo "Closes #${ISSUE_NUMBER}"
+            echo
+            echo "Issue: ${ISSUE_URL}"
+            echo
+            echo "## Codex summary"
+            echo
+            if [ -n "$CODEX_FINAL_MESSAGE" ]; then
+              printf '%s\n' "$CODEX_FINAL_MESSAGE"
+            else
+              echo "Codex did not return a final summary."
+            fi
+          } > pr-body.md
+
+          gh pr create \
+            --head "$BRANCH_NAME" \
+            --base "${{ github.event.repository.default_branch }}" \
+            --title "Codex: ${ISSUE_TITLE}" \
+            --body-file pr-body.md
+
+      - name: Comment when no changes were made
+        if: steps.changes.outputs.has_changes == 'false'
+        uses: actions/github-script@v7
+        env:
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const body = [
+              'Codex ran for this issue but did not produce any file changes.',
+              '',
+              process.env.CODEX_FINAL_MESSAGE || 'No final Codex message was returned.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number('${{ steps.issue.outputs.number }}'),
+              body,
+            });
