@@ -17,9 +17,7 @@ permissions:
 
 jobs:
   openai_issue_to_pr:
-    name: Generate code from issue
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'issues'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -42,10 +40,6 @@ jobs:
               repo: context.repo.repo,
               issue_number: issueNumber,
             });
-            if (issue.pull_request) {
-              core.setFailed(`Issue #${issueNumber} is a pull request, not an issue.`);
-              return;
-            }
             core.setOutput('number', String(issue.number));
             core.setOutput('title', issue.title);
             core.setOutput('body', issue.body || '');
@@ -59,54 +53,47 @@ jobs:
         run: git switch -c "$BRANCH_NAME"
 
       - name: Generate OpenAI prompt
-        uses: actions/github-script@v7
-        env:
-          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
-          ISSUE_BODY: ${{ steps.issue.outputs.body }}
-          ISSUE_URL: ${{ steps.issue.outputs.url }}
-          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const promptPath = '.github/openai/generated/issue-prompt.md';
-            fs.mkdirSync(path.dirname(promptPath), { recursive: true });
-            const prompt = `You are GPT‑4.1 running in GitHub Actions for the resume-generator-spa repository.
-            Implement the GitHub issue below as a complete, production-quality code change.
-            ## Workflow
-            1. Inspect relevant source files.
-            2. Implement the smallest safe change.
-            3. Preserve Angular 21 standalone component and signal patterns.
-            4. Keep API calls centralized in src/app/services/resume-api.ts.
-            5. Add/update tests when logic or UI changes.
-            6. Run npm run build when feasible.
-            7. Do not commit; workflow will handle commit/PR.
-            ## PR expectations
-            - What changed
-            - What validation was run
-            - Any backend-dependent behavior not verified
-            ## GitHub issue
-            Issue: #${process.env.ISSUE_NUMBER}
-            Title: ${process.env.ISSUE_TITLE}
-            Author: @${process.env.ISSUE_AUTHOR}
-            URL: ${process.env.ISSUE_URL}
-            Body:
-            ${process.env.ISSUE_BODY || ''}`;
-            fs.writeFileSync(promptPath, prompt.replace(/^ {12}/gm, ''));
+        run: |
+          mkdir -p .github/openai/generated
+          cat > .github/openai/generated/issue-prompt.md <<'EOF'
+          You are GPT‑4.1 running in GitHub Actions for the resume-generator-spa repository.
+          Implement the GitHub issue below as a complete, production-quality code change.
+          ## Workflow
+          1. Inspect relevant source files.
+          2. Implement the smallest safe change.
+          3. Preserve Angular 21 standalone component and signal patterns.
+          4. Keep API calls centralized in src/app/services/resume-api.ts.
+          5. Add/update tests when logic or UI changes.
+          6. Run npm run build when feasible.
+          7. Do not commit; workflow will handle commit/PR.
+          ## PR expectations
+          - What changed
+          - What validation was run
+          - Any backend-dependent behavior not verified
+          ## GitHub issue
+          Issue: #${{ steps.issue.outputs.number }}
+          Title: ${{ steps.issue.outputs.title }}
+          Author: @${{ steps.issue.outputs.author }}
+          URL: ${{ steps.issue.outputs.url }}
+          Body:
+          ${{ steps.issue.outputs.body }}
+          EOF
 
-      - name: Run OpenAI
+      - name: Call OpenAI GPT‑4.1
         id: run_openai
-        uses: openai/openai-action@v1
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          model: gpt-4.1
-          prompt-file: .github/openai/generated/issue-prompt.md
-          sandbox: workspace-write
-          output-file: openai-output.md
-
-      - name: Remove workflow scratch files
-        run: rm -rf .github/openai/generated openai-output.md
+        run: |
+          RESPONSE=$(curl -s https://api.openai.com/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.OPENAI_API_KEY }}" \
+            -d '{
+              "model": "gpt-4.1",
+              "messages": [
+                {"role": "system", "content": "You are GPT‑4.1 running in GitHub Actions."},
+                {"role": "user", "content": "'"$(cat .github/openai/generated/issue-prompt.md)"'"}
+              ]
+            }')
+          echo "$RESPONSE" > openai-output.json
+          echo "final_message=$(jq -r '.choices[0].message.content' openai-output.json)" >> $GITHUB_OUTPUT
 
       - name: Detect changes
         id: changes
@@ -125,7 +112,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Implement issue #${{ steps.issue.outputs.number }} with OpenAI"
+          git commit -m "Implement issue #${{ steps.issue.outputs.number }} with OpenAI GPT‑4.1"
           git push --set-upstream origin "$BRANCH_NAME"
 
       - name: Create pull request
@@ -136,10 +123,10 @@ jobs:
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
           ISSUE_URL: ${{ steps.issue.outputs.url }}
           BRANCH_NAME: ${{ steps.issue.outputs.branch }}
-          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final-message }}
+          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final_message }}
         run: |
           {
-            echo "Implemented by OpenAI from issue #${ISSUE_NUMBER}."
+            echo "Implemented by OpenAI GPT‑4.1 from issue #${ISSUE_NUMBER}."
             echo
             echo "Closes #${ISSUE_NUMBER}"
             echo
@@ -164,12 +151,12 @@ jobs:
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
-          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final-message }}
+          OPENAI_FINAL_MESSAGE: ${{ steps.run_openai.outputs.final_message }}
         with:
           github-token: ${{ github.token }}
           script: |
             const body = [
-              'OpenAI ran for this issue but did not produce any file changes.',
+              'OpenAI GPT‑4.1 ran for this issue but did not produce any file changes.',
               '',
               process.env.OPENAI_FINAL_MESSAGE || 'No final OpenAI message was returned.',
             ].join('\n');
