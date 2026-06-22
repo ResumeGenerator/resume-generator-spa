@@ -60,11 +60,7 @@ jobs:
               return;
             }
 
-            const trustedAssociations = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
-            if (!trustedAssociations.has(issue.author_association)) {
-              core.setFailed(`Issue #${issueNumber} was opened by ${issue.author_association}; refusing automatic code generation.`);
-              return;
-            }
+
 
             core.setOutput('number', String(issue.number));
             core.setOutput('title', issue.title);
