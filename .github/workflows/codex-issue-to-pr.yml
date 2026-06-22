@@ -109,6 +109,13 @@ jobs:
             Body:
             ${process.env.ISSUE_BODY || ''}`;
             fs.writeFileSync(promptPath, prompt.replace(/^ {12}/gm, ''));
+            
+      - name: Prepare Codex scratch
+        run: mkdir -p /home/runner/.codex
+
+      - name: Write Codex server info
+        run: |
+          echo '{"id":${{ github.run_id }},"status":"ready"}' > /home/runner/.codex/${{ github.run_id }}.json
 
       - name: Run Codex
         id: run_codex
