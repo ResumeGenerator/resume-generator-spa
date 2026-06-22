@@ -32,23 +32,39 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const clientPayload = context.payload.client_payload || {};
             const rawIssueNumber =
               context.payload.inputs?.issue_number ??
-              context.payload.issue?.number;
+              context.payload.issue?.number ??
+              clientPayload.issue_number ??
+              clientPayload.issue?.number;
 
             const issueNumber = Number(rawIssueNumber);
             if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
               core.setFailed(
                 `Could not resolve a valid issue number. ` +
                 `Event: ${context.eventName}. ` +
-                `For manual runs, pass the issue_number workflow input.`
+                `For manual runs, pass the issue_number workflow input. ` +
+                `For repository_dispatch, send client_payload.issue_number or client_payload.issue.number.`
               );
               return;
             }
 
+            const issueRepository =
+              clientPayload.issue_repository ||
+              clientPayload.source_repository ||
+              clientPayload.repository ||
+              `${context.repo.owner}/${context.repo.repo}`;
+            const [issueOwner, issueRepo] = issueRepository.split('/');
+
+            if (!issueOwner || !issueRepo) {
+              core.setFailed(`Invalid issue repository: ${issueRepository}`);
+              return;
+            }
+
             const { data: issue } = await github.rest.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: issueOwner,
+              repo: issueRepo,
               issue_number: issueNumber,
             });
 
@@ -57,11 +73,13 @@ jobs:
             core.setOutput('body', issue.body || '');
             core.setOutput('url', issue.html_url);
             core.setOutput('author', issue.user?.login || 'unknown');
+            core.setOutput('repository', `${issueOwner}/${issueRepo}`);
 
       - name: Generate Codex prompt
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_REPOSITORY: ${{ steps.issue.outputs.repository }}
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
           ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
           ISSUE_URL: ${{ steps.issue.outputs.url }}
@@ -87,6 +105,7 @@ jobs:
             7. Leave a concise final summary with verification results.
 
             GitHub issue:
+            Repository: ${process.env.ISSUE_REPOSITORY}
             Issue: #${process.env.ISSUE_NUMBER}
             Title: ${process.env.ISSUE_TITLE}
             Author: @${process.env.ISSUE_AUTHOR}
@@ -158,6 +177,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_REPOSITORY: ${{ steps.issue.outputs.repository }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
           CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
           CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
@@ -175,7 +196,11 @@ jobs:
 
           pr_body="$(mktemp)"
           {
-            echo "Closes #${ISSUE_NUMBER}"
+            if [ "${ISSUE_REPOSITORY}" = "${GITHUB_REPOSITORY}" ]; then
+              echo "Closes #${ISSUE_NUMBER}"
+            else
+              echo "Related issue: ${ISSUE_URL}"
+            fi
             echo
             echo "Codex step outcome: ${CODEX_OUTCOME}"
             echo
@@ -206,7 +231,7 @@ jobs:
               echo "Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests."
             } > "$pr_body"
 
-            gh issue comment "${ISSUE_NUMBER}" --body-file "$pr_body"
+            gh issue comment "${ISSUE_NUMBER}" --repo "${ISSUE_REPOSITORY}" --body-file "$pr_body"
           fi
 
       - name: Comment when no changes were made
@@ -214,6 +239,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_REPOSITORY: ${{ steps.issue.outputs.repository }}
           CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
           CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
         with:
@@ -227,9 +253,11 @@ jobs:
               process.env.CODEX_FINAL_MESSAGE || 'No final Codex message was returned.',
             ].join('\n');
 
+            const [owner, repo] = process.env.ISSUE_REPOSITORY.split('/');
+
             await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               issue_number: Number(process.env.ISSUE_NUMBER),
               body,
             });
@@ -239,6 +267,7 @@ jobs:
         uses: actions/github-script@v7
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_REPOSITORY: ${{ steps.issue.outputs.repository }}
         with:
           github-token: ${{ github.token }}
           script: |
@@ -248,10 +277,12 @@ jobs:
               return;
             }
 
+            const issueRepository = process.env.ISSUE_REPOSITORY || `${context.repo.owner}/${context.repo.repo}`;
+            const [owner, repo] = issueRepository.split('/');
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               issue_number: issueNumber,
               body: `Codex issue-to-PR workflow failed before it could create a pull request.\n\nRun logs: ${runUrl}`,
             });
