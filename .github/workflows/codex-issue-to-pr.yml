@@ -84,7 +84,24 @@ jobs:
             const path = require('path');
             const promptPath = '.github/codex/generated/issue-prompt.md';
             fs.mkdirSync(path.dirname(promptPath), { recursive: true });
-            const prompt = `You are Codex running in GitHub Actions...
+            const prompt = `You are Codex running in GitHub Actions for the resume-generator-spa repository.
+            Read AGENTS.md first and follow its project guidance.
+            Implement the GitHub issue below as a complete, production-quality code change.
+            ## Required workflow
+            1. Inspect the relevant source files before editing.
+            2. Infer the smallest safe implementation that satisfies the issue.
+            3. Preserve existing Angular 21 standalone component and signal patterns.
+            4. Keep API calls centralized in src/app/services/resume-api.ts when backend behavior is involved.
+            5. Update or add focused tests when the change affects logic or user-visible behavior.
+            6. Run npm run build when feasible.
+            7. Keep unrelated files unchanged.
+            8. Do not commit changes; the workflow will create the commit and pull request.
+            ## Pull request expectations
+            Leave a concise final message with:
+            - What changed.
+            - What validation was run.
+            - Any backend-dependent behavior that could not be verified.
+            ## GitHub issue
             Issue: #${process.env.ISSUE_NUMBER}
             Title: ${process.env.ISSUE_TITLE}
             Author: @${process.env.ISSUE_AUTHOR}
