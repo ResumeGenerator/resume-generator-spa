@@ -126,9 +126,6 @@
                 <button type="button" class="history-preview-link" (click)="previewSavedResume(resume)">
                   {{ previewState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Preview' }}
                 </button>
-                <button type="button" class="history-preview-link" (click)="editSavedResume(resume)">
-                  {{ editState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Edit' }}
-                </button>
                 <button type="button" class="history-preview-link" (click)="regenerateSavedResume(resume)">
                   Regenerate
                 </button>
