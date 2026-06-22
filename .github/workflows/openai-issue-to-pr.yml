@@ -90,21 +90,49 @@ jobs:
             fs.mkdirSync(path.dirname(promptPath), { recursive: true });
             fs.writeFileSync(promptPath, prompt.replace(/^ {12}/gm, ''), 'utf8');
 
+      - name: Verify OpenAI API key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "::error::Missing OPENAI_API_KEY repository secret."
+            exit 1
+          fi
+
+      - name: Prepare workspace for Codex
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          chmod -R a+rwX "$GITHUB_WORKSPACE"
+          mkdir -p "$RUNNER_TEMP/codex-home"
+          chmod -R a+rwX "$RUNNER_TEMP/codex-home"
+
       - name: Run Codex
         id: run_codex
+        continue-on-error: true
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: .github/openai/generated/issue-prompt.md
           output-file: .github/openai/generated/codex-output.md
           sandbox: workspace-write
+          codex-home: ${{ runner.temp }}/codex-home
+
+      - name: Upload Codex diagnostics
+        if: always() && hashFiles('.github/openai/generated/*.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-diagnostics-issue-${{ steps.issue.outputs.number }}
+          path: .github/openai/generated/*.md
+          if-no-files-found: ignore
 
       - name: Remove generated Codex files from diff
+        if: always()
         run: |
           rm -f .github/openai/generated/issue-prompt.md
           rm -f .github/openai/generated/codex-output.md
 
       - name: Detect changes
+        if: always()
         id: changes
         run: |
           git status --short
@@ -122,6 +150,7 @@ jobs:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           ISSUE_TITLE: ${{ steps.issue.outputs.title }}
           CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+          CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
         run: |
           set -euo pipefail
 
@@ -138,6 +167,8 @@ jobs:
           {
             echo "Closes #${ISSUE_NUMBER}"
             echo
+            echo "Codex step outcome: ${CODEX_OUTCOME}"
+            echo
             echo "Codex summary:"
             echo
             if [ -n "${CODEX_FINAL_MESSAGE}" ]; then
@@ -147,11 +178,26 @@ jobs:
             fi
           } > "$pr_body"
 
-          gh pr create \
+          if gh pr create \
             --title "Implement issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
             --body-file "$pr_body" \
             --base main \
-            --head "${{ github.repository_owner }}:$branch"
+            --head "${{ github.repository_owner }}:$branch"; then
+            echo "Pull request created."
+          else
+            compare_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/main...${branch}"
+            {
+              echo "Codex pushed an implementation branch, but GitHub Actions is not permitted to create pull requests in this repository."
+              echo
+              echo "Branch: \`${branch}\`"
+              echo "Open PR manually: ${compare_url}"
+              echo
+              echo "To allow automatic PR creation, enable this repository setting:"
+              echo "Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests."
+            } > "$pr_body"
+
+            gh issue comment "${ISSUE_NUMBER}" --body-file "$pr_body"
+          fi
 
       - name: Comment when no changes were made
         if: steps.changes.outputs.has_changes == 'false'
@@ -159,11 +205,14 @@ jobs:
         env:
           ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
           CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+          CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
         with:
           github-token: ${{ github.token }}
           script: |
             const body = [
               'Codex ran for this issue but did not produce any file changes.',
+              '',
+              `Codex step outcome: ${process.env.CODEX_OUTCOME || 'unknown'}`,
               '',
               process.env.CODEX_FINAL_MESSAGE || 'No final Codex message was returned.',
             ].join('\n');
