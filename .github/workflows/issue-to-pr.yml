@@ -60,15 +60,22 @@ jobs:
           script: |
             const fs = require('node:fs');
             const path = require('node:path');
+            const codexGuidancePath = path.join(process.cwd(), 'CODEX.md');
+            const codexGuidance = fs.existsSync(codexGuidancePath)
+              ? fs.readFileSync(codexGuidancePath, 'utf8').trim()
+              : 'CODEX.md was not found. Follow AGENTS.md and inspect relevant files before editing.';
 
             const prompt = `You are Codex running in GitHub Actions for the resume-generator-spa repository.
             Implement the GitHub issue below as a complete, production-quality code change.
             Do not only describe the change. Modify the repository files directly.
 
-            Follow all repository guidance in AGENTS.md.
+            Follow all repository guidance in AGENTS.md and CODEX.md.
+
+            CODEX.md repository guidance:
+            ${codexGuidance}
 
             Workflow:
-            1. Inspect relevant source files before editing.
+            1. Read CODEX.md first, then inspect only the relevant source files before editing.
             2. Implement the smallest safe change.
             3. Preserve Angular 21 standalone component and signal patterns.
             4. Keep API calls centralized in src/app/services/resume-api.ts.
