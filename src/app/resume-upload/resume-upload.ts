@@ -68,7 +68,12 @@ export class ResumeUpload implements OnInit, OnDestroy {
   protected readonly editSuccessMessage = signal<string | null>(null);
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
-  private readonly defaultTemplateIds = ['modern-minimal', 'professional-dark-blue', 'classic-sidebar-gray'];
+  private readonly defaultTemplateIds = [
+    'modern-minimal',
+    'professional-dark-blue',
+    'classic-sidebar-gray',
+    'clean-blue-header',
+  ];
   private uploadLoaderTimer: ReturnType<typeof setTimeout> | null = null;
   protected jobDescription = '';
   protected resumeId = '';
@@ -820,7 +825,7 @@ export class ResumeUpload implements OnInit, OnDestroy {
       }
 
       if (action === 'preview' && status === 404) {
-        return 'Resume or template was not found. Use an existing resume id and one of: modern-minimal, professional-dark-blue, classic-sidebar-gray.';
+        return 'Resume or template was not found. Use an existing resume id and one of: modern-minimal, professional-dark-blue, classic-sidebar-gray, clean-blue-header.';
       }
     }
 
