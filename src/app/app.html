@@ -17,14 +17,7 @@
 
     @if (isMenuOpen()) {
       <nav id="main-navigation-menu" class="navigation-menu" aria-label="Main navigation">
-        <a
-          routerLink="/upload"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          (click)="closeMenu()"
-        >
-          Upload page
-        </a>
+        <a href="/upload" class="active" (click)="closeMenu()">Upload page</a>
       </nav>
     }
   </div>
