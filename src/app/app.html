@@ -3,24 +3,6 @@
     <a class="brand-link" routerLink="/upload" (click)="closeMenu()">Resume Generator</a>
 
     <div class="header-controls">
-      <fieldset class="theme-selector" aria-label="Theme selector">
-        <legend>Theme</legend>
-        <div class="theme-options">
-          @for (theme of themes; track theme.id) {
-            <button
-              type="button"
-              class="theme-option"
-              [class.active]="selectedThemeId() === theme.id"
-              [attr.aria-pressed]="selectedThemeId() === theme.id"
-              (click)="selectTheme(theme.id)"
-            >
-              <span class="theme-swatch theme-swatch-{{ theme.id }}" aria-hidden="true"></span>
-              <span>{{ theme.label }}</span>
-            </button>
-          }
-        </div>
-      </fieldset>
-
       <button
         type="button"
         class="menu-toggle"
@@ -38,6 +20,23 @@
     @if (isMenuOpen()) {
       <nav id="main-navigation-menu" class="navigation-menu" aria-label="Main navigation">
         <a href="/upload" class="active" (click)="closeMenu()">Upload page</a>
+        <fieldset class="theme-selector" aria-label="Theme selector">
+          <legend>Theme</legend>
+          <div class="theme-options">
+            @for (theme of themes; track theme.id) {
+              <button
+                type="button"
+                class="theme-option"
+                [class.active]="selectedThemeId() === theme.id"
+                [attr.aria-pressed]="selectedThemeId() === theme.id"
+                (click)="selectTheme(theme.id)"
+              >
+                <span class="theme-swatch theme-swatch-{{ theme.id }}" aria-hidden="true"></span>
+                <span>{{ theme.label }}</span>
+              </button>
+            }
+          </div>
+        </fieldset>
       </nav>
     }
   </div>

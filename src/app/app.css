@@ -8,6 +8,9 @@
   --theme-accent: #6d28d9;
   --theme-accent-strong: #7c3aed;
   --theme-accent-soft: #f2eaff;
+  --theme-accent-tint: rgba(109, 40, 217, 0.05);
+  --theme-accent-hover-tint: rgba(109, 40, 217, 0.08);
+  --theme-dropzone-border: rgba(109, 40, 217, 0.36);
   --theme-focus: rgba(124, 58, 237, 0.16);
   --theme-border: #e3d8f7;
   --theme-border-strong: #cdbbeb;
@@ -27,6 +30,9 @@
   --theme-accent: #0f766e;
   --theme-accent-strong: #0d9488;
   --theme-accent-soft: #ccfbf1;
+  --theme-accent-tint: rgba(15, 118, 110, 0.05);
+  --theme-accent-hover-tint: rgba(15, 118, 110, 0.08);
+  --theme-dropzone-border: rgba(15, 118, 110, 0.36);
   --theme-focus: rgba(13, 148, 136, 0.16);
   --theme-border: #c7ebe4;
   --theme-border-strong: #8dd9ca;
@@ -45,6 +51,9 @@
   --theme-accent: #be123c;
   --theme-accent-strong: #e11d48;
   --theme-accent-soft: #ffe4e6;
+  --theme-accent-tint: rgba(190, 18, 60, 0.05);
+  --theme-accent-hover-tint: rgba(190, 18, 60, 0.08);
+  --theme-dropzone-border: rgba(190, 18, 60, 0.36);
   --theme-focus: rgba(225, 29, 72, 0.16);
   --theme-border: #fecdd3;
   --theme-border-strong: #fda4af;
@@ -59,9 +68,9 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid var(--theme-header-border);
-  background: var(--theme-header);
-  box-shadow: 0 2px 12px var(--theme-header-shadow);
+  border-bottom: 1px solid rgba(32, 26, 49, 0.08);
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(32, 26, 49, 0.08);
 }
 
 .site-header-inner {
@@ -70,13 +79,13 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 64px;
+  min-height: 52px;
   gap: 16px;
-  padding: 0 32px;
+  padding: 0 28px;
 }
 
 .brand-link {
-  color: #ffffff;
+  color: var(--theme-accent);
   font-weight: 900;
   text-decoration: none;
   overflow-wrap: anywhere;
@@ -89,9 +98,8 @@
 }
 
 .theme-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: grid;
+  gap: 8px;
   min-width: 0;
   margin: 0;
   padding: 0;
@@ -99,19 +107,20 @@
 }
 
 .theme-selector legend {
-  color: #ffffff;
+  margin-bottom: 8px;
+  color: var(--theme-muted);
   font-size: 0.78rem;
   font-weight: 800;
+  text-transform: uppercase;
 }
 
 .theme-options {
-  display: flex;
-  align-items: center;
+  display: grid;
   gap: 6px;
-  padding: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.38);
+  padding: 6px;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.16);
+  background: #ffffff;
 }
 
 .theme-option {
@@ -119,11 +128,11 @@
   align-items: center;
   gap: 7px;
   min-height: 34px;
-  padding: 0 9px;
+  padding: 0 10px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
-  color: #ffffff;
+  color: var(--theme-heading);
   font: inherit;
   font-size: 0.86rem;
   font-weight: 800;
@@ -132,16 +141,18 @@
 
 .theme-option:hover,
 .theme-option.active {
-  border-color: rgba(255, 255, 255, 0.68);
-  background: rgba(255, 255, 255, 0.24);
+  border-color: var(--theme-border-strong);
+  background: var(--theme-accent-tint);
+  color: var(--theme-accent);
 }
 
 .theme-swatch {
   width: 14px;
   height: 14px;
   flex: 0 0 auto;
-  border: 2px solid rgba(255, 255, 255, 0.84);
+  border: 2px solid #ffffff;
   border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(32, 26, 49, 0.12);
 }
 
 .theme-swatch-violet {
@@ -160,13 +171,13 @@
   display: inline-grid;
   place-content: center;
   gap: 5px;
-  width: 44px;
-  height: 44px;
-  min-height: 44px;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
   padding: 0;
-  border: 1px solid var(--theme-border-strong);
+  border: 1px solid var(--theme-accent);
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--theme-accent);
   cursor: pointer;
 }
 
@@ -175,13 +186,14 @@
   width: 20px;
   height: 2px;
   border-radius: 999px;
-  background: var(--theme-heading);
+  background: #ffffff;
 }
 
 .menu-toggle:focus-visible,
 .navigation-menu a:focus-visible,
+.theme-option:focus-visible,
 .brand-link:focus-visible {
-  outline: 3px solid rgba(255, 255, 255, 0.72);
+  outline: 3px solid var(--theme-focus);
   outline-offset: 3px;
 }
 
@@ -190,6 +202,7 @@
   top: calc(100% + 8px);
   right: 0;
   display: grid;
+  gap: 8px;
   min-width: 220px;
   padding: 8px;
   border: 1px solid var(--theme-border);
@@ -214,38 +227,11 @@
 
 @media (max-width: 560px) {
   .site-header-inner {
-    align-items: flex-start;
-    flex-direction: column;
     padding: 0 16px;
-    gap: 10px;
-    padding-block: 12px;
-  }
-
-  .header-controls,
-  .theme-selector,
-  .theme-options {
-    width: 100%;
   }
 
   .header-controls {
-    align-items: flex-end;
-    justify-content: space-between;
-  }
-
-  .theme-selector {
-    display: grid;
-    flex: 1 1 auto;
-    gap: 6px;
-  }
-
-  .theme-options {
-    justify-content: space-between;
-  }
-
-  .theme-option {
-    justify-content: center;
-    flex: 1 1 0;
-    padding: 0 6px;
+    justify-content: flex-end;
   }
 
   .navigation-menu {

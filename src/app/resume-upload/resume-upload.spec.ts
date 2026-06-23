@@ -41,4 +41,14 @@ describe('ResumeUpload', () => {
 
     expect(actions).toEqual(['Preview', 'Regenerate']);
   });
+
+  it('shows user-focused upload guidance and visual progress', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+    const dropZone = compiled.querySelector<HTMLElement>('.drop-zone');
+
+    expect(compiled.textContent).toContain('Step 1 of 3: Upload');
+    expect(compiled.textContent).toContain('Supports PDF, DOC, or DOCX (Max 5MB).');
+    expect(compiled.textContent).not.toContain('multipart/form-data');
+    expect(dropZone?.querySelector('svg')).toBeTruthy();
+  });
 });
