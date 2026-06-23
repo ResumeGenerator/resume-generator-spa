@@ -4,10 +4,6 @@
   color: #102033;
 }
 
-.landing-page {
-  overflow: hidden;
-}
-
 .hero-section,
 .cta-section {
   background: linear-gradient(110deg, #657ee9 0%, #6b68cb 48%, #7e4ca8 100%);
@@ -18,25 +14,25 @@
   min-height: calc(100vh - 74px);
   display: grid;
   align-items: center;
-  padding: 72px 24px 88px;
+  padding: 96px 24px 92px;
 }
 
 .hero-inner {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.9fr);
+  grid-template-columns: minmax(0, 0.92fr) minmax(520px, 0.88fr);
   align-items: center;
-  gap: 64px;
+  gap: 52px;
   width: min(1380px, 100%);
   margin: 0 auto;
 }
 
 .hero-copy {
-  max-width: 720px;
+  max-width: 660px;
 }
 
 .hero-copy h1 {
   margin: 0;
-  font-size: clamp(3rem, 5vw, 5.4rem);
+  font-size: clamp(3rem, 4.35vw, 4.85rem);
   line-height: 1.18;
   letter-spacing: 0;
   font-weight: 950;
@@ -121,12 +117,16 @@
 
 .hero-visual {
   position: relative;
-  min-height: 430px;
+  display: grid;
+  min-height: 560px;
+  align-items: center;
+  padding: 58px 90px;
 }
 
 .document-preview {
   position: relative;
-  width: min(100%, 520px);
+  z-index: 2;
+  width: min(100%, 560px);
   margin: 0 auto;
   padding: 28px;
   border-radius: 8px;
@@ -166,7 +166,6 @@
 
 .document-preview header strong {
   margin-left: 4px;
-  font-size: 0.9rem;
 }
 
 .resume-preview-body {
@@ -187,7 +186,6 @@
   color: #101828;
   font-size: 1.42rem;
   line-height: 1.15;
-  letter-spacing: 0;
 }
 
 .resume-intro p {
@@ -225,8 +223,6 @@
 .resume-section p {
   margin: 0;
   color: #475467;
-  font-size: 0.9rem;
-  line-height: 1.48;
 }
 
 .resume-summary {
@@ -244,7 +240,6 @@
 
 .resume-role {
   display: grid;
-  gap: 4px;
 }
 
 .resume-role strong {
@@ -285,6 +280,7 @@
 .ats-badge,
 .generated-badge {
   position: absolute;
+  z-index: 3;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -298,8 +294,8 @@
 }
 
 .speed-badge {
-  left: -16px;
-  top: 46px;
+  left: 0;
+  top: 132px;
   animation: badge-float 5.6s ease-in-out infinite;
 }
 
@@ -310,14 +306,14 @@
 }
 
 .ats-badge {
-  right: -12px;
-  bottom: 88px;
+  right: 0;
+  bottom: 154px;
   animation: badge-float 5.8s ease-in-out infinite 0.6s;
 }
 
 .generated-badge {
-  right: 26px;
-  bottom: -21px;
+  right: 28px;
+  bottom: 22px;
   min-height: 42px;
   background: #10b981;
   color: #ffffff;
@@ -582,7 +578,8 @@
   }
 
   .hero-visual {
-    min-height: 360px;
+    min-height: 500px;
+    padding: 44px 86px;
   }
 
   .feature-grid {
@@ -614,6 +611,11 @@
 
   .document-preview {
     padding: 22px;
+  }
+
+  .hero-visual {
+    min-height: 0;
+    padding: 0;
   }
 
   .resume-intro {

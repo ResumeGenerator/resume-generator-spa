@@ -4,19 +4,28 @@
       <p class="eyebrow">CareerKit AI</p>
       <h1>Document workspace</h1>
     </div>
+    <nav class="workspace-tabs" aria-label="Workspace stages">
+      <a class="workspace-tab active" href="#resumeFile">
+        <span aria-hidden="true">Q</span>
+        <span>Request</span>
+      </a>
+      <button type="button" class="workspace-tab" disabled>
+        <span aria-hidden="true">R</span>
+        <span>Refine</span>
+      </button>
+      <button type="button" class="workspace-tab" disabled>
+        <span aria-hidden="true">E</span>
+        <span>Export</span>
+      </button>
+    </nav>
   </header>
 
   <main class="resume-grid">
     <section class="upload-panel" aria-labelledby="upload-title">
       <div class="panel-heading">
         <div>
-          <div class="progress-stepper" aria-label="Upload progress">
-            <span class="progress-dot active" aria-hidden="true"></span>
-            <span class="progress-dot" aria-hidden="true"></span>
-            <span class="progress-dot" aria-hidden="true"></span>
-            <span>Step 1 of 3: Upload</span>
-          </div>
-          <h2 id="upload-title">Resume upload</h2>
+          <h2 id="upload-title">Step 1: Your Input</h2>
+          <p>High-fidelity guided tailoring tool</p>
         </div>
       </div>
 
@@ -51,18 +60,18 @@
         }
 
         <label class="field">
-          <span>Job description</span>
+          <span>Paste Target Job Description for Tailoring</span>
           <textarea
             name="jobDescription"
             rows="7"
             [(ngModel)]="jobDescription"
-            placeholder="Paste an optional target job description for better resume parsing."
+            placeholder="Paste Target Job Description for Tailoring"
           ></textarea>
         </label>
 
         <div class="actions">
           <button type="submit" class="primary-button" [disabled]="!selectedFile() || uploadState() === 'uploading'">
-            {{ uploadState() === 'uploading' ? 'Saving...' : 'Save resume' }}
+            {{ uploadState() === 'uploading' ? 'Tailoring...' : 'Begin Tailoring My Resume' }}
           </button>
           <button type="button" class="secondary-button" (click)="clearForm(fileInput)">Clear</button>
         </div>
@@ -82,17 +91,8 @@
     <section class="preview-panel" aria-labelledby="preview-title">
       <div class="panel-heading">
         <div>
-          <div class="progress-stepper" aria-label="Saved resume progress">
-            <span class="progress-dot complete" aria-hidden="true"></span>
-            <span class="progress-dot active" aria-hidden="true"></span>
-            <span class="progress-dot" aria-hidden="true"></span>
-            <span>Step 2 of 3: Preview</span>
-          </div>
-          <h2 id="preview-title">Saved resumes</h2>
+          <h2 id="preview-title">Saved Tailorings</h2>
         </div>
-        <button type="button" class="secondary-button compact-button" (click)="loadSavedResumes()" [disabled]="savedResumesState() === 'loading'">
-          {{ savedResumesState() === 'loading' ? 'Refreshing...' : 'Refresh' }}
-        </button>
       </div>
 
       @if (uploadState() === 'error') {
@@ -132,6 +132,14 @@
         <div class="resume-list">
           @for (resume of savedResumes(); track resume.id) {
             <article class="resume-row" [class.selected]="selectedSavedResumeId() === resume.id">
+              <button type="button" class="resume-thumbnail" (click)="previewSavedResume(resume)" aria-label="Preview {{ resume.candidateName || resume.filename }}">
+                <span class="thumb-sidebar"></span>
+                <span class="thumb-line"></span>
+                <span class="thumb-line"></span>
+                <span class="thumb-line short"></span>
+                <span class="thumb-line"></span>
+                <span class="thumb-line"></span>
+              </button>
               <button type="button" class="resume-main" (click)="previewSavedResume(resume)">
                 <strong>{{ resume.candidateName || resume.filename }}</strong>
                 <span>{{ resume.currentTitle || 'No current title' }}</span>
@@ -139,10 +147,16 @@
                 <small>{{ formatDate(resume.createdAt) }}</small>
               </button>
               <div class="resume-actions">
-                <button type="button" class="history-preview-link" (click)="previewSavedResume(resume)">
+                <button type="button" class="history-preview-link" title="Preview tailoring" (click)="previewSavedResume(resume)">
+                  <span aria-hidden="true">O</span>
                   {{ previewState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Preview' }}
                 </button>
-                <button type="button" class="history-preview-link" (click)="regenerateSavedResume(resume)">
+                <button type="button" class="history-preview-link" title="Export document" (click)="previewSavedResume(resume)">
+                  <span aria-hidden="true">D</span>
+                  Export
+                </button>
+                <button type="button" class="history-preview-link" title="Regenerate tailoring" (click)="regenerateSavedResume(resume)">
+                  <span aria-hidden="true">R</span>
                   Regenerate
                 </button>
               </div>

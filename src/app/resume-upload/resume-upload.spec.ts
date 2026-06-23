@@ -33,13 +33,13 @@ describe('ResumeUpload', () => {
     fixture.detectChanges();
   });
 
-  it('does not show an edit action for saved resumes', () => {
+  it('shows compact saved tailoring actions without an edit action', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const actions = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.resume-actions button')).map((button) =>
       button.textContent?.trim(),
     );
 
-    expect(actions).toEqual(['Preview', 'Regenerate']);
+    expect(actions).toEqual(['O Preview', 'D Export', 'R Regenerate']);
   });
 
   it('shows user-focused upload guidance and visual progress', () => {
@@ -47,7 +47,8 @@ describe('ResumeUpload', () => {
     const dropZone = compiled.querySelector<HTMLElement>('.drop-zone');
 
     expect(compiled.textContent).toContain('Document workspace');
-    expect(compiled.textContent).toContain('Step 1 of 3: Upload');
+    expect(compiled.textContent).toContain('Step 1: Your Input');
+    expect(compiled.textContent).toContain('Saved Tailorings');
     expect(compiled.textContent).toContain('Supports PDF, DOC, or DOCX (Max 5MB).');
     expect(compiled.textContent).not.toContain('multipart/form-data');
     expect(dropZone?.querySelector('svg')).toBeTruthy();
