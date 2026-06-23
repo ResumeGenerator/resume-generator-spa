@@ -7,9 +7,9 @@
   padding: 18px 28px 24px;
   color: var(--theme-text, #201a31);
   background:
-    linear-gradient(135deg, rgba(20, 184, 166, 0.1), transparent 34%),
-    linear-gradient(315deg, rgba(79, 70, 229, 0.09), transparent 40%),
-    #f4f6f8;
+    linear-gradient(135deg, rgba(109, 40, 217, 0.14), transparent 34%),
+    linear-gradient(315deg, rgba(238, 120, 221, 0.1), transparent 40%),
+    #f7f2ff;
 }
 
 .app-header,
@@ -27,7 +27,7 @@
 
 .eyebrow {
   margin: 0 0 5px;
-  color: #0f766e;
+  color: #6d28d9;
   font-size: 0.7rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -62,7 +62,6 @@ h2 {
 }
 
 .workspace-tab {
-  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -79,7 +78,7 @@ h2 {
 
 .workspace-tab.active {
   border-radius: 8px;
-  background: #158a8a;
+  background: #6d28d9;
   color: #ffffff;
 }
 
@@ -92,7 +91,7 @@ h2 {
 
 .upload-panel,
 .preview-panel {
-  border: 1px solid var(--theme-border, #e3d8f7);
+  border: 1px solid #dccdf6;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.96);
 }
@@ -166,38 +165,38 @@ h2 {
 
 .resume-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(68px, 1fr));
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
   gap: 8px;
   width: 100%;
   grid-column: 2 / -1;
 }
 
 .resume-actions button {
-  min-height: 56px;
-  padding: 6px 8px;
+  min-height: 42px;
 }
 
 .history-preview-link {
   display: grid;
-  place-items: center;
-  gap: 3px;
-  border: 1px solid #d9e5e7;
-  background: #f8fbfb;
-  color: #0f766e;
-  font-size: 0.75rem;
+  grid-template-columns: auto 1fr;
+  place-items: center start;
+  gap: 7px;
+  border: 1px solid #dccdf6;
+  background: #fbf8ff;
+  color: #6d28d9;
+  font-size: 0.82rem;
   font-weight: 800;
-  text-align: center;
+  text-align: left;
 }
 
 .history-preview-link span {
   display: grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: #e6f7f6;
-  color: #0f766e;
-  font-size: 0.8rem;
+  background: #f2eaff;
+  color: #6d28d9;
+  font-size: 0.72rem;
 }
 
 .resume-thumbnail {
@@ -218,7 +217,7 @@ h2 {
   inset: 0 auto 0 0;
   width: 22px;
   border-radius: 5px 0 0 5px;
-  background: #158a8a;
+  background: linear-gradient(180deg, #657ee9, #7e4ca8);
 }
 
 .thumb-line {
@@ -227,26 +226,22 @@ h2 {
   background: #dfe6ee;
 }
 
-.thumb-line.short {
-  width: 60%;
-}
-
 .drop-zone {
   display: grid;
   place-items: center;
   min-height: 190px;
   padding: 24px;
-  border: 1.5px dashed rgba(15, 118, 110, 0.24);
+  border: 1.5px dashed rgba(109, 40, 217, 0.28);
   border-radius: 8px;
-  background: #f7fbfb;
+  background: #fbf8ff;
   text-align: center;
   cursor: pointer;
 }
 
 .drop-zone:hover,
 .drop-zone.has-file {
-  border-color: #0f766e;
-  background: #eefaf9;
+  border-color: #7c3aed;
+  background: #f2eaff;
 }
 
 .drop-zone input {
@@ -265,7 +260,7 @@ h2 {
   margin-bottom: 14px;
   border-radius: 50%;
   background: transparent;
-  color: #158a8a;
+  color: #6d28d9;
   color: #ffffff;
   font-size: 2rem;
   font-weight: 400;
@@ -349,13 +344,13 @@ input {
 }
 
 textarea:focus {
-  border-color: #0f766e;
-  outline: 3px solid rgba(15, 118, 110, 0.16);
+  border-color: #7c3aed;
+  outline: 3px solid rgba(124, 58, 237, 0.16);
 }
 
 input:focus {
-  border-color: #0f766e;
-  outline: 3px solid rgba(15, 118, 110, 0.16);
+  border-color: #7c3aed;
+  outline: 3px solid rgba(124, 58, 237, 0.16);
 }
 
 .actions {
@@ -418,7 +413,7 @@ button:disabled {
 .primary-button {
   flex: 1 1 auto;
   min-width: 240px;
-  background: #158a8a;
+  background: #e65387;
   color: #ffffff;
 }
 

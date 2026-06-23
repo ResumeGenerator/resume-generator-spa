@@ -13,10 +13,6 @@
         <span aria-hidden="true">R</span>
         <span>Refine</span>
       </button>
-      <button type="button" class="workspace-tab" disabled>
-        <span aria-hidden="true">E</span>
-        <span>Export</span>
-      </button>
     </nav>
   </header>
 
@@ -150,10 +146,6 @@
                 <button type="button" class="history-preview-link" title="Preview tailoring" (click)="previewSavedResume(resume)">
                   <span aria-hidden="true">O</span>
                   {{ previewState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Preview' }}
-                </button>
-                <button type="button" class="history-preview-link" title="Export document" (click)="previewSavedResume(resume)">
-                  <span aria-hidden="true">D</span>
-                  Export
                 </button>
                 <button type="button" class="history-preview-link" title="Regenerate tailoring" (click)="regenerateSavedResume(resume)">
                   <span aria-hidden="true">R</span>

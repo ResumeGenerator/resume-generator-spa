@@ -39,7 +39,7 @@ describe('ResumeUpload', () => {
       button.textContent?.trim(),
     );
 
-    expect(actions).toEqual(['O Preview', 'D Export', 'R Regenerate']);
+    expect(actions).toEqual(['O Preview', 'R Regenerate']);
   });
 
   it('shows user-focused upload guidance and visual progress', () => {
