@@ -10,7 +10,12 @@
     <section class="upload-panel" aria-labelledby="upload-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">Step 1</p>
+          <div class="progress-stepper" aria-label="Upload progress">
+            <span class="progress-dot active" aria-hidden="true"></span>
+            <span class="progress-dot" aria-hidden="true"></span>
+            <span class="progress-dot" aria-hidden="true"></span>
+            <span>Step 1 of 3: Upload</span>
+          </div>
           <h2 id="upload-title">Resume upload</h2>
         </div>
       </div>
@@ -24,9 +29,15 @@
             accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             (change)="onFileSelected($event)"
           />
-          <span class="upload-icon" aria-hidden="true">+</span>
+          <span class="upload-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M12 16V8" />
+              <path d="m8.5 11.5 3.5-3.5 3.5 3.5" />
+              <path d="M20 16.5A4.5 4.5 0 0 0 16.1 10a6 6 0 0 0-11.4 2A3.8 3.8 0 0 0 5 19h13a3 3 0 0 0 2-5.2" />
+            </svg>
+          </span>
           <strong>{{ selectedFile() ? 'Resume selected' : 'Choose a resume file' }}</strong>
-          <small>PDF, DOC, or DOCX. The file is sent as multipart/form-data.</small>
+          <small>Supports PDF, DOC, or DOCX (Max 5MB).</small>
         </label>
 
         @if (fileMeta(); as file) {
@@ -71,7 +82,12 @@
     <section class="preview-panel" aria-labelledby="preview-title">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">Step 2</p>
+          <div class="progress-stepper" aria-label="Saved resume progress">
+            <span class="progress-dot complete" aria-hidden="true"></span>
+            <span class="progress-dot active" aria-hidden="true"></span>
+            <span class="progress-dot" aria-hidden="true"></span>
+            <span>Step 2 of 3: Preview</span>
+          </div>
           <h2 id="preview-title">Saved resumes</h2>
         </div>
         <button type="button" class="secondary-button compact-button" (click)="loadSavedResumes()" [disabled]="savedResumesState() === 'loading'">

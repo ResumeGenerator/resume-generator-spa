@@ -3,8 +3,8 @@
 }
 
 .workspace-shell {
-  min-height: calc(100vh - 65px);
-  padding: 24px 32px 32px;
+  min-height: calc(100vh - 53px);
+  padding: 20px 28px 28px;
   color: var(--theme-text, #201a31);
   background:
     linear-gradient(135deg, var(--theme-gradient-a, rgba(109, 40, 217, 0.18)), transparent 36%),
@@ -22,7 +22,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  padding: 8px 0 18px;
+  padding: 6px 0 16px;
 }
 
 .eyebrow {
@@ -42,8 +42,8 @@ p {
 
 h1 {
   max-width: 720px;
-  font-size: clamp(2rem, 4vw, 3rem);
-  line-height: 1.05;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
@@ -71,18 +71,40 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 22px 24px;
+  padding: 18px 22px;
   border-bottom: 1px solid var(--theme-border, #ede4fb);
 }
 
 .upload-form,
 .preview-panel {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .upload-form {
-  padding: 24px;
+  padding: 22px;
+}
+
+.progress-stepper {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: var(--theme-muted, #6f6282);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--theme-border-strong, #cdbbeb);
+}
+
+.progress-dot.active,
+.progress-dot.complete {
+  background: var(--theme-accent, #6d28d9);
 }
 
 .resume-row,
@@ -164,9 +186,9 @@ h2 {
   place-items: center;
   min-height: 220px;
   padding: 28px;
-  border: 2px dashed var(--theme-border-strong, #bca7e8);
+  border: 1.5px dashed var(--theme-dropzone-border, rgba(109, 40, 217, 0.36));
   border-radius: 8px;
-  background: var(--theme-accent-soft, #fbf8ff);
+  background: var(--theme-accent-tint, rgba(109, 40, 217, 0.05));
   text-align: center;
   cursor: pointer;
 }
@@ -174,7 +196,7 @@ h2 {
 .drop-zone:hover,
 .drop-zone.has-file {
   border-color: var(--theme-accent-strong, #7c3aed);
-  background: var(--theme-accent-soft, #f2eaff);
+  background: var(--theme-accent-hover-tint, rgba(109, 40, 217, 0.08));
 }
 
 .drop-zone input {
@@ -197,6 +219,16 @@ h2 {
   font-size: 2rem;
   font-weight: 400;
   line-height: 1;
+}
+
+.upload-icon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .drop-zone small,
@@ -245,7 +277,7 @@ textarea {
   min-height: 170px;
   resize: vertical;
   padding: 14px 16px;
-  border: 1px solid var(--theme-border-strong, #d7c8ef);
+  border: 1px solid var(--theme-border, #e3d8f7);
   border-radius: 8px;
   background: #ffffff;
   color: var(--theme-text, #201a31);
@@ -258,7 +290,7 @@ input {
   width: 100%;
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid var(--theme-border-strong, #d7c8ef);
+  border: 1px solid var(--theme-border, #e3d8f7);
   border-radius: 8px;
   background: #ffffff;
   color: var(--theme-text, #201a31);
