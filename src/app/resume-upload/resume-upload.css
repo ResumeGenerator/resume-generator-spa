@@ -5,11 +5,11 @@
 .workspace-shell {
   min-height: calc(100vh - 65px);
   padding: 24px 32px 32px;
-  color: #201a31;
+  color: var(--theme-text, #201a31);
   background:
-    linear-gradient(135deg, rgba(109, 40, 217, 0.18), transparent 36%),
-    linear-gradient(315deg, rgba(15, 118, 110, 0.12), transparent 38%),
-    #f7f2ff;
+    linear-gradient(135deg, var(--theme-gradient-a, rgba(109, 40, 217, 0.18)), transparent 36%),
+    linear-gradient(315deg, var(--theme-gradient-b, rgba(15, 118, 110, 0.12)), transparent 38%),
+    var(--theme-screen, #f7f2ff);
 }
 
 .app-header,
@@ -27,7 +27,7 @@
 
 .eyebrow {
   margin: 0 0 8px;
-  color: #6d28d9;
+  color: var(--theme-accent, #6d28d9);
   font-size: 0.76rem;
   font-weight: 800;
   letter-spacing: 0;
@@ -61,7 +61,7 @@ h2 {
 
 .upload-panel,
 .preview-panel {
-  border: 1px solid #e3d8f7;
+  border: 1px solid var(--theme-border, #e3d8f7);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
 }
@@ -72,7 +72,7 @@ h2 {
   justify-content: space-between;
   gap: 16px;
   padding: 22px 24px;
-  border-bottom: 1px solid #ede4fb;
+  border-bottom: 1px solid var(--theme-border, #ede4fb);
 }
 
 .upload-form,
@@ -103,14 +103,14 @@ h2 {
   align-items: stretch;
   flex-direction: column;
   padding: 12px;
-  border: 1px solid #e0d4f2;
+  border: 1px solid var(--theme-border, #e0d4f2);
   border-radius: 8px;
   background: #ffffff;
 }
 
 .resume-row.selected {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+  border-color: var(--theme-accent-strong, #7c3aed);
+  box-shadow: 0 0 0 3px var(--theme-focus, rgba(124, 58, 237, 0.16));
 }
 
 .resume-main {
@@ -134,7 +134,7 @@ h2 {
 
 .resume-main span,
 .resume-main small {
-  color: #6f6282;
+  color: var(--theme-muted, #6f6282);
 }
 
 .resume-actions {
@@ -152,7 +152,7 @@ h2 {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #6d28d9;
+  color: var(--theme-accent, #6d28d9);
   font-weight: 800;
   text-align: left;
   text-decoration: underline;
@@ -164,17 +164,17 @@ h2 {
   place-items: center;
   min-height: 220px;
   padding: 28px;
-  border: 2px dashed #bca7e8;
+  border: 2px dashed var(--theme-border-strong, #bca7e8);
   border-radius: 8px;
-  background: #fbf8ff;
+  background: var(--theme-accent-soft, #fbf8ff);
   text-align: center;
   cursor: pointer;
 }
 
 .drop-zone:hover,
 .drop-zone.has-file {
-  border-color: #7c3aed;
-  background: #f2eaff;
+  border-color: var(--theme-accent-strong, #7c3aed);
+  background: var(--theme-accent-soft, #f2eaff);
 }
 
 .drop-zone input {
@@ -192,7 +192,7 @@ h2 {
   height: 46px;
   margin-bottom: 14px;
   border-radius: 50%;
-  background: #6d28d9;
+  background: var(--theme-accent, #6d28d9);
   color: #ffffff;
   font-size: 2rem;
   font-weight: 400;
@@ -204,7 +204,7 @@ h2 {
 .timeline-item p,
 .empty-state p,
 .message p {
-  color: #6f6282;
+  color: var(--theme-muted, #6f6282);
   line-height: 1.5;
 }
 
@@ -214,7 +214,7 @@ h2 {
   justify-content: space-between;
   gap: 14px;
   padding: 14px;
-  border: 1px solid #e0d4f2;
+  border: 1px solid var(--theme-border, #e0d4f2);
   border-radius: 8px;
   background: #ffffff;
 }
@@ -236,7 +236,7 @@ h2 {
 }
 
 .field span {
-  color: #34264d;
+  color: var(--theme-heading, #34264d);
   font-weight: 800;
 }
 
@@ -245,10 +245,10 @@ textarea {
   min-height: 170px;
   resize: vertical;
   padding: 14px 16px;
-  border: 1px solid #d7c8ef;
+  border: 1px solid var(--theme-border-strong, #d7c8ef);
   border-radius: 8px;
   background: #ffffff;
-  color: #201a31;
+  color: var(--theme-text, #201a31);
   font: inherit;
   line-height: 1.5;
   box-sizing: border-box;
@@ -258,21 +258,21 @@ input {
   width: 100%;
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid #d7c8ef;
+  border: 1px solid var(--theme-border-strong, #d7c8ef);
   border-radius: 8px;
   background: #ffffff;
-  color: #201a31;
+  color: var(--theme-text, #201a31);
   font: inherit;
 }
 
 textarea:focus {
-  border-color: #7c3aed;
-  outline: 3px solid rgba(124, 58, 237, 0.16);
+  border-color: var(--theme-accent-strong, #7c3aed);
+  outline: 3px solid var(--theme-focus, rgba(124, 58, 237, 0.16));
 }
 
 input:focus {
-  border-color: #7c3aed;
-  outline: 3px solid rgba(124, 58, 237, 0.16);
+  border-color: var(--theme-accent-strong, #7c3aed);
+  outline: 3px solid var(--theme-focus, rgba(124, 58, 237, 0.16));
 }
 
 .actions {
@@ -286,19 +286,19 @@ input:focus {
   align-items: center;
   gap: 16px;
   padding: 16px;
-  border: 1px solid #cdbbeb;
+  border: 1px solid var(--theme-border-strong, #cdbbeb);
   border-radius: 8px;
   background: #ffffff;
 }
 
 .ai-loader strong {
   display: block;
-  color: #34264d;
+  color: var(--theme-heading, #34264d);
 }
 
 .ai-loader p {
   margin-top: 4px;
-  color: #6f6282;
+  color: var(--theme-muted, #6f6282);
 }
 
 .ai-loader-orbit {
@@ -306,8 +306,8 @@ input:focus {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 4px solid #f2eaff;
-  border-top-color: #7c3aed;
+  border: 4px solid var(--theme-accent-soft, #f2eaff);
+  border-top-color: var(--theme-accent-strong, #7c3aed);
   animation: ai-loader-spin 0.9s linear infinite;
 }
 
@@ -334,19 +334,19 @@ button:disabled {
 
 .primary-button {
   min-width: 156px;
-  background: #6d28d9;
+  background: var(--theme-accent, #6d28d9);
   color: #ffffff;
 }
 
 .secondary-button {
   background: #ffffff;
-  border-color: #cdbbeb;
-  color: #34264d;
+  border-color: var(--theme-border-strong, #cdbbeb);
+  color: var(--theme-heading, #34264d);
 }
 
 .text-button {
   background: transparent;
-  color: #6d28d9;
+  color: var(--theme-accent, #6d28d9);
 }
 
 .preview-panel {
@@ -385,8 +385,8 @@ pre {
 }
 
 .empty-state {
-  border: 1px solid #e3d8f7;
-  background: #fbf8ff;
+  border: 1px solid var(--theme-border, #e3d8f7);
+  background: var(--theme-accent-soft, #fbf8ff);
 }
 
 pre {
@@ -402,14 +402,14 @@ pre {
 }
 
 .api-response {
-  border: 1px solid #e3d8f7;
+  border: 1px solid var(--theme-border, #e3d8f7);
   border-radius: 8px;
   background: #ffffff;
 }
 
 .api-response summary {
   padding: 14px 16px;
-  color: #34264d;
+  color: var(--theme-heading, #34264d);
   font-weight: 800;
   cursor: pointer;
 }
@@ -437,7 +437,7 @@ pre {
   max-height: min(920px, calc(100vh - 48px));
   overflow: hidden;
   border-radius: 8px;
-  background: #f7f2ff;
+  background: var(--theme-screen, #f7f2ff);
 }
 
 .preview-modal {
@@ -454,7 +454,7 @@ pre {
   justify-content: space-between;
   gap: 16px;
   padding: 18px 22px;
-  border-bottom: 1px solid #e3d8f7;
+  border-bottom: 1px solid var(--theme-border, #e3d8f7);
   background: #ffffff;
 }
 
@@ -483,8 +483,8 @@ pre {
   display: grid;
   gap: 16px;
   padding: 18px;
-  border: 1px solid #e0d4f2;
-  border-left: 5px solid #7c3aed;
+  border: 1px solid var(--theme-border, #e0d4f2);
+  border-left: 5px solid var(--theme-accent-strong, #7c3aed);
   background: #ffffff;
 }
 
@@ -504,13 +504,13 @@ pre {
   display: grid;
   gap: 14px;
   padding: 16px;
-  border: 1px solid #d7c8ef;
-  background: #fbf8ff;
+  border: 1px solid var(--theme-border-strong, #d7c8ef);
+  background: var(--theme-accent-soft, #fbf8ff);
 }
 
 .add-item-button {
-  border-color: #cdbbeb;
-  background: #6d28d9;
+  border-color: var(--theme-border-strong, #cdbbeb);
+  background: var(--theme-accent, #6d28d9);
   color: #ffffff;
 }
 
@@ -538,10 +538,10 @@ pre {
   height: 64px;
   min-height: 64px;
   padding: 0;
-  border: 1px solid #cdbbeb;
+  border: 1px solid var(--theme-border-strong, #cdbbeb);
   border-radius: 8px;
   background: #ffffff;
-  color: #201a31;
+  color: var(--theme-text, #201a31);
   font-size: 2.4rem;
   line-height: 1;
   transform: translateY(-50%);
@@ -557,7 +557,7 @@ pre {
 
 .template-card {
   overflow: hidden;
-  border: 1px solid #e3d8f7;
+  border: 1px solid var(--theme-border, #e3d8f7);
   border-radius: 8px;
   background: #ffffff;
 }
@@ -569,7 +569,7 @@ pre {
   gap: 12px;
   min-height: 64px;
   padding: 12px 14px;
-  border-bottom: 1px solid #ede4fb;
+  border-bottom: 1px solid var(--theme-border, #ede4fb);
 }
 
 .template-card strong {
@@ -582,7 +582,7 @@ pre {
 }
 
 .template-card header span {
-  color: #6f6282;
+  color: var(--theme-muted, #6f6282);
 }
 
 .single-template-card {
