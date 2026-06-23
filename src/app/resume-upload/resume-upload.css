@@ -3,7 +3,7 @@
 }
 
 .workspace-shell {
-  min-height: 100vh;
+  min-height: calc(100vh - 65px);
   padding: 24px 32px 32px;
   color: #201a31;
   background:
