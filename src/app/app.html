@@ -2,18 +2,38 @@
   <div class="site-header-inner">
     <a class="brand-link" routerLink="/upload" (click)="closeMenu()">Resume Generator</a>
 
-    <button
-      type="button"
-      class="menu-toggle"
-      [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
-      aria-controls="main-navigation-menu"
-      [attr.aria-expanded]="isMenuOpen()"
-      (click)="toggleMenu()"
-    >
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-      <span aria-hidden="true"></span>
-    </button>
+    <div class="header-controls">
+      <fieldset class="theme-selector" aria-label="Theme selector">
+        <legend>Theme</legend>
+        <div class="theme-options">
+          @for (theme of themes; track theme.id) {
+            <button
+              type="button"
+              class="theme-option"
+              [class.active]="selectedThemeId() === theme.id"
+              [attr.aria-pressed]="selectedThemeId() === theme.id"
+              (click)="selectTheme(theme.id)"
+            >
+              <span class="theme-swatch theme-swatch-{{ theme.id }}" aria-hidden="true"></span>
+              <span>{{ theme.label }}</span>
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      <button
+        type="button"
+        class="menu-toggle"
+        [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
+        aria-controls="main-navigation-menu"
+        [attr.aria-expanded]="isMenuOpen()"
+        (click)="toggleMenu()"
+      >
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </button>
+    </div>
 
     @if (isMenuOpen()) {
       <nav id="main-navigation-menu" class="navigation-menu" aria-label="Main navigation">

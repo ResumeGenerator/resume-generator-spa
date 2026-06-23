@@ -46,17 +46,49 @@ describe('App', () => {
     expect(uploadLink?.getAttribute('href')).toBe('/upload');
   });
 
-  it('applies the purple theme to the header', () => {
+  it('applies the default violet theme to the app shell', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const header = compiled.querySelector<HTMLElement>('.site-header');
     const brand = compiled.querySelector<HTMLElement>('.brand-link');
+    const themeStyles = getComputedStyle(compiled);
 
-    expect(header).toBeTruthy();
+    expect(compiled.getAttribute('data-theme')).toBe('violet');
+    expect(themeStyles.getPropertyValue('--theme-header').trim()).toBe('#8b5cf6');
+    expect(themeStyles.getPropertyValue('--theme-screen').trim()).toBe('#f7f2ff');
     expect(brand).toBeTruthy();
-    expect(getComputedStyle(header as HTMLElement).backgroundColor).toBe('rgb(139, 92, 246)');
     expect(getComputedStyle(brand as HTMLElement).color).toBe('rgb(255, 255, 255)');
+  });
+
+  it('shows three selectable themes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const themeOptions = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.theme-option'));
+
+    expect(themeOptions.map((button) => button.textContent?.trim())).toEqual(['Violet', 'Teal', 'Rose']);
+    expect(compiled.getAttribute('data-theme')).toBe('violet');
+    expect(themeOptions[0].getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('updates the header and screen theme when a theme is selected', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const tealOption = compiled.querySelectorAll<HTMLButtonElement>('.theme-option')[1];
+
+    tealOption.click();
+    fixture.detectChanges();
+
+    const themeStyles = getComputedStyle(compiled);
+
+    expect(compiled.getAttribute('data-theme')).toBe('teal');
+    expect(tealOption.classList.contains('active')).toBe(true);
+    expect(tealOption.getAttribute('aria-pressed')).toBe('true');
+    expect(themeStyles.getPropertyValue('--theme-header').trim()).toBe('#0d9488');
+    expect(themeStyles.getPropertyValue('--theme-screen').trim()).toBe('#ecfdf5');
   });
 });
