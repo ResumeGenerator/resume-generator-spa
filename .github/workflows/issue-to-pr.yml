@@ -1,0 +1,247 @@
+name: OpenAI issue to PR
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: GitHub issue number to implement
+        required: true
+        type: number
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  openai_issue_to_pr:
+    runs-on: ubuntu-latest
+    outputs:
+      final_message: ${{ steps.run_codex.outputs.final-message }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve issue context
+        id: issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.eventName === 'workflow_dispatch'
+              ? Number(context.payload.inputs.issue_number)
+              : context.payload.issue.number;
+
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+            });
+
+            core.setOutput('number', String(issue.number));
+            core.setOutput('title', issue.title);
+            core.setOutput('body', issue.body || '');
+            core.setOutput('url', issue.html_url);
+            core.setOutput('author', issue.user?.login || 'unknown');
+
+      - name: Generate Codex prompt
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          ISSUE_AUTHOR: ${{ steps.issue.outputs.author }}
+          ISSUE_URL: ${{ steps.issue.outputs.url }}
+          ISSUE_BODY: ${{ steps.issue.outputs.body }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const path = require('node:path');
+
+            const prompt = `You are Codex running in GitHub Actions for the resume-generator-spa repository.
+            Implement the GitHub issue below as a complete, production-quality code change.
+            Do not only describe the change. Modify the repository files directly.
+
+            Follow all repository guidance in AGENTS.md.
+
+            Workflow:
+            1. Inspect relevant source files before editing.
+            2. Implement the smallest safe change.
+            3. Preserve Angular 21 standalone component and signal patterns.
+            4. Keep API calls centralized in src/app/services/resume-api.ts.
+            5. Add or update tests when logic or UI changes.
+            6. Run npm run build when feasible.
+            7. Leave a concise final summary with verification results.
+
+            GitHub issue:
+            Issue: #${process.env.ISSUE_NUMBER}
+            Title: ${process.env.ISSUE_TITLE}
+            Author: @${process.env.ISSUE_AUTHOR}
+            URL: ${process.env.ISSUE_URL}
+
+            Body:
+            ${process.env.ISSUE_BODY || '(No issue body provided.)'}
+            `;
+
+            const promptPath = path.join('.github', 'openai', 'generated', 'issue-prompt.md');
+            fs.mkdirSync(path.dirname(promptPath), { recursive: true });
+            fs.writeFileSync(promptPath, prompt.replace(/^ {12}/gm, ''), 'utf8');
+
+      - name: Verify OpenAI API key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            echo "::error::Missing OPENAI_API_KEY repository secret."
+            exit 1
+          fi
+
+      - name: Prepare workspace for Codex
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          chmod -R a+rwX "$GITHUB_WORKSPACE"
+          mkdir -p "$RUNNER_TEMP/codex-home"
+          chmod -R a+rwX "$RUNNER_TEMP/codex-home"
+
+      - name: Run Codex
+        id: run_codex
+        continue-on-error: true
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .github/openai/generated/issue-prompt.md
+          output-file: .github/openai/generated/codex-output.md
+          sandbox: workspace-write
+          codex-home: ${{ runner.temp }}/codex-home
+
+      - name: Upload Codex diagnostics
+        if: always() && hashFiles('.github/openai/generated/*.md') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: codex-diagnostics-issue-${{ steps.issue.outputs.number }}
+          path: .github/openai/generated/*.md
+          if-no-files-found: ignore
+
+      - name: Remove generated Codex files from diff
+        if: always()
+        run: |
+          rm -f .github/openai/generated/issue-prompt.md
+          rm -f .github/openai/generated/codex-output.md
+
+      - name: Detect changes
+        if: always()
+        id: changes
+        run: |
+          git status --short
+
+          if git status --porcelain | grep .; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create implementation pull request
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+          CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
+        run: |
+          set -euo pipefail
+
+          branch="openai/issue-${ISSUE_NUMBER}"
+          git checkout -B "$branch"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Implement issue #${ISSUE_NUMBER} with Codex"
+          git push --force origin "$branch"
+
+          pr_body="$(mktemp)"
+          {
+            echo "Closes #${ISSUE_NUMBER}"
+            echo
+            echo "Codex step outcome: ${CODEX_OUTCOME}"
+            echo
+            echo "Codex summary:"
+            echo
+            if [ -n "${CODEX_FINAL_MESSAGE}" ]; then
+              echo "${CODEX_FINAL_MESSAGE}"
+            else
+              echo "Codex completed with file changes, but did not return a final message."
+            fi
+          } > "$pr_body"
+
+          if gh pr create \
+            --title "Implement issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}" \
+            --body-file "$pr_body" \
+            --base main \
+            --head "${{ github.repository_owner }}:$branch"; then
+            echo "Pull request created."
+          else
+            compare_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/main...${branch}"
+            {
+              echo "Codex pushed an implementation branch, but GitHub Actions is not permitted to create pull requests in this repository."
+              echo
+              echo "Branch: \`${branch}\`"
+              echo "Open PR manually: ${compare_url}"
+              echo
+              echo "To allow automatic PR creation, enable this repository setting:"
+              echo "Settings -> Actions -> General -> Workflow permissions -> Allow GitHub Actions to create and approve pull requests."
+            } > "$pr_body"
+
+            gh issue comment "${ISSUE_NUMBER}" --body-file "$pr_body"
+          fi
+
+      - name: Comment when no changes were made
+        if: steps.changes.outputs.has_changes == 'false'
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+          CODEX_FINAL_MESSAGE: ${{ steps.run_codex.outputs.final-message }}
+          CODEX_OUTCOME: ${{ steps.run_codex.outcome }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const body = [
+              'Codex ran for this issue but did not produce any file changes.',
+              '',
+              `Codex step outcome: ${process.env.CODEX_OUTCOME || 'unknown'}`,
+              '',
+              process.env.CODEX_FINAL_MESSAGE || 'No final Codex message was returned.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: Number(process.env.ISSUE_NUMBER),
+              body,
+            });
+
+      - name: Comment when workflow failed
+        if: failure()
+        uses: actions/github-script@v7
+        env:
+          ISSUE_NUMBER: ${{ steps.issue.outputs.number }}
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const issueNumber = Number(process.env.ISSUE_NUMBER);
+            if (!issueNumber) {
+              core.info('Issue number was not resolved; skipping failure comment.');
+              return;
+            }
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `Codex issue-to-PR workflow failed before it could create a pull request.\n\nRun logs: ${runUrl}`,
+            });
