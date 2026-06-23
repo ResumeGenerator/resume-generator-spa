@@ -1,12 +1,19 @@
 import { Routes } from '@angular/router';
 
+import { LandingPage } from './landing-page/landing-page';
+import { LoginPage } from './login-page/login-page';
 import { ResumeUpload } from './resume-upload/resume-upload';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'upload',
-    pathMatch: 'full',
+    component: LandingPage,
+    title: 'ResumeAI',
+  },
+  {
+    path: 'login',
+    component: LoginPage,
+    title: 'Sign In | ResumeAI',
   },
   {
     path: 'upload',

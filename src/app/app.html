@@ -1,44 +1,18 @@
 <header class="site-header">
   <div class="site-header-inner">
-    <a class="brand-link" routerLink="/upload" (click)="closeMenu()">Resume Generator</a>
+    <a class="brand-link" routerLink="/" aria-label="ResumeAI home">
+      <span class="brand-mark" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+      </span>
+      <span>ResumeAI</span>
+    </a>
 
-    <div class="header-controls">
-      <button
-        type="button"
-        class="menu-toggle"
-        [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
-        aria-controls="main-navigation-menu"
-        [attr.aria-expanded]="isMenuOpen()"
-        (click)="toggleMenu()"
-      >
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-        <span aria-hidden="true"></span>
-      </button>
-    </div>
-
-    @if (isMenuOpen()) {
-      <nav id="main-navigation-menu" class="navigation-menu" aria-label="Main navigation">
-        <a href="/upload" class="active" (click)="closeMenu()">Upload page</a>
-        <fieldset class="theme-selector" aria-label="Theme selector">
-          <legend>Theme</legend>
-          <div class="theme-options">
-            @for (theme of themes; track theme.id) {
-              <button
-                type="button"
-                class="theme-option"
-                [class.active]="selectedThemeId() === theme.id"
-                [attr.aria-pressed]="selectedThemeId() === theme.id"
-                (click)="selectTheme(theme.id)"
-              >
-                <span class="theme-swatch theme-swatch-{{ theme.id }}" aria-hidden="true"></span>
-                <span>{{ theme.label }}</span>
-              </button>
-            }
-          </div>
-        </fieldset>
-      </nav>
-    }
+    <nav class="header-nav" aria-label="Main navigation">
+      <a class="primary-nav-link" routerLink="/upload">Create Resume</a>
+      <a class="login-nav-link" routerLink="/login">Login</a>
+    </nav>
   </div>
 </header>
 

@@ -1,0 +1,64 @@
+<main class="login-page" aria-labelledby="login-title">
+  <section class="login-card">
+    <div class="login-mark" aria-hidden="true">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+
+    <header class="login-heading">
+      <h1 id="login-title">Welcome Back!</h1>
+      <p>Sign in to continue creating polished resumes with AI.</p>
+    </header>
+
+    <form class="login-form" (ngSubmit)="submitLogin()">
+      <label class="field">
+        <span>Email Address</span>
+        <input
+          name="email"
+          type="email"
+          autocomplete="email"
+          placeholder="you@example.com"
+          [(ngModel)]="email"
+        />
+      </label>
+
+      <label class="field">
+        <span>Password</span>
+        <input
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          placeholder="********"
+          [(ngModel)]="password"
+        />
+      </label>
+
+      <div class="form-row">
+        <label class="remember-me">
+          <input name="rememberMe" type="checkbox" [(ngModel)]="rememberMe" />
+          <span>Remember me</span>
+        </label>
+        <a href="/">Forgot password?</a>
+      </div>
+
+      @if (submitted) {
+        <p class="login-note">Authentication is not connected yet. This page is ready for the login integration.</p>
+      }
+
+      <button type="submit" class="submit-button">Sign In</button>
+    </form>
+
+    <div class="divider"><span>Or continue with</span></div>
+
+    <button type="button" class="google-button">
+      <span aria-hidden="true">G</span>
+      Google
+    </button>
+
+    <p class="signup-copy">
+      Don't have an account?
+      <a routerLink="/upload">Create one now</a>
+    </p>
+  </section>
+</main>
