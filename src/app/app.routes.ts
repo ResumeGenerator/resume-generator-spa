@@ -8,12 +8,12 @@ export const routes: Routes = [
   {
     path: '',
     component: LandingPage,
-    title: 'ResumeAI',
+    title: 'CareerKit AI',
   },
   {
     path: 'login',
     component: LoginPage,
-    title: 'Sign In | ResumeAI',
+    title: 'Sign In | CareerKit AI',
   },
   {
     path: 'upload',

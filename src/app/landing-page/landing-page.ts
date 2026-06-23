@@ -18,20 +18,20 @@ export class LandingPage {
   protected readonly features: FeatureCard[] = [
     {
       icon: 'AI',
-      title: 'AI-Powered Resume Parsing',
-      description: 'Turn resume files into structured profile data ready for review, edits, and regeneration.',
+      title: 'AI-Powered Career Documents',
+      description: 'Turn career files into structured profile data ready for review, edits, and regeneration.',
       tone: 'pink',
     },
     {
       icon: 'GL',
       title: 'Template-Ready Output',
-      description: 'Preview saved resumes in professional templates before exporting PDF or Word versions.',
+      description: 'Preview saved documents in professional templates before exporting PDF or Word versions.',
       tone: 'blue',
     },
     {
       icon: '5m',
       title: 'Ready in Minutes',
-      description: 'Upload, inspect, edit, and regenerate polished resume documents without slow manual formatting.',
+      description: 'Upload, inspect, edit, and regenerate polished application documents without slow formatting.',
       tone: 'amber',
     },
     {

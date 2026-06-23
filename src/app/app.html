@@ -14,20 +14,20 @@
         <span></span>
       </button>
 
-      <a class="brand-link" routerLink="/" aria-label="ResumeAI home" (click)="closeMenu()">
-        <span>ResumeAI</span>
+      <a class="brand-link" routerLink="/" aria-label="CareerKit AI home" (click)="closeMenu()">
+        <span>CareerKit AI</span>
       </a>
     </div>
 
     <nav class="header-nav" aria-label="Main navigation">
-      <a class="primary-nav-link" routerLink="/upload" (click)="closeMenu()">Create Resume</a>
+      <a class="primary-nav-link" routerLink="/upload" (click)="closeMenu()">Start Creating</a>
       <a class="login-nav-link" routerLink="/login" (click)="closeMenu()">Login</a>
     </nav>
 
     @if (isMenuOpen()) {
       <nav id="main-navigation-menu" class="navigation-menu" aria-label="Menu navigation">
         <a routerLink="/" (click)="closeMenu()">Home</a>
-        <a routerLink="/upload" (click)="closeMenu()">Resume Workspace</a>
+        <a routerLink="/upload" (click)="closeMenu()">Document Workspace</a>
         <a routerLink="/login" (click)="closeMenu()">Login</a>
       </nav>
     }

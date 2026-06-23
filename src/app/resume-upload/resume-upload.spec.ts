@@ -46,6 +46,7 @@ describe('ResumeUpload', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const dropZone = compiled.querySelector<HTMLElement>('.drop-zone');
 
+    expect(compiled.textContent).toContain('Document workspace');
     expect(compiled.textContent).toContain('Step 1 of 3: Upload');
     expect(compiled.textContent).toContain('Supports PDF, DOC, or DOCX (Max 5MB).');
     expect(compiled.textContent).not.toContain('multipart/form-data');

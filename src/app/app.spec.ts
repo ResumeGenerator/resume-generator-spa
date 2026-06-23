@@ -34,11 +34,11 @@ describe('App', () => {
     const navLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.header-nav a'));
     const leadingItems = Array.from(compiled.querySelectorAll('.header-leading > *'));
 
-    expect(brand?.textContent?.trim()).toBe('ResumeAI');
+    expect(brand?.textContent?.trim()).toBe('CareerKit AI');
     expect(brand?.getAttribute('href')).toBe('/');
     expect(leadingItems[0].classList.contains('menu-toggle')).toBe(true);
     expect(leadingItems[1].classList.contains('brand-link')).toBe(true);
-    expect(navLinks.map((link) => link.textContent?.trim())).toEqual(['Create Resume', 'Login']);
+    expect(navLinks.map((link) => link.textContent?.trim())).toEqual(['Start Creating', 'Login']);
     expect(navLinks.map((link) => link.getAttribute('href'))).toEqual(['/upload', '/login']);
   });
 
@@ -61,7 +61,7 @@ describe('App', () => {
 
     expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
     expect(getComputedStyle(menu as HTMLElement).left).toBe('24px');
-    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual(['Home', 'Resume Workspace', 'Login']);
+    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual(['Home', 'Document Workspace', 'Login']);
     expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual(['/', '/upload', '/login']);
   });
 
