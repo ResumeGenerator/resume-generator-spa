@@ -1,18 +1,36 @@
 <header class="site-header">
   <div class="site-header-inner">
-    <a class="brand-link" routerLink="/" aria-label="ResumeAI home">
-      <span class="brand-mark" aria-hidden="true">
+    <div class="header-leading">
+      <button
+        type="button"
+        class="menu-toggle"
+        [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
+        aria-controls="main-navigation-menu"
+        [attr.aria-expanded]="isMenuOpen()"
+        (click)="toggleMenu()"
+      >
         <span></span>
         <span></span>
         <span></span>
-      </span>
-      <span>ResumeAI</span>
-    </a>
+      </button>
+
+      <a class="brand-link" routerLink="/" aria-label="ResumeAI home" (click)="closeMenu()">
+        <span>ResumeAI</span>
+      </a>
+    </div>
 
     <nav class="header-nav" aria-label="Main navigation">
-      <a class="primary-nav-link" routerLink="/upload">Create Resume</a>
-      <a class="login-nav-link" routerLink="/login">Login</a>
+      <a class="primary-nav-link" routerLink="/upload" (click)="closeMenu()">Create Resume</a>
+      <a class="login-nav-link" routerLink="/login" (click)="closeMenu()">Login</a>
     </nav>
+
+    @if (isMenuOpen()) {
+      <nav id="main-navigation-menu" class="navigation-menu" aria-label="Menu navigation">
+        <a routerLink="/" (click)="closeMenu()">Home</a>
+        <a routerLink="/upload" (click)="closeMenu()">Resume Workspace</a>
+        <a routerLink="/login" (click)="closeMenu()">Login</a>
+      </nav>
+    }
   </div>
 </header>
 

@@ -32,11 +32,37 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const brand = compiled.querySelector<HTMLAnchorElement>('.brand-link');
     const navLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.header-nav a'));
+    const leadingItems = Array.from(compiled.querySelectorAll('.header-leading > *'));
 
     expect(brand?.textContent?.trim()).toBe('ResumeAI');
     expect(brand?.getAttribute('href')).toBe('/');
+    expect(leadingItems[0].classList.contains('menu-toggle')).toBe(true);
+    expect(leadingItems[1].classList.contains('brand-link')).toBe(true);
     expect(navLinks.map((link) => link.textContent?.trim())).toEqual(['Create Resume', 'Login']);
     expect(navLinks.map((link) => link.getAttribute('href'))).toEqual(['/upload', '/login']);
+  });
+
+  it('opens the left-side hamburger menu', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const menuToggle = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
+
+    expect(menuToggle).toBeTruthy();
+    expect(menuToggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(compiled.querySelector('.navigation-menu')).toBeNull();
+
+    menuToggle?.click();
+    fixture.detectChanges();
+
+    const menu = compiled.querySelector<HTMLElement>('.navigation-menu');
+    const menuLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.navigation-menu a'));
+
+    expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(getComputedStyle(menu as HTMLElement).left).toBe('24px');
+    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual(['Home', 'Resume Workspace', 'Login']);
+    expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual(['/', '/upload', '/login']);
   });
 
   it('renders the gradient header and compact action buttons', () => {
