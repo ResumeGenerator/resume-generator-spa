@@ -25,7 +25,7 @@ describe('App', () => {
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 
-  it('shows an upload page link from the hamburger menu', () => {
+  it('shows a full page upload link from the hamburger menu', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
@@ -44,5 +44,19 @@ describe('App', () => {
     expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
     expect(uploadLink?.textContent?.trim()).toBe('Upload page');
     expect(uploadLink?.getAttribute('href')).toBe('/upload');
+  });
+
+  it('applies the purple theme to the header', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const header = compiled.querySelector<HTMLElement>('.site-header');
+    const brand = compiled.querySelector<HTMLElement>('.brand-link');
+
+    expect(header).toBeTruthy();
+    expect(brand).toBeTruthy();
+    expect(getComputedStyle(header as HTMLElement).backgroundColor).toBe('rgb(139, 92, 246)');
+    expect(getComputedStyle(brand as HTMLElement).color).toBe('rgb(255, 255, 255)');
   });
 });
