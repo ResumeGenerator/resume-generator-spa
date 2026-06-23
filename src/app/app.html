@@ -1,1 +1,33 @@
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="brand-link" routerLink="/upload" (click)="closeMenu()">Resume Generator</a>
+
+    <button
+      type="button"
+      class="menu-toggle"
+      [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
+      aria-controls="main-navigation-menu"
+      [attr.aria-expanded]="isMenuOpen()"
+      (click)="toggleMenu()"
+    >
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
+
+    @if (isMenuOpen()) {
+      <nav id="main-navigation-menu" class="navigation-menu" aria-label="Main navigation">
+        <a
+          routerLink="/upload"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          (click)="closeMenu()"
+        >
+          Upload page
+        </a>
+      </nav>
+    }
+  </div>
+</header>
+
 <router-outlet />

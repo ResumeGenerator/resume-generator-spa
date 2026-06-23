@@ -24,4 +24,25 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
+
+  it('shows an upload page link from the hamburger menu', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const menuToggle = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
+
+    expect(menuToggle).toBeTruthy();
+    expect(menuToggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(compiled.querySelector('.navigation-menu')).toBeNull();
+
+    menuToggle?.click();
+    fixture.detectChanges();
+
+    const uploadLink = compiled.querySelector<HTMLAnchorElement>('.navigation-menu a');
+
+    expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(uploadLink?.textContent?.trim()).toBe('Upload page');
+    expect(uploadLink?.getAttribute('href')).toBe('/upload');
+  });
 });
