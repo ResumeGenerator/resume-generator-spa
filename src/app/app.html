@@ -31,7 +31,10 @@
             (click)="toggleProfileMenu()"
           >
             <span class="profile-avatar" aria-hidden="true">{{ profileInitials() }}</span>
-            <span class="profile-label">{{ profileName() }}</span>
+            <span class="profile-text">
+              <span class="profile-kicker">Signed in</span>
+              <span class="profile-label">{{ profileName() }}</span>
+            </span>
           </button>
 
           @if (isProfileOpen()) {
@@ -45,7 +48,7 @@
                   }
                 </div>
               </div>
-              <button type="button" class="profile-logout" (click)="logout()">Logout</button>
+              <button type="button" class="profile-logout" (click)="logout()">Sign out</button>
             </div>
           }
         </div>

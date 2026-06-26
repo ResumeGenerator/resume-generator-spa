@@ -122,13 +122,13 @@
 .profile-button {
   display: inline-flex;
   align-items: center;
-  max-width: 280px;
-  min-height: 42px;
-  gap: 10px;
+  max-width: 260px;
+  min-height: 44px;
+  gap: 9px;
   border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 8px;
-  padding: 4px 12px 4px 5px;
-  background: rgba(255, 255, 255, 0.14);
+  padding: 5px 12px 5px 6px;
+  background: rgba(255, 255, 255, 0.16);
   color: #ffffff;
   font: inherit;
   font-weight: 900;
@@ -143,8 +143,8 @@
 
 .profile-avatar {
   display: inline-grid;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
@@ -156,30 +156,44 @@
 }
 
 .profile-avatar.large {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, #657ee9, #7e4ca8);
   color: #ffffff;
   font-size: 0.92rem;
 }
 
-.profile-label {
+.profile-text {
+  display: grid;
   min-width: 0;
+  gap: 1px;
+  text-align: left;
+}
+
+.profile-kicker {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.profile-label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.1;
 }
 
 .profile-panel {
   position: absolute;
   top: calc(100% + 10px);
   right: 0;
-  width: min(310px, calc(100vw - 32px));
-  padding: 10px;
+  width: min(280px, calc(100vw - 32px));
+  padding: 8px;
   border: 1px solid rgba(109, 40, 217, 0.14);
   border-radius: 8px;
   background: #ffffff;
-  box-shadow: 0 20px 44px rgba(32, 26, 49, 0.2);
+  box-shadow: 0 18px 38px rgba(32, 26, 49, 0.18);
 }
 
 .profile-summary {
@@ -187,7 +201,7 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  padding: 8px;
+  padding: 8px 8px 10px;
   color: #34264d;
 }
 
@@ -204,19 +218,23 @@
   white-space: nowrap;
 }
 
+.profile-summary strong {
+  font-size: 0.98rem;
+}
+
 .profile-summary span {
   color: #6f6282;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .profile-logout {
   width: 100%;
-  min-height: 38px;
-  margin-top: 6px;
+  min-height: 36px;
+  margin-top: 2px;
   border: 0;
   border-radius: 6px;
-  background: #f2eaff;
-  color: #6d28d9;
+  background: #fff1f2;
+  color: #be123c;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
@@ -224,7 +242,7 @@
 }
 
 .profile-logout:hover {
-  background: #eadcff;
+  background: #ffe4e6;
 }
 
 .mobile-profile-summary {
