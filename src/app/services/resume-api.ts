@@ -7,6 +7,7 @@ declare global {
     __RESUME_GENERATOR_CONFIG__?: {
       parserApiUrl?: string;
       templateApiUrl?: string;
+      authApiUrl?: string;
     };
   }
 }

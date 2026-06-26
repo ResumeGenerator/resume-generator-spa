@@ -4,6 +4,7 @@ set -eu
 : "${PORT:=80}"
 : "${PARSER_API_URL:=http://localhost:8000}"
 : "${TEMPLATE_API_URL:=http://localhost:8080}"
+: "${AUTH_API_URL:=https://coverletter-api.up.railway.app}"
 
 normalize_url() {
   case "$1" in
@@ -14,11 +15,13 @@ normalize_url() {
 
 PARSER_API_URL="$(normalize_url "$PARSER_API_URL")"
 TEMPLATE_API_URL="$(normalize_url "$TEMPLATE_API_URL")"
+AUTH_API_URL="$(normalize_url "$AUTH_API_URL")"
 
 cat > /usr/share/nginx/html/runtime-config.js <<EOF
 window.__RESUME_GENERATOR_CONFIG__ = {
   parserApiUrl: '${PARSER_API_URL}',
   templateApiUrl: '${TEMPLATE_API_URL}',
+  authApiUrl: '${AUTH_API_URL}',
 };
 EOF
 

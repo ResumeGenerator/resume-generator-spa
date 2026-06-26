@@ -1,5 +1,7 @@
 import { Component, signal } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
+
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -10,11 +12,22 @@ import { RouterLink, RouterOutlet } from '@angular/router';
 export class App {
   protected readonly isMenuOpen = signal(false);
 
+  constructor(
+    protected readonly authService: AuthService,
+    private readonly router: Router,
+  ) {}
+
   protected toggleMenu(): void {
     this.isMenuOpen.update((isOpen) => !isOpen);
   }
 
   protected closeMenu(): void {
     this.isMenuOpen.set(false);
+  }
+
+  protected logout(): void {
+    this.authService.logout();
+    this.closeMenu();
+    void this.router.navigate(['/login']);
   }
 }

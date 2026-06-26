@@ -21,14 +21,22 @@
 
     <nav class="header-nav" aria-label="Main navigation">
       <a class="primary-nav-link" routerLink="/upload" (click)="closeMenu()">Start Creating</a>
-      <a class="login-nav-link" routerLink="/login" (click)="closeMenu()">Login</a>
+      @if (authService.isAuthenticated()) {
+        <button type="button" class="login-nav-link" (click)="logout()">Logout</button>
+      } @else {
+        <a class="login-nav-link" routerLink="/login" (click)="closeMenu()">Login</a>
+      }
     </nav>
 
     @if (isMenuOpen()) {
       <nav id="main-navigation-menu" class="navigation-menu" aria-label="Menu navigation">
         <a routerLink="/" (click)="closeMenu()">Home</a>
         <a routerLink="/upload" (click)="closeMenu()">Document Workspace</a>
-        <a routerLink="/login" (click)="closeMenu()">Login</a>
+        @if (authService.isAuthenticated()) {
+          <button type="button" (click)="logout()">Logout</button>
+        } @else {
+          <a routerLink="/login" (click)="closeMenu()">Login</a>
+        }
       </nav>
     }
   </div>

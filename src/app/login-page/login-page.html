@@ -7,11 +7,50 @@
     </div>
 
     <header class="login-heading">
-      <h1 id="login-title">Welcome Back!</h1>
-      <p>Sign in to continue creating polished career documents with AI.</p>
+      <h1 id="login-title">{{ isRegisterMode ? 'Create Account' : 'Welcome Back!' }}</h1>
+      <p>
+        {{
+          isRegisterMode
+            ? 'Create an account to save and manage your resume workspace.'
+            : 'Sign in to continue creating polished career documents with AI.'
+        }}
+      </p>
     </header>
 
-    <form class="login-form" (ngSubmit)="submitLogin()">
+    <div class="auth-switch" role="group" aria-label="Authentication mode">
+      <button
+        type="button"
+        [class.active]="!isRegisterMode"
+        [attr.aria-pressed]="!isRegisterMode"
+        (click)="showLogin()"
+      >
+        Sign In
+      </button>
+      <button
+        type="button"
+        [class.active]="isRegisterMode"
+        [attr.aria-pressed]="isRegisterMode"
+        (click)="showRegister()"
+      >
+        Register
+      </button>
+    </div>
+
+    <form class="login-form" (ngSubmit)="submitAuth()" novalidate>
+      @if (isRegisterMode) {
+        <label class="field">
+          <span>Display Name</span>
+          <input
+            name="displayName"
+            type="text"
+            autocomplete="name"
+            placeholder="Jane Doe"
+            [disabled]="isSubmitting"
+            [(ngModel)]="displayName"
+          />
+        </label>
+      }
+
       <label class="field">
         <span>Email Address</span>
         <input
@@ -19,6 +58,7 @@
           type="email"
           autocomplete="email"
           placeholder="you@example.com"
+          [disabled]="isSubmitting"
           [(ngModel)]="email"
         />
       </label>
@@ -28,37 +68,56 @@
         <input
           name="password"
           type="password"
-          autocomplete="current-password"
+          [attr.autocomplete]="isRegisterMode ? 'new-password' : 'current-password'"
           placeholder="********"
+          [disabled]="isSubmitting"
           [(ngModel)]="password"
         />
       </label>
 
-      <div class="form-row">
-        <label class="remember-me">
-          <input name="rememberMe" type="checkbox" [(ngModel)]="rememberMe" />
-          <span>Remember me</span>
-        </label>
-        <a href="/">Forgot password?</a>
-      </div>
-
-      @if (submitted) {
-        <p class="login-note">Authentication is not connected yet. This page is ready for the login integration.</p>
+      @if (!isRegisterMode) {
+        <div class="form-row">
+          <label class="remember-me">
+            <input
+              name="rememberMe"
+              type="checkbox"
+              [disabled]="isSubmitting"
+              [(ngModel)]="rememberMe"
+            />
+            <span>Remember me</span>
+          </label>
+        </div>
       }
 
-      <button type="submit" class="submit-button">Sign In</button>
+      @if (errorMessage) {
+        <p class="login-note error-note">{{ errorMessage }}</p>
+      }
+
+      <button type="submit" class="submit-button" [disabled]="isSubmitting">
+        {{
+          isSubmitting
+            ? isRegisterMode
+              ? 'Creating...'
+              : 'Signing in...'
+            : isRegisterMode
+              ? 'Create Account'
+              : 'Sign In'
+        }}
+      </button>
     </form>
 
     <div class="divider"><span>Or continue with</span></div>
 
-    <button type="button" class="google-button">
+    <button type="button" class="google-button" [disabled]="isSubmitting" (click)="startGoogleLogin()">
       <span aria-hidden="true">G</span>
       Google
     </button>
 
     <p class="signup-copy">
-      Don't have an account?
-      <a routerLink="/upload">Create one now</a>
+      {{ isRegisterMode ? 'Already have an account?' : "Don't have an account?" }}
+      <button type="button" (click)="isRegisterMode ? showLogin() : showRegister()">
+        {{ isRegisterMode ? 'Sign in' : 'Create one now' }}
+      </button>
     </p>
   </section>
 </main>

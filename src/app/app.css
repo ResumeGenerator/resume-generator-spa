@@ -96,9 +96,11 @@
   border-radius: 8px;
   padding: 0 22px;
   color: #ffffff;
+  font: inherit;
   font-weight: 900;
   text-decoration: none;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .primary-nav-link {
@@ -115,7 +117,8 @@
 .menu-toggle:focus-visible,
 .primary-nav-link:focus-visible,
 .login-nav-link:focus-visible,
-.navigation-menu a:focus-visible {
+.navigation-menu a:focus-visible,
+.navigation-menu button:focus-visible {
   outline: 3px solid rgba(255, 255, 255, 0.36);
   outline-offset: 3px;
 }
@@ -134,15 +137,22 @@
   box-shadow: 0 18px 38px rgba(32, 26, 49, 0.18);
 }
 
-.navigation-menu a {
+.navigation-menu a,
+.navigation-menu button {
   padding: 12px 14px;
+  border: 0;
   border-radius: 6px;
+  background: transparent;
   color: #34264d;
+  font: inherit;
   font-weight: 900;
   text-decoration: none;
+  text-align: left;
+  cursor: pointer;
 }
 
-.navigation-menu a:hover {
+.navigation-menu a:hover,
+.navigation-menu button:hover {
   background: #f2eaff;
   color: #6d28d9;
 }
