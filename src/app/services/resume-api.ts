@@ -8,6 +8,7 @@ declare global {
       parserApiUrl?: string;
       templateApiUrl?: string;
       authApiUrl?: string;
+      authRedirectUri?: string;
     };
   }
 }

@@ -5,6 +5,7 @@ set -eu
 : "${PARSER_API_URL:=http://localhost:8000}"
 : "${TEMPLATE_API_URL:=http://localhost:8080}"
 : "${AUTH_API_URL:=https://resume-generator-auth-api-staging.up.railway.app}"
+: "${FRONTEND_POPUP_COMPLETE_URL:=https://resume-generator-spa-staging.up.railway.app/auth/auth-callback}"
 
 normalize_url() {
   case "$1" in
@@ -22,6 +23,7 @@ window.__RESUME_GENERATOR_CONFIG__ = {
   parserApiUrl: '${PARSER_API_URL}',
   templateApiUrl: '${TEMPLATE_API_URL}',
   authApiUrl: '${AUTH_API_URL}',
+  authRedirectUri: '${FRONTEND_POPUP_COMPLETE_URL}',
 };
 EOF
 

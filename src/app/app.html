@@ -22,7 +22,33 @@
     <nav class="header-nav" aria-label="Main navigation">
       <a class="primary-nav-link" routerLink="/upload" (click)="closeMenu()">Start Creating</a>
       @if (authService.isAuthenticated()) {
-        <button type="button" class="login-nav-link" (click)="logout()">Logout</button>
+        <div class="profile-menu">
+          <button
+            type="button"
+            class="profile-button"
+            [attr.aria-expanded]="isProfileOpen()"
+            aria-controls="profile-menu-panel"
+            (click)="toggleProfileMenu()"
+          >
+            <span class="profile-avatar" aria-hidden="true">{{ profileInitials() }}</span>
+            <span class="profile-label">{{ profileName() }}</span>
+          </button>
+
+          @if (isProfileOpen()) {
+            <div id="profile-menu-panel" class="profile-panel">
+              <div class="profile-summary">
+                <span class="profile-avatar large" aria-hidden="true">{{ profileInitials() }}</span>
+                <div>
+                  <strong>{{ profileName() }}</strong>
+                  @if (profileEmail()) {
+                    <span>{{ profileEmail() }}</span>
+                  }
+                </div>
+              </div>
+              <button type="button" class="profile-logout" (click)="logout()">Logout</button>
+            </div>
+          }
+        </div>
       } @else {
         <a class="login-nav-link" routerLink="/login" (click)="closeMenu()">Login</a>
       }
@@ -33,6 +59,10 @@
         <a routerLink="/" (click)="closeMenu()">Home</a>
         <a routerLink="/upload" (click)="closeMenu()">Document Workspace</a>
         @if (authService.isAuthenticated()) {
+          <div class="mobile-profile-summary">
+            <span class="profile-avatar" aria-hidden="true">{{ profileInitials() }}</span>
+            <span>{{ profileName() }}</span>
+          </div>
           <button type="button" (click)="logout()">Logout</button>
         } @else {
           <a routerLink="/login" (click)="closeMenu()">Login</a>

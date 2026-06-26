@@ -19,6 +19,7 @@ interface RuntimeConfigWindow extends Window {
     parserApiUrl?: string;
     templateApiUrl?: string;
     authApiUrl?: string;
+    authRedirectUri?: string;
   };
 }
 
@@ -31,11 +32,14 @@ export class AuthService {
     (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__?.authApiUrl,
     'https://resume-generator-auth-api-staging.up.railway.app',
   );
+  private readonly authRedirectUri =
+    (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__?.authRedirectUri?.trim() ||
+    `${window.location.origin}/auth/auth-callback`;
   private readonly authenticated = signal(Boolean(this.getToken()));
 
-  readonly googleLoginUrl =
-    `${this.authApiUrl}/api/auth/google-login?redirectUri=` +
-    encodeURIComponent('https://resume-generator-spa-staging.up.railway.app/auth/auth-callback');
+  readonly googleLoginUrl = `${this.authApiUrl}/api/auth/google-login?redirectUri=${encodeURIComponent(
+    this.authRedirectUri,
+  )}`;
 
   constructor(private readonly http: HttpClient) {}
 
