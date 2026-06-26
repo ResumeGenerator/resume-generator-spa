@@ -4,7 +4,7 @@ set -eu
 : "${PORT:=80}"
 : "${PARSER_API_URL:=http://localhost:8000}"
 : "${TEMPLATE_API_URL:=http://localhost:8080}"
-: "${AUTH_API_URL:=https://coverletter-api.up.railway.app}"
+: "${AUTH_API_URL:=https://resume-generator-auth-api-staging.up.railway.app}"
 
 normalize_url() {
   case "$1" in

@@ -29,7 +29,7 @@ export class AuthService {
   private readonly tokenStorageKey = 'resumeGeneratorAuthToken';
   private readonly authApiUrl = this.resolveBaseUrl(
     (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__?.authApiUrl,
-    'https://coverletter-api.up.railway.app',
+    'https://resume-generator-auth-api-staging.up.railway.app',
   );
   private readonly authenticated = signal(Boolean(this.getToken()));
 
