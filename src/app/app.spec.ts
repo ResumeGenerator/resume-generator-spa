@@ -61,8 +61,13 @@ describe('App', () => {
 
     expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
     expect(getComputedStyle(menu as HTMLElement).left).toBe('24px');
-    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual(['Home', 'Document Workspace', 'Login']);
-    expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual(['/', '/upload', '/login']);
+    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Home',
+      'Document Workspace',
+      'Resume Builder',
+      'Login',
+    ]);
+    expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual(['/', '/upload', '/resume-builder', '/login']);
   });
 
   it('renders the gradient header and compact action buttons', () => {

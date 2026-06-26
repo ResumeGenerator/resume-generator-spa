@@ -61,6 +61,7 @@
       <nav id="main-navigation-menu" class="navigation-menu" aria-label="Menu navigation">
         <a routerLink="/" (click)="closeMenu()">Home</a>
         <a routerLink="/upload" (click)="closeMenu()">Document Workspace</a>
+        <a routerLink="/resume-builder" (click)="closeMenu()">Resume Builder</a>
         @if (authService.isAuthenticated()) {
           <div class="mobile-profile-summary">
             <span class="profile-avatar" aria-hidden="true">{{ profileInitials() }}</span>
