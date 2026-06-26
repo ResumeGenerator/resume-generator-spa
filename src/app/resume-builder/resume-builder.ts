@@ -558,11 +558,19 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       return;
     }
 
+    const resumeId = this.resumeId.trim() || this.editingResume()?.id || this.selectedSavedResumeId() || '';
+
+    if (!resumeId) {
+      this.previewErrorMessage.set('Unable to save template edits. Select or upload a resume first.');
+      this.renderedSaveState.set('error');
+      return;
+    }
+
     this.renderedSaveState.set('saving');
     this.previewErrorMessage.set(null);
 
     this.resumeApi
-      .saveRenderedResume(this.buildRenderedResumePayload())
+      .saveRenderedResume(resumeId, this.buildRenderedResumePayload())
       .pipe(finalize(() => this.renderedSaveState.update((state) => (state === 'saving' ? 'idle' : state))))
       .subscribe({
         next: () => {
