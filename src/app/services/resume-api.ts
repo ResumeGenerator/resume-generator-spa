@@ -67,6 +67,23 @@ export interface ResumePreviewResponse {
   templates: ResumePreviewTemplate[];
 }
 
+export interface RenderedResumeSaveRequest {
+  template: string;
+  format: 'html' | 'pdf' | 'word' | string;
+  data: Record<string, unknown>;
+  font?: string;
+  color?: string;
+  withPhoto?: boolean;
+  avatar?: string;
+  contactsTitle?: string;
+  detailsTitle?: string;
+}
+
+export interface RenderedResumeSaveResponse {
+  id: string;
+  createdAt?: string;
+}
+
 export interface SavedResume {
   id: string;
   filename: string;
@@ -95,6 +112,7 @@ export class ResumeApi {
   );
   private readonly resumesUrl = `${this.parserApiUrl}/api/resumes`;
   private readonly parseResumeUrl = `${this.parserApiUrl}/api/resumes/parse`;
+  private readonly renderedResumeUrl = `${this.parserApiUrl}/api/resumes/rendered`;
   private readonly previewResumeUrl = `${this.templateApiUrl}/api/Resumes/preview`;
   private readonly pdfResumeUrl = `${this.templateApiUrl}/api/Resumes/pdf`;
   private readonly wordResumeUrl = `${this.templateApiUrl}/api/Resumes/word`;
@@ -131,6 +149,10 @@ export class ResumeApi {
 
   previewResume(request: ResumePreviewRequest): Observable<ResumePreviewResponse> {
     return this.http.post<ResumePreviewResponse>(this.previewResumeUrl, request);
+  }
+
+  saveRenderedResume(request: RenderedResumeSaveRequest): Observable<RenderedResumeSaveResponse> {
+    return this.http.post<RenderedResumeSaveResponse>(this.renderedResumeUrl, request);
   }
 
   downloadResumePdf(resumeId: string, templateId: string): Observable<Blob> {

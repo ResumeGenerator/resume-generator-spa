@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 
 import {
   ParsedResumeResponse,
+  RenderedResumeSaveRequest,
   ResumeApi,
   ResumeDocumentResponse,
   ResumePreviewResponse,
@@ -17,6 +18,7 @@ type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 type PreviewState = 'idle' | 'loading' | 'success' | 'error';
 type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
 type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
+type RenderedSaveState = 'idle' | 'saving' | 'success' | 'error';
 type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'summary';
 
 interface EditorStep {
@@ -73,6 +75,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly editingResume = signal<ResumeDocumentResponse | null>(null);
   protected readonly editErrorMessage = signal<string | null>(null);
   protected readonly editSuccessMessage = signal<string | null>(null);
+  protected readonly renderedSaveState = signal<RenderedSaveState>('idle');
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
   protected readonly activeEditorStep = signal<EditorStepId>('personal');
@@ -91,6 +94,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     'classic-sidebar-gray',
     'clean-blue-header',
   ];
+  private readonly renderedTemplateId = 'sydney';
   private uploadLoaderTimer: ReturnType<typeof setTimeout> | null = null;
   protected jobDescription = '';
   protected resumeId = '';
@@ -549,6 +553,29 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.downloadWordTemplate(templateId);
   }
 
+  protected saveRenderedResume(): void {
+    if (this.renderedSaveState() === 'saving') {
+      return;
+    }
+
+    this.renderedSaveState.set('saving');
+    this.previewErrorMessage.set(null);
+
+    this.resumeApi
+      .saveRenderedResume(this.buildRenderedResumePayload())
+      .pipe(finalize(() => this.renderedSaveState.update((state) => (state === 'saving' ? 'idle' : state))))
+      .subscribe({
+        next: () => {
+          this.renderedSaveState.set('success');
+          this.savedIndicator.set(true);
+        },
+        error: (error) => {
+          this.previewErrorMessage.set(this.resolveErrorMessage(error, 'edit'));
+          this.renderedSaveState.set('error');
+        },
+      });
+  }
+
   protected trustedPreviewHtml(html: string): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(this.asPreviewDocument(html));
   }
@@ -717,6 +744,97 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       .split(/\r?\n|,/)
       .map((item) => item.trim())
       .filter(Boolean);
+  }
+
+  private buildRenderedResumePayload(): RenderedResumeSaveRequest {
+    const summary = this.editProfessionalSummary.trim() || this.editProfessionalHeadline.trim();
+    const skillItems = this.uniqueLines([
+      ...this.toChipList(this.editHardSkills),
+      ...this.toChipList(this.editToolsAndSoftware),
+      ...this.toChipList(this.editMethodologies),
+      ...this.toChipList(this.editSoftSkills),
+      ...this.toChipList(this.editLanguages),
+    ]).map((skill) => ({ name: skill, level: '' }));
+
+    return {
+      template: this.renderedTemplateId,
+      format: 'html',
+      data: {
+        name: this.editCandidateName.trim(),
+        title: this.editCurrentTitle.trim(),
+        location: this.editCandidateLocation.trim(),
+        phone: this.editCandidatePhone.trim(),
+        email: this.editCandidateEmail.trim(),
+        summary,
+        dateOfBirth: '',
+        gender: '',
+        nationality: '',
+        documentDate: '',
+        address: this.editIndustry.trim(),
+        postalCode: this.editSpecialization.trim(),
+        secondaryAddress: null,
+        sections: [
+          {
+            title: 'Professional summary',
+            type: 'summary',
+            items: summary,
+          },
+          {
+            title: 'Work experience',
+            type: 'experience',
+            items: this.editWorkExperience.map((experience) => ({
+              position: experience.role.trim(),
+              company: experience.companyOrOrganization.trim(),
+              location: experience.location.trim(),
+              jobType: '',
+              reasonForLeaving: '',
+              start: experience.startDate.trim(),
+              end: experience.endDate.trim(),
+              achievements: this.uniqueLines([
+                ...this.toChipList(experience.responsibilities),
+                ...this.toChipList(experience.achievements),
+              ]),
+            })),
+          },
+          {
+            title: 'Education',
+            type: 'education',
+            items: this.editEducation.map((education) => ({
+              degree: education.degree.trim(),
+              school: education.institution.trim(),
+              faculty: '',
+              department: education.majorOrFieldOfStudy.trim(),
+              location: education.location.trim(),
+              years: education.endDate.trim(),
+              start: '',
+              end: education.endDate.trim(),
+              highlights: [],
+            })),
+          },
+          {
+            title: 'Skills',
+            type: 'skill',
+            items: skillItems,
+          },
+          {
+            title: 'Courses',
+            type: 'course',
+            items: this.editCertifications.map((certification) => ({
+              course: certification.name.trim(),
+              institution: certification.issuer.trim(),
+              start: '',
+              end: certification.year.trim(),
+            })),
+          },
+        ],
+      },
+      font: 'Arial',
+      color: '#000000',
+      withPhoto: false,
+      avatar: '',
+      contactsTitle: 'Contacts',
+      detailsTitle: 'Details',
+    };
   }
 
   private buildFallbackPreviewHtml(): string {
