@@ -132,16 +132,17 @@ export class AuthService {
       email: this.firstString(claims['email'], claims[EMAIL_CLAIM], claims['unique_name'], claims['preferred_username']),
       displayName: this.firstString(
         claims['displayName'],
+        claims['display_name'],
         claims['name'],
         claims[NAME_CLAIM],
         claims['fullName'],
+        claims['full_name'],
         claims['userName'],
+        claims['user_name'],
         this.joinName(claims['givenName'], claims['familyName']),
         this.joinName(claims[GIVEN_NAME_CLAIM], claims[SURNAME_CLAIM]),
         claims['unique_name'],
         claims['preferred_username'],
-        claims['email'],
-        claims[EMAIL_CLAIM],
       ),
       fullName: this.asString(claims['fullName']),
       userName: this.asString(claims['userName']),
@@ -155,17 +156,19 @@ export class AuthService {
     const email = this.firstString(user.email, user['Email'], user['emailAddress'], user['mail'], user[EMAIL_CLAIM]);
     const displayName = this.firstString(
       user.displayName,
+      user['display_name'],
       user['DisplayName'],
       user.name,
       user['Name'],
       user[NAME_CLAIM],
       user.fullName,
+      user['full_name'],
       user['FullName'],
       user.userName,
+      user['user_name'],
       user['UserName'],
       this.joinName(user.givenName ?? user['given_name'] ?? user['firstName'], user.familyName ?? user['family_name'] ?? user['lastName']),
       this.joinName(user[GIVEN_NAME_CLAIM], user[SURNAME_CLAIM]),
-      email,
     );
 
     return {

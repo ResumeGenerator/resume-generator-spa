@@ -15,7 +15,14 @@ export class App implements OnInit {
   protected readonly isProfileOpen = signal(false);
   protected readonly profileName = computed(() => {
     const user = this.authService.currentUser();
-    return this.asDisplayString(user?.displayName) || this.asDisplayString(user?.email) || 'User';
+    const displayName = this.asDisplayString(user?.displayName);
+    const email = this.asDisplayString(user?.email);
+
+    if (displayName && displayName.toLowerCase() !== email.toLowerCase()) {
+      return displayName;
+    }
+
+    return this.nameFromEmail(email) || 'User';
   });
   protected readonly profileEmail = computed(() => this.asDisplayString(this.authService.currentUser()?.email));
   protected readonly profileInitials = computed(() => {
@@ -80,5 +87,19 @@ export class App implements OnInit {
 
   private asDisplayString(value: unknown): string {
     return typeof value === 'string' ? value.trim() : '';
+  }
+
+  private nameFromEmail(email: string): string {
+    const localPart = email.split('@')[0]?.trim();
+
+    if (!localPart) {
+      return '';
+    }
+
+    return localPart
+      .split(/[._-]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 }

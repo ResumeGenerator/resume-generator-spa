@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { AuthCallback } from './auth-callback/auth-callback';
 import { LandingPage } from './landing-page/landing-page';
 import { LoginPage } from './login-page/login-page';
+import { ResumeBuilder } from './resume-builder/resume-builder';
 import { ResumeUpload } from './resume-upload/resume-upload';
 import { authGuard } from './services/auth.guard';
 
@@ -27,6 +28,12 @@ export const routes: Routes = [
     component: ResumeUpload,
     canActivate: [authGuard],
     title: 'Resume Upload',
+  },
+  {
+    path: 'resume-builder',
+    component: ResumeBuilder,
+    canActivate: [authGuard],
+    title: 'Resume Builder',
   },
   {
     path: '**',

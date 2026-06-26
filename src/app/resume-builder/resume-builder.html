@@ -1,0 +1,290 @@
+<section class="builder-shell">
+  <header class="builder-header">
+    <div class="builder-title">
+      <a class="back-button" routerLink="/" aria-label="Go back">
+        <span aria-hidden="true">&lsaquo;</span>
+      </a>
+      <h1>Your resume</h1>
+    </div>
+
+    <div class="builder-actions">
+      <button type="button" class="share-button">
+        <span aria-hidden="true">⇧</span>
+        Share
+      </button>
+      <button type="button" class="download-button" (click)="downloadActivePdf()">
+        <span aria-hidden="true">⇩</span>
+        Download
+        <span class="download-divider" aria-hidden="true"></span>
+        <span aria-hidden="true">⌄</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="builder-grid">
+    <aside class="step-rail" aria-label="Resume sections">
+      @for (step of editorSteps; track step.id; let index = $index) {
+        <button
+          type="button"
+          class="step-item"
+          [class.active]="activeEditorStep() === step.id"
+          [class.complete]="isStepCompleted(index)"
+          (click)="setEditorStep(step.id)"
+        >
+          <span class="step-marker">
+            @if (isStepCompleted(index)) {
+              ✓
+            } @else {
+              {{ index + 1 }}
+            }
+          </span>
+          <span>{{ step.label }}</span>
+        </button>
+      }
+
+      <button type="button" class="step-item muted">
+        <span class="step-marker">+</span>
+        <span>Add section</span>
+      </button>
+    </aside>
+
+    <section class="editor-card" aria-labelledby="editor-title">
+      <header class="editor-heading">
+        <div>
+          <h2 id="editor-title">{{ activeStepHeading() }}</h2>
+          <p>{{ activeStepDescription() }}</p>
+        </div>
+        @if (activeEditorStep() !== 'personal' && activeEditorStep() !== 'contact') {
+          <div class="editor-icons" aria-hidden="true">
+            <span>✎</span>
+            <span>▢</span>
+          </div>
+        }
+      </header>
+
+      <div class="editor-scroll">
+        @switch (activeEditorStep()) {
+          @case ('personal') {
+            <div class="field-grid two">
+              <label class="builder-field">
+                <span>First name</span>
+                <input
+                  name="editorFirstName"
+                  [ngModel]="firstName()"
+                  (ngModelChange)="updateFirstName($event)"
+                  placeholder="First name"
+                />
+              </label>
+              <label class="builder-field">
+                <span>Last name</span>
+                <input
+                  name="editorLastName"
+                  [ngModel]="lastName()"
+                  (ngModelChange)="updateLastName($event)"
+                  placeholder="Last name"
+                />
+              </label>
+            </div>
+
+            <label class="builder-field icon-field">
+              <span>Desired job title</span>
+              <input name="editorTitle" [(ngModel)]="editCurrentTitle" placeholder="Desired job title" />
+            </label>
+
+            <label class="photo-button" for="resumeFile">
+              <input
+                #fileInput
+                id="resumeFile"
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                (change)="onFileSelected($event)"
+              />
+              <span aria-hidden="true">▣</span>
+              Add photo
+            </label>
+          }
+
+          @case ('contact') {
+            <div class="field-grid two">
+              <label class="builder-field">
+                <span>Email</span>
+                <input name="editorEmail" type="email" [(ngModel)]="editCandidateEmail" placeholder="Email" />
+              </label>
+              <label class="builder-field">
+                <span>Phone number</span>
+                <input name="editorPhone" [(ngModel)]="editCandidatePhone" placeholder="Phone number" />
+              </label>
+              <label class="builder-field">
+                <span>Country</span>
+                <input name="editorCountry" [(ngModel)]="editCareerLevel" placeholder="Country" />
+              </label>
+              <label class="builder-field">
+                <span>City</span>
+                <input name="editorLocation" [(ngModel)]="editCandidateLocation" placeholder="City" />
+              </label>
+              <label class="builder-field">
+                <span>Address</span>
+                <input name="editorAddress" [(ngModel)]="editIndustry" placeholder="Address" />
+              </label>
+              <label class="builder-field">
+                <span>Postal code</span>
+                <input name="editorPostal" [(ngModel)]="editSpecialization" placeholder="Postal code" />
+              </label>
+            </div>
+          }
+
+          @case ('experience') {
+            @if (primaryExperience(); as experience) {
+              <article class="experience-card">
+                <header>
+                  <span class="drag-handle" aria-hidden="true">⋮⋮</span>
+                  <strong>{{ experience.role || 'Work experience' }}</strong>
+                  <button type="button" aria-label="Collapse">⌃</button>
+                </header>
+
+                <div class="field-grid two">
+                  <label class="builder-field">
+                    <span>Job title</span>
+                    <input name="editorExperienceRole" [(ngModel)]="experience.role" placeholder="Job title" />
+                  </label>
+                  <label class="builder-field">
+                    <span>Company</span>
+                    <input name="editorExperienceCompany" [(ngModel)]="experience.companyOrOrganization" placeholder="Company" />
+                  </label>
+                  <label class="builder-field compact">
+                    <span>Start</span>
+                    <input name="editorExperienceStart" [(ngModel)]="experience.startDate" placeholder="2024" />
+                  </label>
+                  <label class="builder-field compact">
+                    <span>End</span>
+                    <input name="editorExperienceEnd" [(ngModel)]="experience.endDate" placeholder="2026" />
+                  </label>
+                  <label class="builder-field">
+                    <span>Location</span>
+                    <input name="editorExperienceLocation" [(ngModel)]="experience.location" placeholder="Location" />
+                  </label>
+                </div>
+
+                <label class="builder-field">
+                  <span>Responsibilities</span>
+                  <textarea name="editorExperienceResponsibilities" rows="7" [(ngModel)]="experience.responsibilities"></textarea>
+                </label>
+
+                <button type="button" class="ai-button">
+                  <span aria-hidden="true">✦</span>
+                  Improve with AI
+                </button>
+              </article>
+            } @else {
+              <button type="button" class="add-wide" (click)="addWorkExperience()">Add work experience</button>
+            }
+          }
+
+          @case ('skills') {
+            <div class="suggestion-row">
+              <div>
+                <span aria-hidden="true">✦</span>
+                <strong>AI suggested for {{ editCurrentTitle || 'your role' }}</strong>
+              </div>
+              <button type="button">↻ Refresh</button>
+            </div>
+
+            <div class="skill-chips">
+              @for (skill of hardSkillChips(); track skill) {
+                <button type="button" class="skill-chip active" (click)="removeSuggestedSkill(skill)">
+                  {{ skill }}
+                </button>
+              }
+              @for (skill of suggestedSkillChips(); track skill) {
+                <button type="button" class="skill-chip" (click)="addSuggestedSkill(skill)">
+                  {{ skill }}
+                </button>
+              }
+            </div>
+
+            <label class="builder-field">
+              <span>Additional skills</span>
+              <textarea name="editorSkills" rows="5" [(ngModel)]="editHardSkills"></textarea>
+            </label>
+          }
+
+          @case ('education') {
+            @for (education of editEducation; track $index) {
+              <article class="experience-card">
+                <header>
+                  <strong>{{ education.degree || 'Education' }}</strong>
+                </header>
+                <div class="field-grid two">
+                  <label class="builder-field">
+                    <span>Degree</span>
+                    <input name="editorEducationDegree{{ $index }}" [(ngModel)]="education.degree" />
+                  </label>
+                  <label class="builder-field">
+                    <span>Institution</span>
+                    <input name="editorEducationInstitution{{ $index }}" [(ngModel)]="education.institution" />
+                  </label>
+                  <label class="builder-field">
+                    <span>Field of study</span>
+                    <input name="editorEducationMajor{{ $index }}" [(ngModel)]="education.majorOrFieldOfStudy" />
+                  </label>
+                  <label class="builder-field">
+                    <span>Location</span>
+                    <input name="editorEducationLocation{{ $index }}" [(ngModel)]="education.location" />
+                  </label>
+                </div>
+              </article>
+            }
+            <button type="button" class="add-wide" (click)="addEducation()">Add education</button>
+          }
+
+          @case ('summary') {
+            <label class="builder-field">
+              <span>Professional summary</span>
+              <textarea name="editorSummary" rows="11" [(ngModel)]="editProfessionalSummary"></textarea>
+            </label>
+          }
+        }
+      </div>
+
+      <footer class="editor-footer">
+        @if (activeStepIndex() > 0) {
+          <button type="button" class="back-step" (click)="previousEditorStep()">
+            <span aria-hidden="true">‹</span>
+            Back
+          </button>
+        } @else {
+          <span></span>
+        }
+
+        <button type="button" class="next-step" (click)="nextEditorStep()">
+          Next
+          <span aria-hidden="true">›</span>
+        </button>
+      </footer>
+    </section>
+
+    <section class="preview-stage" aria-label="Resume preview">
+      <header class="preview-toolbar">
+        <div class="score-chip">
+          <span aria-hidden="true">🥰</span>
+          <strong>60%</strong>
+        </div>
+        <div class="score-progress">
+          <strong>{{ suggestionText() }}</strong>
+          <span><i></i></span>
+        </div>
+        <button type="button" class="template-button">
+          <span aria-hidden="true">◉</span>
+          Change template
+        </button>
+      </header>
+
+      <div class="resume-preview-frame">
+        <iframe title="Resume preview" sandbox="" [srcdoc]="trustedPreviewHtml(currentResumePreview())"></iframe>
+        @if (savedIndicator()) {
+          <span class="saved-pill">✓ Saved</span>
+        }
+      </div>
+    </section>
+  </main>
+</section>
