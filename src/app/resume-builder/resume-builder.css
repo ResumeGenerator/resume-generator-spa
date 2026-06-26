@@ -91,43 +91,42 @@
 
 .builder-grid {
   display: grid;
-  grid-template-columns:260px minmax(420px,1fr) minmax(360px,1fr);
-  gap: 24px;
+  grid-template-columns:minmax(480px,1fr) minmax(380px,0.9fr);
+  gap: 18px 24px;
   align-items: start;
 }
 
 .step-rail {
-  display: grid;
-  align-content: start;
-  padding-top: 10px;
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 2px;
 }
 
 .step-item {
   position: relative;
-  display: grid;
-  grid-template-columns: 60px minmax(0, 1fr);
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 72px;
+  gap: 8px;
+  width: auto;
+  min-width: max-content;
+  min-height: 44px;
   border: 0;
-  border-radius: 14px;
-  padding: 0 16px 0 0;
+  border-radius: 12px;
+  padding: 0 12px;
   background: transparent;
   color: #111827;
   font: inherit;
-  font-size: 1.36rem;
+  font-size: 0.95rem;
   font-weight: 800;
   text-align: left;
   cursor: pointer;
 }
 
 .step-item::after {
-  position: absolute;
-  top: 58px;
-  left: 30px;
-  width: 4px;
-  height: 24px;
+  width: 18px;
+  height: 3px;
   border-radius: 999px;
   background: #dedede;
   content: "";
@@ -148,13 +147,13 @@
 .step-marker {
   display: grid;
   place-items: center;
-  width: 60px;
-  height: 60px;
+  width: 34px;
+  height: 34px;
   border: 1px solid #d2d2d2;
-  border-radius: 14px;
+  border-radius: 10px;
   background: #fff;
   color: #8b8b8b;
-  font-size: 1.45rem;
+  font-size: 1rem;
   font-weight: 800;
 }
 
@@ -166,7 +165,7 @@
 }
 
 .step-item.active .step-marker {
-  box-shadow: inset 0 0 0 6px #cfe0ff;
+  box-shadow: inset 0 0 0 4px #cfe0ff;
   background: #2563eb;
   color: #fff;
 }
@@ -534,28 +533,12 @@ button:disabled {
 
 @media (max-width: 1320px) {
   .builder-grid {
-    grid-template-columns:220px minmax(390px,1fr) minmax(320px,1fr);
+    grid-template-columns:minmax(430px,1fr) minmax(320px,0.85fr);
     gap: 18px;
   }
 
   .builder-shell {
     padding-inline: 22px;
-  }
-
-  .step-item {
-    grid-template-columns: 52px minmax(0, 1fr);
-    min-height: 66px;
-    font-size: 1.12rem;
-  }
-
-  .step-item::after {
-    top: 54px;
-    left: 26px;
-  }
-
-  .step-marker {
-    width: 52px;
-    height: 52px;
   }
 
   .preview-toolbar {
@@ -586,15 +569,8 @@ button:disabled {
 }
 
 @media (max-width: 860px) {
-
-  .step-rail {
-    display: flex;
-    overflow-x: auto;
-    gap: 10px;
-  }
-
   .step-item {
-    min-width: 220px;
+    font-size: 0.9rem;
   }
 
   .step-item::after {
