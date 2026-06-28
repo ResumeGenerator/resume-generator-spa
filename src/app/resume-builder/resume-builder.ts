@@ -188,7 +188,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.savedResumesErrorMessage.set(null);
 
     this.resumeApi
-      .getSavedResumes(100, 0)
+      .getTemplateSavedResumes(100, 0)
       .pipe(finalize(() => this.savedResumesState.update((state) => (state === 'loading' ? 'idle' : state))))
       .subscribe({
         next: (response) => {
@@ -513,7 +513,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   private loadResumeIntoEditor(resumeId: string): void {
-    this.resumeApi.getResume(resumeId).subscribe({
+    this.resumeApi.getTemplateResume(resumeId).subscribe({
       next: (response) => {
         this.editingResume.set(response);
         this.populateEditForm(response);
@@ -1401,7 +1401,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     }
 
     if (action === 'saved') {
-      return 'Unable to load saved resumes. Please check the parser API server and try again.';
+      return 'Unable to load saved resumes. Please check the template API server and try again.';
     }
 
     if (action === 'edit') {
