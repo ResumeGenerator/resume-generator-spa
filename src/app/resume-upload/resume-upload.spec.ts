@@ -8,7 +8,7 @@ describe('ResumeUpload', () => {
   let fixture: ComponentFixture<ResumeUpload>;
 
   const resumeApi = {
-    getSavedResumes: () =>
+    getTemplateSavedResumes: () =>
       of({
         items: [
           {

@@ -124,12 +124,7 @@ export class ResumeApi {
   constructor(private readonly http: HttpClient) {}
 
   getSavedResumes(limit = 100, skip = 0): Observable<SavedResumesResponse> {
-    return this.http.get<SavedResumesResponse>(this.parserResumesUrl, {
-      params: {
-        limit,
-        skip,
-      },
-    });
+    return this.getTemplateSavedResumes(limit, skip);
   }
 
   getTemplateSavedResumes(limit = 100, skip = 0): Observable<SavedResumesResponse> {

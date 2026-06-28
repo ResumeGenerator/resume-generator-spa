@@ -141,7 +141,7 @@ export class ResumeUpload implements OnInit, OnDestroy {
     this.savedResumesErrorMessage.set(null);
 
     this.resumeApi
-      .getSavedResumes(100, 0)
+      .getTemplateSavedResumes(100, 0)
       .pipe(finalize(() => this.savedResumesState.update((state) => (state === 'loading' ? 'idle' : state))))
       .subscribe({
         next: (response) => {
