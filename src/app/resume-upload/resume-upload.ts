@@ -305,6 +305,14 @@ export class ResumeUpload implements OnInit, OnDestroy {
     this.editSavedResume(resume);
   }
 
+  protected resumeBuilderUrl(resumeId: string): string {
+    return `/resume-builder/${encodeURIComponent(resumeId)}`;
+  }
+
+  protected openResumeBuilder(resumeId: string): void {
+    window.location.href = this.resumeBuilderUrl(resumeId);
+  }
+
   protected addWorkExperience(): void {
     this.editWorkExperience.push({
       companyOrOrganization: '',

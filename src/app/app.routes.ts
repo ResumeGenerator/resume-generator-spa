@@ -30,6 +30,12 @@ export const routes: Routes = [
     title: 'Resume Upload',
   },
   {
+    path: 'resume-builder/:resumeId',
+    component: ResumeBuilder,
+    canActivate: [authGuard],
+    title: 'Resume Builder',
+  },
+  {
     path: 'resume-builder',
     component: ResumeBuilder,
     canActivate: [authGuard],

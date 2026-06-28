@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import {
@@ -159,9 +159,19 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   constructor(
     private readonly resumeApi: ResumeApi,
     private readonly sanitizer: DomSanitizer,
+    private readonly route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    const resumeId = this.route.snapshot.paramMap.get('resumeId')?.trim();
+
+    if (resumeId) {
+      this.selectedSavedResumeId.set(resumeId);
+      this.resumeId = resumeId;
+      this.loadResumeIntoEditor(resumeId);
+      this.previewResumeById(resumeId);
+    }
+
     this.loadSavedResumes();
   }
 
@@ -482,6 +492,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.previewResponse.set(response);
+          this.populateEditFormFromPreviewData(response.data ?? response.templates[0]?.data);
           this.activeTemplateIndex.set(0);
           this.previewState.set('success');
         },
@@ -905,7 +916,79 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     `;
   }
 
+  private populateEditFormFromPreviewData(value: unknown): void {
+    const resume = this.asResumeDocument(value);
+
+    if (resume) {
+      this.editingResume.set(resume);
+      this.populateEditForm(resume);
+      return;
+    }
+
+    const renderedData = this.resolveRenderedProfileData(value);
+
+    if (renderedData) {
+      this.populateRenderedEditForm(renderedData, null);
+    }
+  }
+
+  private asResumeDocument(value: unknown): ResumeDocumentResponse | null {
+    const record = this.asRecord(value);
+    const profile = this.asRecord(record['profile']);
+
+    if (Object.keys(profile).length === 0) {
+      return null;
+    }
+
+    return {
+      id: this.asString(record['id']) || this.asString(record['resumeId']) || this.resumeId,
+      profile: profile as ResumeDocumentResponse['profile'],
+      metadata: this.asRecord(record['metadata']),
+      source: this.asRecord(record['source']),
+      createdAt: this.asString(record['createdAt']),
+      updatedAt: this.asString(record['updatedAt']),
+    };
+  }
+
+  private resolveRenderedProfileData(value: unknown): Record<string, unknown> | null {
+    const record = this.asRecord(value);
+    const profile = this.asRecord(record['profile']);
+    const profileData = this.asRecord(profile['data']);
+
+    if (this.hasRenderedProfileData(profileData)) {
+      return profileData;
+    }
+
+    const directData = this.asRecord(record['data']);
+
+    if (this.hasRenderedProfileData(directData)) {
+      return directData;
+    }
+
+    if (this.hasRenderedProfileData(record)) {
+      return record;
+    }
+
+    return null;
+  }
+
+  private hasRenderedProfileData(data: Record<string, unknown>): boolean {
+    return Boolean(
+      this.asString(data['name']) ||
+        this.asString(data['title']) ||
+        this.asString(data['email']) ||
+        this.asRecordArray(data['sections']).length,
+    );
+  }
+
   private populateEditForm(resume: ResumeDocumentResponse): void {
+    const renderedData = this.asRecord(resume.profile['data']);
+
+    if (this.hasRenderedProfileData(renderedData)) {
+      this.populateRenderedEditForm(renderedData, resume);
+      return;
+    }
+
     const candidateProfile = this.asRecord(resume.profile['candidateProfile']);
     const careerClassification = this.asRecord(resume.profile['careerClassification']);
     const careerProgression = this.asRecord(resume.profile['careerProgression']);
@@ -961,6 +1044,125 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       issuer: this.asString(item['issuer']),
       year: this.asEditableNumber(item['year']),
     }));
+  }
+
+  private populateRenderedEditForm(data: Record<string, unknown>, resume: ResumeDocumentResponse | null): void {
+    const source = this.asRecord(resume?.source);
+    const summarySection = this.findRenderedSection(data, 'summary');
+    const experienceSection = this.findRenderedSection(data, 'experience');
+    const educationSection = this.findRenderedSection(data, 'education');
+    const skillSection = this.findRenderedSection(data, 'skill', 'skills');
+    const certificationSection = this.findRenderedSection(data, 'course', 'courses', 'certification', 'certifications');
+    const summary = this.asEditableText(summarySection?.['items']) || this.asString(data['summary']);
+
+    this.editCandidateName = this.asString(data['name']);
+    this.editCandidateEmail = this.asString(data['email']);
+    this.editCandidatePhone = this.asString(data['phone']);
+    this.editCandidateLocation = this.asString(data['location']);
+    this.editCurrentTitle = this.asString(data['title']);
+    this.editProfessionalHeadline = summary;
+    this.editTotalExperienceYears = '';
+    this.editCareerLevel = '';
+    this.editIndustry = this.asString(data['address']);
+    this.editSpecialization = this.asString(data['postalCode']);
+    this.editIndustryFocus = '';
+    this.editPrimarySpecialization = '';
+    this.editSecondarySpecialization = '';
+    this.editJobDescription = this.asString(source['jobDescription']);
+    this.editProfessionalSummary = summary;
+    this.editTechnicalHighlights = '';
+    this.editLeadershipHighlights = '';
+    this.editProjectHighlights = '';
+    this.editIndustryHighlights = '';
+    this.editHardSkills = this.uniqueLines(this.extractRenderedSkillNames(skillSection?.['items'])).join('\n');
+    this.editToolsAndSoftware = '';
+    this.editMethodologies = '';
+    this.editSoftSkills = '';
+    this.editLanguages = '';
+    this.editWorkExperience = this.asRecordArray(experienceSection?.['items']).map((item) => {
+      const responsibilities = this.asEditableText(item['responsibilities']);
+      const achievements = this.asEditableText(item['achievements']);
+
+      return {
+        companyOrOrganization: this.asString(item['company']) || this.asString(item['companyOrOrganization']),
+        role: this.asString(item['position']) || this.asString(item['role']),
+        location: this.asString(item['location']),
+        startDate: this.asString(item['start']) || this.asString(item['startDate']),
+        endDate: this.asString(item['end']) || this.asString(item['endDate']),
+        responsibilities: responsibilities || achievements,
+        achievements: responsibilities ? achievements : '',
+      };
+    });
+    this.editEducation = this.asRecordArray(educationSection?.['items']).map((item) => ({
+      degree: this.asString(item['degree']),
+      majorOrFieldOfStudy: this.asString(item['department']) || this.asString(item['faculty']),
+      institution: this.asString(item['school']) || this.asString(item['institution']),
+      location: this.asString(item['location']),
+      endDate: this.asString(item['end']) || this.asString(item['years']),
+    }));
+    this.editCertifications = this.asRecordArray(certificationSection?.['items']).map((item) => ({
+      name: this.asString(item['course']) || this.asString(item['name']),
+      issuer: this.asString(item['institution']) || this.asString(item['issuer']),
+      year: this.asString(item['end']) || this.asEditableNumber(item['year']),
+    }));
+  }
+
+  private findRenderedSection(data: Record<string, unknown>, ...types: string[]): Record<string, unknown> | null {
+    const normalizedTypes = new Set(types.map((type) => type.toLowerCase()));
+
+    return (
+      this.asRecordArray(data['sections']).find((section) =>
+        normalizedTypes.has(this.asString(section['type']).toLowerCase()),
+      ) ?? null
+    );
+  }
+
+  private asEditableText(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    if (!Array.isArray(value)) {
+      return '';
+    }
+
+    return value
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item;
+        }
+
+        const record = this.asRecord(item);
+        return (
+          this.asString(record['text']) ||
+          this.asString(record['description']) ||
+          this.asString(record['name']) ||
+          this.asString(record['title'])
+        );
+      })
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  private extractRenderedSkillNames(value: unknown): string[] {
+    if (typeof value === 'string') {
+      return this.toChipList(value);
+    }
+
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item;
+        }
+
+        const record = this.asRecord(item);
+        return this.asString(record['name']) || this.asString(record['skill']) || this.asString(record['title']);
+      })
+      .filter(Boolean);
   }
 
   private buildEditedProfile(resume: ResumeDocumentResponse): Record<string, unknown> {

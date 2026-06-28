@@ -10,7 +10,7 @@
     <section class="upload-panel" aria-labelledby="upload-title">
       <div class="panel-heading">
         <div>
-          <p>High-fidelity guided tailoring tool</p>
+          <p>Step 1: Your Input</p>
         </div>
       </div>
 
@@ -117,7 +117,12 @@
         <div class="resume-list">
           @for (resume of savedResumes(); track resume.id) {
             <article class="resume-row" [class.selected]="selectedSavedResumeId() === resume.id">
-              <button type="button" class="resume-thumbnail" (click)="previewSavedResume(resume)" aria-label="Preview {{ resume.candidateName || resume.filename }}">
+              <button
+                type="button"
+                class="resume-thumbnail"
+                (click)="openResumeBuilder(resume.id)"
+                aria-label="Preview {{ resume.candidateName || resume.filename }}"
+              >
                 <span class="thumb-sidebar"></span>
                 <span class="thumb-line"></span>
                 <span class="thumb-line"></span>
@@ -125,16 +130,21 @@
                 <span class="thumb-line"></span>
                 <span class="thumb-line"></span>
               </button>
-              <button type="button" class="resume-main" (click)="previewSavedResume(resume)">
+              <button type="button" class="resume-main" (click)="openResumeBuilder(resume.id)">
                 <strong>{{ resume.candidateName || resume.filename }}</strong>
                 <span>{{ resume.currentTitle || 'No current title' }}</span>
                 <small>{{ resume.candidateEmail || resume.filename }}</small>
                 <small>{{ formatDate(resume.createdAt) }}</small>
               </button>
               <div class="resume-actions">
-                <button type="button" class="history-preview-link" title="Preview tailoring" (click)="previewSavedResume(resume)">
+                <button
+                  type="button"
+                  class="history-preview-link"
+                  title="Preview tailoring"
+                  (click)="openResumeBuilder(resume.id)"
+                >
                   <span aria-hidden="true">O</span>
-                  {{ previewState() === 'loading' && selectedSavedResumeId() === resume.id ? 'Loading...' : 'Preview' }}
+                  Preview
                 </button>
                 <button type="button" class="history-preview-link" title="Regenerate tailoring" (click)="regenerateSavedResume(resume)">
                   <span aria-hidden="true">R</span>

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 declare global {
   interface Window {
@@ -60,11 +60,15 @@ export interface ResumePreviewRequest {
 export interface ResumePreviewTemplate {
   templateId: string;
   html: string;
+  data?: unknown;
 }
 
 export interface ResumePreviewResponse {
   resumeId: string;
   templates: ResumePreviewTemplate[];
+  templateId?: string;
+  html?: string;
+  data?: unknown;
 }
 
 export interface RenderedResumeSaveRequest {
@@ -147,7 +151,9 @@ export class ResumeApi {
   }
 
   previewResume(request: ResumePreviewRequest): Observable<ResumePreviewResponse> {
-    return this.http.post<ResumePreviewResponse>(this.previewResumeUrl, request);
+    return this.http
+      .post<ResumePreviewResponse>(this.previewResumeUrl, request)
+      .pipe(map((response) => this.normalizePreviewResponse(response, request)));
   }
 
   saveRenderedResume(resumeId: string, request: RenderedResumeSaveRequest): Observable<RenderedResumeSaveResponse> {
@@ -184,5 +190,32 @@ export class ResumeApi {
     const resolved = value?.trim() || fallback;
     const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(resolved) ? resolved : `https://${resolved}`;
     return withProtocol.replace(/\/+$/, '');
+  }
+
+  private normalizePreviewResponse(
+    response: ResumePreviewResponse,
+    request: ResumePreviewRequest,
+  ): ResumePreviewResponse {
+    if (response.templates?.length) {
+      return response;
+    }
+
+    const templateId = response.templateId || request.templateId || request.templateIds[0] || 'resume-template';
+    const templates = response.html
+      ? [
+          {
+            templateId,
+            html: response.html,
+            data: response.data,
+          },
+        ]
+      : [];
+
+    return {
+      ...response,
+      resumeId: response.resumeId || request.resumeId,
+      templateId,
+      templates,
+    };
   }
 }
