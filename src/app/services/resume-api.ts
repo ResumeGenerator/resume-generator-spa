@@ -72,9 +72,14 @@ export interface ResumePreviewResponse {
 }
 
 export interface RenderedResumeSaveRequest {
+  resumeId?: string;
   template: string;
+  templateId?: string;
   format: 'html' | 'pdf' | 'word' | string;
   data: Record<string, unknown>;
+  profile?: ResumeProfile;
+  metadata?: Record<string, unknown>;
+  source?: Record<string, unknown>;
   font?: string;
   color?: string;
   withPhoto?: boolean;
@@ -84,8 +89,18 @@ export interface RenderedResumeSaveRequest {
 }
 
 export interface RenderedResumeSaveResponse {
-  id: string;
+  id?: string;
+  resumeId?: string;
+  templateResumeId?: string;
+  templateId?: string;
+  html?: string;
+  data?: unknown;
+  profile?: ResumeProfile;
+  metadata?: Record<string, unknown>;
+  source?: Record<string, unknown>;
   createdAt?: string;
+  updatedAt?: string;
+  [key: string]: unknown;
 }
 
 export interface SavedResume {
@@ -182,7 +197,10 @@ export class ResumeApi {
   }
 
   saveRenderedResume(resumeId: string, request: RenderedResumeSaveRequest): Observable<RenderedResumeSaveResponse> {
-    return this.http.post<RenderedResumeSaveResponse>(`${this.templateResumesUrl}/${resumeId}/templates`, request);
+    return this.http.post<RenderedResumeSaveResponse>(
+      `${this.templateResumesUrl}/edited/${encodeURIComponent(resumeId)}`,
+      request,
+    );
   }
 
   downloadResumePdf(resumeId: string, templateId: string): Observable<Blob> {

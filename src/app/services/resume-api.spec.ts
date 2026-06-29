@@ -142,4 +142,51 @@ describe('ResumeApi', () => {
       updatedAt: '',
     });
   });
+
+  it('saves rendered edits through the template edited document endpoint', () => {
+    let savedId = '';
+
+    resumeApi
+      .saveRenderedResume('resume-1', {
+        resumeId: 'resume-1',
+        template: 'modern-minimal',
+        templateId: 'modern-minimal',
+        format: 'html',
+        data: {
+          name: 'Jane Candidate',
+        },
+        profile: {
+          data: {
+            name: 'Jane Candidate',
+          },
+        },
+      })
+      .subscribe((response) => {
+        savedId = response.id || '';
+      });
+
+    const request = httpTesting.expectOne('https://template.example.test/api/Resumes/edited/resume-1');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      resumeId: 'resume-1',
+      template: 'modern-minimal',
+      templateId: 'modern-minimal',
+      format: 'html',
+      data: {
+        name: 'Jane Candidate',
+      },
+      profile: {
+        data: {
+          name: 'Jane Candidate',
+        },
+      },
+    });
+
+    request.flush({
+      id: 'edited-1',
+    });
+
+    expect(savedId).toBe('edited-1');
+  });
 });

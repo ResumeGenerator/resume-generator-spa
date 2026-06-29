@@ -94,7 +94,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     'classic-sidebar-gray',
     'clean-blue-header',
   ];
-  private readonly renderedTemplateId = 'sydney';
   private uploadLoaderTimer: ReturnType<typeof setTimeout> | null = null;
   protected jobDescription = '';
   protected resumeId = '';
@@ -555,13 +554,11 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   protected downloadActivePdf(): void {
-    const templateId = this.previewResponse()?.templates[this.activeTemplateIndex()]?.templateId || this.defaultTemplateIds[0];
-    this.downloadPdfTemplate(templateId);
+    this.downloadPdfTemplate(this.activeTemplateId());
   }
 
   protected downloadActiveWord(): void {
-    const templateId = this.previewResponse()?.templates[this.activeTemplateIndex()]?.templateId || this.defaultTemplateIds[0];
-    this.downloadWordTemplate(templateId);
+    this.downloadWordTemplate(this.activeTemplateId());
   }
 
   protected saveRenderedResume(): void {
@@ -580,19 +577,65 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.renderedSaveState.set('saving');
     this.previewErrorMessage.set(null);
 
+    const templateId = this.activeTemplateId();
+
     this.resumeApi
-      .saveRenderedResume(resumeId, this.buildRenderedResumePayload())
+      .saveRenderedResume(resumeId, this.buildRenderedResumePayload(templateId))
       .pipe(finalize(() => this.renderedSaveState.update((state) => (state === 'saving' ? 'idle' : state))))
       .subscribe({
-        next: () => {
+        next: (response) => {
           this.renderedSaveState.set('success');
           this.savedIndicator.set(true);
+          this.handleRenderedSaveResponse(response, resumeId);
         },
         error: (error) => {
           this.previewErrorMessage.set(this.resolveErrorMessage(error, 'edit'));
           this.renderedSaveState.set('error');
         },
       });
+  }
+
+  private handleRenderedSaveResponse(response: unknown, fallbackResumeId: string): void {
+    const savedResumeId = this.extractSavedResumeId(response) || fallbackResumeId;
+    const savedResume = this.asResumeDocument(response);
+
+    this.resumeId = savedResumeId;
+    this.selectedSavedResumeId.set(savedResumeId);
+
+    if (savedResume) {
+      this.editingResume.set(savedResume);
+    }
+
+    this.loadSavedResumes();
+    this.previewResumeById(savedResumeId);
+  }
+
+  private extractSavedResumeId(value: unknown): string {
+    const record = this.asRecord(value);
+    const dataRecord = this.asRecord(record['data']);
+    const mongoId = this.asRecord(record['_id']);
+    const dataMongoId = this.asRecord(dataRecord['_id']);
+
+    return (
+      this.asString(record['id']) ||
+      this.asString(record['resumeId']) ||
+      this.asString(record['templateResumeId']) ||
+      this.asString(mongoId['$oid']) ||
+      this.asString(dataRecord['id']) ||
+      this.asString(dataRecord['resumeId']) ||
+      this.asString(dataRecord['templateResumeId']) ||
+      this.asString(dataMongoId['$oid'])
+    );
+  }
+
+  private activeTemplateId(): string {
+    const preview = this.previewResponse();
+
+    return (
+      preview?.templates[this.activeTemplateIndex()]?.templateId ||
+      preview?.templateId ||
+      this.defaultTemplateIds[0]
+    );
   }
 
   protected trustedPreviewHtml(html: string): SafeHtml {
@@ -765,87 +808,25 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       .filter(Boolean);
   }
 
-  private buildRenderedResumePayload(): RenderedResumeSaveRequest {
-    const summary = this.editProfessionalSummary.trim() || this.editProfessionalHeadline.trim();
-    const skillItems = this.uniqueLines([
-      ...this.toChipList(this.editHardSkills),
-      ...this.toChipList(this.editToolsAndSoftware),
-      ...this.toChipList(this.editMethodologies),
-      ...this.toChipList(this.editSoftSkills),
-      ...this.toChipList(this.editLanguages),
-    ]).map((skill) => ({ name: skill, level: '' }));
+  private buildRenderedResumePayload(templateId: string): RenderedResumeSaveRequest {
+    const editingResume = this.editingResume();
+    const data = this.buildRenderedResumeData();
+    const source = this.asRecord(editingResume?.source);
 
     return {
-      template: this.renderedTemplateId,
+      resumeId: this.resumeId.trim(),
+      template: templateId,
+      templateId,
       format: 'html',
-      data: {
-        name: this.editCandidateName.trim(),
-        title: this.editCurrentTitle.trim(),
-        location: this.editCandidateLocation.trim(),
-        phone: this.editCandidatePhone.trim(),
-        email: this.editCandidateEmail.trim(),
-        summary,
-        dateOfBirth: '',
-        gender: '',
-        nationality: '',
-        documentDate: '',
-        address: this.editIndustry.trim(),
-        postalCode: this.editSpecialization.trim(),
-        secondaryAddress: null,
-        sections: [
-          {
-            title: 'Professional summary',
-            type: 'summary',
-            items: summary,
-          },
-          {
-            title: 'Work experience',
-            type: 'experience',
-            items: this.editWorkExperience.map((experience) => ({
-              position: experience.role.trim(),
-              company: experience.companyOrOrganization.trim(),
-              location: experience.location.trim(),
-              jobType: '',
-              reasonForLeaving: '',
-              start: experience.startDate.trim(),
-              end: experience.endDate.trim(),
-              achievements: this.uniqueLines([
-                ...this.toChipList(experience.responsibilities),
-                ...this.toChipList(experience.achievements),
-              ]),
-            })),
-          },
-          {
-            title: 'Education',
-            type: 'education',
-            items: this.editEducation.map((education) => ({
-              degree: education.degree.trim(),
-              school: education.institution.trim(),
-              faculty: '',
-              department: education.majorOrFieldOfStudy.trim(),
-              location: education.location.trim(),
-              years: education.endDate.trim(),
-              start: '',
-              end: education.endDate.trim(),
-              highlights: [],
-            })),
-          },
-          {
-            title: 'Skills',
-            type: 'skill',
-            items: skillItems,
-          },
-          {
-            title: 'Courses',
-            type: 'course',
-            items: this.editCertifications.map((certification) => ({
-              course: certification.name.trim(),
-              institution: certification.issuer.trim(),
-              start: '',
-              end: certification.year.trim(),
-            })),
-          },
-        ],
+      data,
+      profile: {
+        ...this.asRecord(editingResume?.profile),
+        data,
+      },
+      metadata: this.asRecord(editingResume?.metadata),
+      source: {
+        ...source,
+        jobDescription: this.editJobDescription.trim() || source['jobDescription'] || null,
       },
       font: 'Arial',
       color: '#000000',
@@ -854,6 +835,158 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       contactsTitle: 'Contacts',
       detailsTitle: 'Details',
     };
+  }
+
+  private buildRenderedResumeData(): Record<string, unknown> {
+    const baseData = this.currentRenderedData();
+    const summary = this.editProfessionalSummary.trim() || this.editProfessionalHeadline.trim();
+
+    return {
+      ...baseData,
+      name: this.editCandidateName.trim(),
+      title: this.editCurrentTitle.trim(),
+      location: this.editCandidateLocation.trim(),
+      phone: this.editCandidatePhone.trim(),
+      email: this.editCandidateEmail.trim(),
+      summary,
+      dateOfBirth: baseData['dateOfBirth'] ?? '',
+      gender: baseData['gender'] ?? '',
+      nationality: baseData['nationality'] ?? '',
+      documentDate: baseData['documentDate'] ?? '',
+      address: this.editIndustry.trim(),
+      postalCode: this.editSpecialization.trim(),
+      secondaryAddress: baseData['secondaryAddress'] ?? null,
+      sections: this.buildRenderedSections(baseData, summary),
+    };
+  }
+
+  private currentRenderedData(): Record<string, unknown> {
+    const preview = this.previewResponse();
+    const activeTemplate = preview?.templates[this.activeTemplateIndex()];
+
+    return (
+      this.resolveRenderedProfileData(activeTemplate?.data) ||
+      this.resolveRenderedProfileData(preview?.data) ||
+      this.resolveRenderedProfileData(this.editingResume()) ||
+      {}
+    );
+  }
+
+  private buildRenderedSections(baseData: Record<string, unknown>, summary: string): Record<string, unknown>[] {
+    const existingSections = this.asRecordArray(baseData['sections']);
+    const existingExperienceItems = this.asRecordArray(
+      this.findRenderedSectionIn(existingSections, 'experience')?.['items'],
+    );
+    const existingEducationItems = this.asRecordArray(this.findRenderedSectionIn(existingSections, 'education')?.['items']);
+    const existingSkillItems = this.asRecordArray(
+      this.findRenderedSectionIn(existingSections, 'skill', 'skills')?.['items'],
+    );
+    const existingCertificationItems = this.asRecordArray(
+      this.findRenderedSectionIn(existingSections, 'course', 'courses', 'certification', 'certifications')?.['items'],
+    );
+    const skillItems = this.uniqueLines([
+      ...this.toChipList(this.editHardSkills),
+      ...this.toChipList(this.editToolsAndSoftware),
+      ...this.toChipList(this.editMethodologies),
+      ...this.toChipList(this.editSoftSkills),
+      ...this.toChipList(this.editLanguages),
+    ]).map((skill) => ({
+      ...this.findRenderedSkillItem(existingSkillItems, skill),
+      name: skill,
+      level: this.asString(this.findRenderedSkillItem(existingSkillItems, skill)['level']),
+    }));
+    const knownTypes = new Set(['summary', 'experience', 'education', 'skill', 'skills', 'course', 'courses', 'certification', 'certifications']);
+
+    return [
+      this.mergeRenderedSection(existingSections, ['summary'], {
+        title: 'Professional summary',
+        type: 'summary',
+        items: summary,
+      }),
+      this.mergeRenderedSection(existingSections, ['experience'], {
+        title: 'Work experience',
+        type: 'experience',
+        items: this.editWorkExperience.map((experience, index) => {
+          const responsibilities = this.toLines(experience.responsibilities);
+          const achievements = this.uniqueLines([
+            ...responsibilities,
+            ...this.toLines(experience.achievements),
+          ]);
+
+          return {
+            ...(existingExperienceItems[index] ?? {}),
+            position: experience.role.trim(),
+            company: experience.companyOrOrganization.trim(),
+            location: experience.location.trim(),
+            jobType: this.asString(existingExperienceItems[index]?.['jobType']),
+            reasonForLeaving: this.asString(existingExperienceItems[index]?.['reasonForLeaving']),
+            start: experience.startDate.trim(),
+            end: experience.endDate.trim(),
+            responsibilities,
+            achievements,
+          };
+        }),
+      }),
+      this.mergeRenderedSection(existingSections, ['education'], {
+        title: 'Education',
+        type: 'education',
+        items: this.editEducation.map((education, index) => ({
+          ...(existingEducationItems[index] ?? {}),
+          degree: education.degree.trim(),
+          school: education.institution.trim(),
+          faculty: this.asString(existingEducationItems[index]?.['faculty']),
+          department: education.majorOrFieldOfStudy.trim(),
+          location: education.location.trim(),
+          years: education.endDate.trim(),
+          start: this.asString(existingEducationItems[index]?.['start']),
+          end: education.endDate.trim(),
+          highlights: existingEducationItems[index]?.['highlights'] ?? [],
+        })),
+      }),
+      this.mergeRenderedSection(existingSections, ['skill', 'skills'], {
+        title: 'Skills',
+        type: 'skill',
+        items: skillItems,
+      }),
+      this.mergeRenderedSection(existingSections, ['course', 'courses', 'certification', 'certifications'], {
+        title: 'Courses',
+        type: 'course',
+        items: this.editCertifications.map((certification, index) => ({
+          ...(existingCertificationItems[index] ?? {}),
+          course: certification.name.trim(),
+          institution: certification.issuer.trim(),
+          start: this.asString(existingCertificationItems[index]?.['start']),
+          end: certification.year.trim(),
+        })),
+      }),
+      ...existingSections.filter((section) => !knownTypes.has(this.asString(section['type']).toLowerCase())),
+    ];
+  }
+
+  private mergeRenderedSection(
+    existingSections: Record<string, unknown>[],
+    types: string[],
+    section: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const existing = this.findRenderedSectionIn(existingSections, ...types) ?? {};
+
+    return {
+      ...existing,
+      title: this.asString(existing['title']) || section['title'],
+      type: this.asString(existing['type']) || section['type'],
+      items: section['items'],
+    };
+  }
+
+  private findRenderedSkillItem(items: Record<string, unknown>[], skill: string): Record<string, unknown> {
+    const normalizedSkill = skill.trim().toLowerCase();
+
+    return (
+      items.find((item) => {
+        const itemName = this.asString(item['name']) || this.asString(item['skill']) || this.asString(item['title']);
+        return itemName.trim().toLowerCase() === normalizedSkill;
+      }) ?? {}
+    );
   }
 
   private buildFallbackPreviewHtml(): string {
@@ -1108,12 +1241,14 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   private findRenderedSection(data: Record<string, unknown>, ...types: string[]): Record<string, unknown> | null {
+    return this.findRenderedSectionIn(this.asRecordArray(data['sections']), ...types);
+  }
+
+  private findRenderedSectionIn(sections: Record<string, unknown>[], ...types: string[]): Record<string, unknown> | null {
     const normalizedTypes = new Set(types.map((type) => type.toLowerCase()));
 
     return (
-      this.asRecordArray(data['sections']).find((section) =>
-        normalizedTypes.has(this.asString(section['type']).toLowerCase()),
-      ) ?? null
+      sections.find((section) => normalizedTypes.has(this.asString(section['type']).toLowerCase())) ?? null
     );
   }
 
