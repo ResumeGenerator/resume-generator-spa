@@ -175,6 +175,7 @@ export class ResumeApi {
         resumeId: request.resumeId,
         templateId: templates[0]?.templateId,
         html: templates[0]?.html,
+        data: templates[0]?.data,
         templates,
       })),
     );
@@ -252,10 +253,7 @@ export class ResumeApi {
         responseType: 'text',
       })
       .pipe(
-        map((html) => ({
-          templateId,
-          html,
-        })),
+        map((response) => this.normalizeTemplateHtmlResponse(response, templateId)),
       );
   }
 
@@ -273,6 +271,41 @@ export class ResumeApi {
       seen.add(templateId);
       return true;
     });
+  }
+
+  private normalizeTemplateHtmlResponse(response: string, fallbackTemplateId: string): ResumePreviewTemplate {
+    const parsedResponse = this.parseJsonResponse(response);
+
+    if (typeof parsedResponse === 'string') {
+      return {
+        templateId: fallbackTemplateId,
+        html: parsedResponse,
+      };
+    }
+
+    const record = this.asRecord(parsedResponse);
+    const html = this.asString(record['html']);
+
+    if (!html) {
+      return {
+        templateId: fallbackTemplateId,
+        html: response,
+      };
+    }
+
+    return {
+      templateId: this.asString(record['templateId']) || fallbackTemplateId,
+      html,
+      data: record['data'],
+    };
+  }
+
+  private parseJsonResponse(response: string): unknown {
+    try {
+      return JSON.parse(response);
+    } catch {
+      return response;
+    }
   }
 
   private normalizeSavedResumesResponse(value: unknown, limit: number, skip: number): SavedResumesResponse {
