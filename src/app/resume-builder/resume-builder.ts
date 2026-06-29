@@ -86,6 +86,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly activeTemplateIndex = signal(0);
   protected readonly activeEditorStep = signal<EditorStepId>('personal');
   protected readonly savedIndicator = signal(true);
+  protected readonly collapsedWorkExperienceIndexes = signal<Set<number>>(new Set());
   protected readonly editorSteps: EditorStep[] = [
     { id: 'personal', label: 'Personal details' },
     { id: 'contact', label: 'Contact info' },
@@ -345,6 +346,24 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     return this.editWorkExperience[0];
   }
 
+  protected isWorkExperienceCollapsed(index: number): boolean {
+    return this.collapsedWorkExperienceIndexes().has(index);
+  }
+
+  protected toggleWorkExperience(index: number): void {
+    this.collapsedWorkExperienceIndexes.update((indexes) => {
+      const nextIndexes = new Set(indexes);
+
+      if (nextIndexes.has(index)) {
+        nextIndexes.delete(index);
+      } else {
+        nextIndexes.add(index);
+      }
+
+      return nextIndexes;
+    });
+  }
+
   protected addSuggestedSkill(skill: string): void {
     const existing = this.hardSkillChips();
     if (existing.some((item) => item.toLowerCase() === skill.toLowerCase())) {
@@ -438,6 +457,19 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected removeWorkExperience(index: number): void {
     this.editWorkExperience.splice(index, 1);
+    this.collapsedWorkExperienceIndexes.update((indexes) => {
+      const nextIndexes = new Set<number>();
+
+      indexes.forEach((collapsedIndex) => {
+        if (collapsedIndex < index) {
+          nextIndexes.add(collapsedIndex);
+        } else if (collapsedIndex > index) {
+          nextIndexes.add(collapsedIndex - 1);
+        }
+      });
+
+      return nextIndexes;
+    });
   }
 
   protected addEducation(): void {
@@ -1201,6 +1233,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       responsibilities: this.asEditableLines(item['responsibilities']),
       achievements: this.asEditableLines(item['achievements']),
     }));
+    this.resetWorkExperienceCollapseState();
     this.editEducation = this.asRecordArray(resume.profile['education']).map((item) => ({
       degree: this.asString(item['degree']),
       majorOrFieldOfStudy: this.asString(item['majorOrFieldOfStudy']),
@@ -1282,6 +1315,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         achievements: responsibilities ? achievements : '',
       };
     });
+    this.resetWorkExperienceCollapseState();
     this.editEducation = this.asRecordArray(educationSection?.['items']).map((item) => ({
       degree: this.asString(item['degree']),
       majorOrFieldOfStudy: this.asString(item['department']) || this.asString(item['faculty']),
@@ -1305,7 +1339,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     if (extractedItems.length) {
       this.editWorkExperience = extractedItems;
+      this.resetWorkExperienceCollapseState();
     }
+  }
+
+  private resetWorkExperienceCollapseState(): void {
+    this.collapsedWorkExperienceIndexes.set(new Set());
   }
 
   private hasUsableWorkExperience(): boolean {

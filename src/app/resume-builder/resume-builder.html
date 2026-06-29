@@ -57,7 +57,10 @@
         @if (activeEditorStep() === 'experience') {
           <div class="editor-icons">
             <button type="button" class="icon-button" aria-label="Edit work experience section">
-              <span aria-hidden="true">✎</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M4 20h4L19 9l-4-4L4 16v4z"></path>
+                <path d="M13.5 6.5l4 4"></path>
+              </svg>
             </button>
             <button
               type="button"
@@ -66,7 +69,13 @@
               [disabled]="editWorkExperience.length === 0"
               (click)="removeWorkExperience(0)"
             >
-              <span aria-hidden="true">⌫</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="M6 6l1 15h10l1-15"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
             </button>
           </div>
         }
@@ -147,12 +156,26 @@
             @if (editWorkExperience.length > 0) {
               <div class="experience-list">
                 @for (experience of editWorkExperience; track $index; let index = $index) {
-                  <article class="experience-card">
+                  <article class="experience-card" [class.collapsed]="isWorkExperienceCollapsed(index)">
                     <header class="experience-card-header">
                       <span class="drag-handle" aria-hidden="true"></span>
                       <strong>{{ experience.role || 'Work experience' }}</strong>
-                      <button type="button" class="icon-button" aria-label="Collapse work experience">
-                        <span aria-hidden="true">⌃</span>
+                      <button
+                        type="button"
+                        class="icon-button"
+                        [attr.aria-expanded]="!isWorkExperienceCollapsed(index)"
+                        [attr.aria-label]="isWorkExperienceCollapsed(index) ? 'Expand work experience' : 'Collapse work experience'"
+                        (click)="toggleWorkExperience(index)"
+                      >
+                        @if (isWorkExperienceCollapsed(index)) {
+                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M6 9l6 6 6-6"></path>
+                          </svg>
+                        } @else {
+                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M6 15l6-6 6 6"></path>
+                          </svg>
+                        }
                       </button>
                       <button
                         type="button"
@@ -160,22 +183,46 @@
                         aria-label="Delete work experience entry"
                         (click)="removeWorkExperience(index)"
                       >
-                        <span aria-hidden="true">⌫</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path d="M3 6h18"></path>
+                          <path d="M8 6V4h8v2"></path>
+                          <path d="M6 6l1 15h10l1-15"></path>
+                          <path d="M10 11v6"></path>
+                          <path d="M14 11v6"></path>
+                        </svg>
                       </button>
                     </header>
 
+                    @if (!isWorkExperienceCollapsed(index)) {
                     <div class="experience-field-grid">
                       <label class="builder-field icon-field">
                         <span>Job title</span>
                         <div class="field-input-shell">
-                          <span class="field-leading-icon" aria-hidden="true">▣</span>
+                          <span class="field-leading-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <rect x="4" y="8" width="16" height="11" rx="2"></rect>
+                              <path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+                              <path d="M4 13h16"></path>
+                            </svg>
+                          </span>
                           <input name="editorExperienceRole{{ index }}" [(ngModel)]="experience.role" placeholder="Job title" />
                         </div>
                       </label>
                       <label class="builder-field icon-field">
                         <span>Company</span>
                         <div class="field-input-shell">
-                          <span class="field-leading-icon" aria-hidden="true">▦</span>
+                          <span class="field-leading-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M4 21h16"></path>
+                              <path d="M6 21V5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v16"></path>
+                              <path d="M9 8h2"></path>
+                              <path d="M13 8h2"></path>
+                              <path d="M9 12h2"></path>
+                              <path d="M13 12h2"></path>
+                              <path d="M9 16h2"></path>
+                              <path d="M13 16h2"></path>
+                            </svg>
+                          </span>
                           <input
                             name="editorExperienceCompany{{ index }}"
                             [(ngModel)]="experience.companyOrOrganization"
@@ -189,21 +236,40 @@
                       <label class="builder-field icon-field compact">
                         <span>Start</span>
                         <div class="field-input-shell">
-                          <span class="field-leading-icon" aria-hidden="true">□</span>
+                          <span class="field-leading-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                              <path d="M8 3v4"></path>
+                              <path d="M16 3v4"></path>
+                              <path d="M4 10h16"></path>
+                            </svg>
+                          </span>
                           <input name="editorExperienceStart{{ index }}" [(ngModel)]="experience.startDate" placeholder="2024" />
                         </div>
                       </label>
                       <label class="builder-field icon-field compact">
                         <span>End</span>
                         <div class="field-input-shell">
-                          <span class="field-leading-icon" aria-hidden="true">□</span>
+                          <span class="field-leading-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                              <path d="M8 3v4"></path>
+                              <path d="M16 3v4"></path>
+                              <path d="M4 10h16"></path>
+                            </svg>
+                          </span>
                           <input name="editorExperienceEnd{{ index }}" [(ngModel)]="experience.endDate" placeholder="2026" />
                         </div>
                       </label>
                       <label class="builder-field icon-field">
                         <span>Location</span>
                         <div class="field-input-shell">
-                          <span class="field-leading-icon" aria-hidden="true">⌖</span>
+                          <span class="field-leading-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                              <path d="M12 21s6-5.2 6-11a6 6 0 0 0-12 0c0 5.8 6 11 6 11z"></path>
+                              <circle cx="12" cy="10" r="2.2"></circle>
+                            </svg>
+                          </span>
                           <input name="editorExperienceLocation{{ index }}" [(ngModel)]="experience.location" placeholder="Location" />
                         </div>
                       </label>
@@ -211,7 +277,12 @@
 
                     <div class="experience-notes">
                       <button type="button" class="ai-button">
-                        <span class="sparkle-icon" aria-hidden="true">✦</span>
+                        <span class="sparkle-icon" aria-hidden="true">
+                          <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path>
+                            <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"></path>
+                          </svg>
+                        </span>
                         Improve with AI
                       </button>
                       <label class="builder-field">
@@ -224,6 +295,7 @@
                         ></textarea>
                       </label>
                     </div>
+                    }
                   </article>
                 }
               </div>
