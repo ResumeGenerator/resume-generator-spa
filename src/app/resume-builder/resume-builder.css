@@ -379,6 +379,11 @@
   background: #fff;
 }
 
+.experience-list {
+  display: grid;
+  gap: 22px;
+}
+
 .experience-card-header,
 .experience-card header {
   display: flex;

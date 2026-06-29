@@ -144,81 +144,91 @@
           }
 
           @case ('experience') {
-            @if (primaryExperience(); as experience) {
-              <article class="experience-card">
-                <header class="experience-card-header">
-                  <span class="drag-handle" aria-hidden="true"></span>
-                  <strong>{{ experience.role || 'Work experience' }}</strong>
-                  <button type="button" class="icon-button" aria-label="Collapse work experience">
-                    <span aria-hidden="true">⌃</span>
-                  </button>
-                  <button
-                    type="button"
-                    class="icon-button"
-                    aria-label="Delete work experience entry"
-                    (click)="removeWorkExperience(0)"
-                  >
-                    <span aria-hidden="true">⌫</span>
-                  </button>
-                </header>
+            @if (editWorkExperience.length > 0) {
+              <div class="experience-list">
+                @for (experience of editWorkExperience; track $index; let index = $index) {
+                  <article class="experience-card">
+                    <header class="experience-card-header">
+                      <span class="drag-handle" aria-hidden="true"></span>
+                      <strong>{{ experience.role || 'Work experience' }}</strong>
+                      <button type="button" class="icon-button" aria-label="Collapse work experience">
+                        <span aria-hidden="true">⌃</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-button"
+                        aria-label="Delete work experience entry"
+                        (click)="removeWorkExperience(index)"
+                      >
+                        <span aria-hidden="true">⌫</span>
+                      </button>
+                    </header>
 
-                <div class="experience-field-grid">
-                  <label class="builder-field icon-field">
-                    <span>Job title</span>
-                    <div class="field-input-shell">
-                      <span class="field-leading-icon" aria-hidden="true">▣</span>
-                      <input name="editorExperienceRole" [(ngModel)]="experience.role" placeholder="Job title" />
+                    <div class="experience-field-grid">
+                      <label class="builder-field icon-field">
+                        <span>Job title</span>
+                        <div class="field-input-shell">
+                          <span class="field-leading-icon" aria-hidden="true">▣</span>
+                          <input name="editorExperienceRole{{ index }}" [(ngModel)]="experience.role" placeholder="Job title" />
+                        </div>
+                      </label>
+                      <label class="builder-field icon-field">
+                        <span>Company</span>
+                        <div class="field-input-shell">
+                          <span class="field-leading-icon" aria-hidden="true">▦</span>
+                          <input
+                            name="editorExperienceCompany{{ index }}"
+                            [(ngModel)]="experience.companyOrOrganization"
+                            placeholder="Company"
+                          />
+                        </div>
+                      </label>
                     </div>
-                  </label>
-                  <label class="builder-field icon-field">
-                    <span>Company</span>
-                    <div class="field-input-shell">
-                      <span class="field-leading-icon" aria-hidden="true">▦</span>
-                      <input name="editorExperienceCompany" [(ngModel)]="experience.companyOrOrganization" placeholder="Company" />
-                    </div>
-                  </label>
-                </div>
 
-                <div class="experience-meta-grid">
-                  <label class="builder-field icon-field compact">
-                    <span>Start</span>
-                    <div class="field-input-shell">
-                      <span class="field-leading-icon" aria-hidden="true">□</span>
-                      <input name="editorExperienceStart" [(ngModel)]="experience.startDate" placeholder="2024" />
+                    <div class="experience-meta-grid">
+                      <label class="builder-field icon-field compact">
+                        <span>Start</span>
+                        <div class="field-input-shell">
+                          <span class="field-leading-icon" aria-hidden="true">□</span>
+                          <input name="editorExperienceStart{{ index }}" [(ngModel)]="experience.startDate" placeholder="2024" />
+                        </div>
+                      </label>
+                      <label class="builder-field icon-field compact">
+                        <span>End</span>
+                        <div class="field-input-shell">
+                          <span class="field-leading-icon" aria-hidden="true">□</span>
+                          <input name="editorExperienceEnd{{ index }}" [(ngModel)]="experience.endDate" placeholder="2026" />
+                        </div>
+                      </label>
+                      <label class="builder-field icon-field">
+                        <span>Location</span>
+                        <div class="field-input-shell">
+                          <span class="field-leading-icon" aria-hidden="true">⌖</span>
+                          <input name="editorExperienceLocation{{ index }}" [(ngModel)]="experience.location" placeholder="Location" />
+                        </div>
+                      </label>
                     </div>
-                  </label>
-                  <label class="builder-field icon-field compact">
-                    <span>End</span>
-                    <div class="field-input-shell">
-                      <span class="field-leading-icon" aria-hidden="true">□</span>
-                      <input name="editorExperienceEnd" [(ngModel)]="experience.endDate" placeholder="2026" />
-                    </div>
-                  </label>
-                  <label class="builder-field icon-field">
-                    <span>Location</span>
-                    <div class="field-input-shell">
-                      <span class="field-leading-icon" aria-hidden="true">⌖</span>
-                      <input name="editorExperienceLocation" [(ngModel)]="experience.location" placeholder="Location" />
-                    </div>
-                  </label>
-                </div>
 
-                <div class="experience-notes">
-                  <button type="button" class="ai-button">
-                    <span class="sparkle-icon" aria-hidden="true">✦</span>
-                    Improve with AI
-                  </button>
-                  <label class="builder-field">
-                    <span class="sr-only">Responsibilities</span>
-                    <textarea
-                      name="editorExperienceResponsibilities"
-                      rows="8"
-                      [(ngModel)]="experience.responsibilities"
-                      aria-label="Responsibilities"
-                    ></textarea>
-                  </label>
-                </div>
-              </article>
+                    <div class="experience-notes">
+                      <button type="button" class="ai-button">
+                        <span class="sparkle-icon" aria-hidden="true">✦</span>
+                        Improve with AI
+                      </button>
+                      <label class="builder-field">
+                        <span class="sr-only">Responsibilities</span>
+                        <textarea
+                          name="editorExperienceResponsibilities{{ index }}"
+                          rows="8"
+                          [(ngModel)]="experience.responsibilities"
+                          aria-label="Responsibilities"
+                        ></textarea>
+                      </label>
+                    </div>
+                  </article>
+                }
+              </div>
+
+              <button type="button" class="add-wide" (click)="addWorkExperience()">Add work experience</button>
             } @else {
               <button type="button" class="add-wide" (click)="addWorkExperience()">Add work experience</button>
             }
