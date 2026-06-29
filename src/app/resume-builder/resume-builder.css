@@ -207,10 +207,39 @@
 
 .editor-icons {
   display: inline-flex;
-  gap: 26px;
+  align-items: center;
+  gap: 18px;
   color: #777;
+}
+
+.icon-button {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #71717a;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: #f0f0f0;
+  color: #17181f;
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.icon-button span {
   font-size: 1.8rem;
   font-weight: 900;
+  line-height: 1;
 }
 
 .editor-scroll {
@@ -236,7 +265,7 @@
   min-width: 0;
 }
 
-.builder-field span {
+.builder-field > span {
   color: #76777d;
   font-size: 1rem;
   font-weight: 500;
@@ -271,6 +300,47 @@
   outline: 3px solid rgba(22, 119, 255, 0.14);
 }
 
+.field-input-shell {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+  min-height: 84px;
+  border: 1px solid #d6d6d6;
+  border-radius: 18px;
+  padding: 22px 18px 12px;
+  background: #fff;
+}
+
+.field-input-shell:focus-within {
+  border-color: #1677ff;
+  outline: 3px solid rgba(22, 119, 255, 0.14);
+}
+
+.field-input-shell input {
+  min-width: 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.field-input-shell input:focus {
+  border-color: transparent;
+  outline: 0;
+}
+
+.field-leading-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #8a8c91;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
 .photo-button {
   display: inline-flex;
   align-items: center;
@@ -302,36 +372,76 @@
 
 .experience-card {
   display: grid;
-  gap: 22px;
-  padding: 24px;
+  gap: 28px;
+  padding: 28px 24px 34px;
   border: 1px solid #d6d6d6;
-  border-radius: 18px;
+  border-radius: 20px;
   background: #fff;
 }
 
+.experience-card-header,
 .experience-card header {
   display: flex;
   align-items: center;
   gap: 18px;
 }
 
+.experience-card-header strong,
 .experience-card header strong {
   flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
   font-size: 1.45rem;
-}
-
-.experience-card header button {
-  border: 0;
-  background: transparent;
-  color: #9b9b9b;
-  font: inherit;
-  font-size: 1.4rem;
-  cursor: pointer;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .drag-handle {
-  color: #999;
-  letter-spacing: 2px;
+  width: 28px;
+  height: 34px;
+  flex: 0 0 auto;
+  color: #9a9a9a;
+  background-image: radial-gradient(currentColor 2px, transparent 2px);
+  background-position: 0 0;
+  background-size: 10px 10px;
+}
+
+.experience-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.experience-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(98px, 0.66fr) minmax(98px, 0.66fr) minmax(170px, 1.4fr);
+  gap: 24px;
+}
+
+.experience-notes {
+  position: relative;
+  overflow: hidden;
+  min-height: 300px;
+  border: 1px solid #d6d6d6;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.experience-notes .builder-field textarea {
+  min-height: 298px;
+  border: 0;
+  border-radius: 0;
+  padding: 78px 22px 24px;
+  color: #5f6067;
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.experience-notes .builder-field textarea:focus {
+  border-color: transparent;
+  outline: 0;
 }
 
 .ai-button,
@@ -347,6 +457,38 @@
   font: inherit;
   font-weight: 900;
   cursor: pointer;
+}
+
+.ai-button {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+}
+
+.sparkle-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+  color: #111827;
+  font-size: 1.6rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .suggestion-row {
@@ -578,6 +720,11 @@ button:disabled {
   }
 
   .field-grid.two {
+    grid-template-columns: 1fr;
+  }
+
+  .experience-field-grid,
+  .experience-meta-grid {
     grid-template-columns: 1fr;
   }
 
