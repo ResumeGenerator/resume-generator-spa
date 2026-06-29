@@ -36,6 +36,12 @@ interface WorkExperienceEditItem {
   achievements: string;
 }
 
+interface RenderedTextBlock {
+  text: string;
+  tagName: string;
+  isBullet: boolean;
+}
+
 interface EducationEditItem {
   degree: string;
   majorOrFieldOfStudy: string;
@@ -490,8 +496,13 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       .pipe(finalize(() => this.previewState.update((state) => (state === 'loading' ? 'idle' : state))))
       .subscribe({
         next: (response) => {
+          const activeTemplate = response.templates[0];
+
           this.previewResponse.set(response);
-          this.populateEditFormFromPreviewData(response.data ?? response.templates[0]?.data);
+          this.populateEditFormFromPreviewData(
+            response.data ?? activeTemplate?.data,
+            response.html || activeTemplate?.html || '',
+          );
           this.activeTemplateIndex.set(0);
           this.previewState.set('success');
         },
@@ -1070,20 +1081,21 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     `;
   }
 
-  private populateEditFormFromPreviewData(value: unknown): void {
+  private populateEditFormFromPreviewData(value: unknown, previewHtml = ''): void {
     const resume = this.asResumeDocument(value);
 
     if (resume) {
       this.editingResume.set(resume);
       this.populateEditForm(resume);
-      return;
+    } else {
+      const renderedData = this.resolveRenderedProfileData(value);
+
+      if (renderedData) {
+        this.populateRenderedEditForm(renderedData, null);
+      }
     }
 
-    const renderedData = this.resolveRenderedProfileData(value);
-
-    if (renderedData) {
-      this.populateRenderedEditForm(renderedData, null);
-    }
+    this.populateWorkExperienceFromPreviewHtml(previewHtml);
   }
 
   private asResumeDocument(value: unknown): ResumeDocumentResponse | null {
@@ -1279,6 +1291,246 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       issuer: this.asString(item['institution']) || this.asString(item['issuer']),
       year: this.asString(item['end']) || this.asEditableNumber(item['year']),
     }));
+  }
+
+  private populateWorkExperienceFromPreviewHtml(previewHtml: string): void {
+    if (this.hasUsableWorkExperience() || !previewHtml.trim()) {
+      return;
+    }
+
+    const extractedItems = this.extractRenderedExperienceFromHtml(previewHtml);
+
+    if (extractedItems.length) {
+      this.editWorkExperience = extractedItems;
+    }
+  }
+
+  private hasUsableWorkExperience(): boolean {
+    return this.editWorkExperience.some((item) =>
+      Boolean(
+        item.companyOrOrganization.trim() ||
+          item.role.trim() ||
+          item.location.trim() ||
+          item.responsibilities.trim() ||
+          item.achievements.trim(),
+      ),
+    );
+  }
+
+  private extractRenderedExperienceFromHtml(html: string): WorkExperienceEditItem[] {
+    const parser = new DOMParser();
+    const documentNode = parser.parseFromString(html, 'text/html');
+    const blocks = this.collectRenderedTextBlocks(documentNode.body);
+    const startIndex = blocks.findIndex((block) => this.isRenderedExperienceHeading(block.text));
+
+    if (startIndex < 0) {
+      return [];
+    }
+
+    const sectionBlocks: RenderedTextBlock[] = [];
+
+    for (const block of blocks.slice(startIndex + 1)) {
+      if (this.isRenderedSectionBoundary(block)) {
+        break;
+      }
+
+      if (block.text) {
+        sectionBlocks.push(block);
+      }
+    }
+
+    return this.parseExperienceBlocks(sectionBlocks);
+  }
+
+  private collectRenderedTextBlocks(root: Element): RenderedTextBlock[] {
+    const blocks: RenderedTextBlock[] = [];
+    const visit = (element: Element): void => {
+      const tagName = element.tagName.toUpperCase();
+
+      if (tagName === 'SCRIPT' || tagName === 'STYLE') {
+        return;
+      }
+
+      const text = this.cleanRenderedText(element.textContent || '');
+      const isBullet = tagName === 'LI';
+      const isHeading = /^H[1-6]$/.test(tagName);
+      const hasBlockChildren = Array.from(element.children).some((child) => this.isRenderedBlockElement(child));
+
+      if ((isBullet || isHeading || !hasBlockChildren) && text) {
+        blocks.push({
+          text,
+          tagName,
+          isBullet,
+        });
+        return;
+      }
+
+      Array.from(element.children).forEach((child) => visit(child));
+    };
+
+    Array.from(root.children).forEach((child) => visit(child));
+    return blocks;
+  }
+
+  private isRenderedBlockElement(element: Element): boolean {
+    return /^(ARTICLE|ASIDE|DD|DIV|DL|DT|FOOTER|H[1-6]|HEADER|LI|MAIN|OL|P|SECTION|TABLE|TBODY|TD|TH|THEAD|TR|UL)$/i.test(
+      element.tagName,
+    );
+  }
+
+  private isRenderedExperienceHeading(value: string): boolean {
+    return this.renderedExperienceAliases().some(
+      (alias) => this.normalizeSectionKey(value) === this.normalizeSectionKey(alias),
+    );
+  }
+
+  private isRenderedSectionBoundary(block: RenderedTextBlock): boolean {
+    const key = this.normalizeSectionKey(block.text);
+    const boundaryKeys = [
+      'education',
+      'skills',
+      'technicalskills',
+      'coreskills',
+      'summary',
+      'professionalsummary',
+      'projects',
+      'certifications',
+      'courses',
+      'licenses',
+      'contact',
+      'contacts',
+    ];
+
+    return block.tagName.match(/^H[1-6]$/) !== null && boundaryKeys.includes(key);
+  }
+
+  private parseExperienceBlocks(blocks: RenderedTextBlock[]): WorkExperienceEditItem[] {
+    const items: WorkExperienceEditItem[] = [];
+    let current: WorkExperienceEditItem | null = null;
+
+    const pushCurrent = (): void => {
+      if (current && this.isUsableWorkExperienceItem(current)) {
+        items.push(current);
+      }
+    };
+
+    blocks.forEach((block) => {
+      const parsedLine = this.parseExperienceLine(block.text);
+      const line = parsedLine.text;
+
+      if (!line && !parsedLine.startDate && !parsedLine.endDate) {
+        return;
+      }
+
+      if (!current) {
+        current = this.emptyWorkExperienceItem();
+      }
+
+      if (parsedLine.startDate || parsedLine.endDate) {
+        current.startDate ||= parsedLine.startDate;
+        current.endDate ||= parsedLine.endDate;
+      }
+
+      if (!line) {
+        return;
+      }
+
+      if (block.isBullet || this.shouldTreatRenderedLineAsBullet(line, current)) {
+        current.responsibilities = this.appendEditableLine(current.responsibilities, line);
+        return;
+      }
+
+      if (current.role && current.companyOrOrganization && current.responsibilities) {
+        pushCurrent();
+        current = this.emptyWorkExperienceItem();
+      }
+
+      if (!current.role) {
+        current.role = line;
+        return;
+      }
+
+      if (!current.companyOrOrganization) {
+        const organization = this.parseRenderedOrganizationLine(line);
+        current.companyOrOrganization = organization.company;
+        current.location = organization.location;
+        return;
+      }
+
+      current.responsibilities = this.appendEditableLine(current.responsibilities, line);
+    });
+
+    pushCurrent();
+    return items;
+  }
+
+  private parseExperienceLine(value: string): { text: string; startDate: string; endDate: string } {
+    const datePattern =
+      /((?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s*'?\d{2,4}|\d{4}|present|current)\s*(?:-|–|—|to)\s*((?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s*'?\d{2,4}|\d{4}|present|current)?/i;
+    const match = value.match(datePattern);
+
+    if (!match) {
+      return {
+        text: this.cleanRenderedText(value.replace(/^[•*-]\s*/, '')),
+        startDate: '',
+        endDate: '',
+      };
+    }
+
+    return {
+      text: this.cleanRenderedText(value.replace(match[0], '').replace(/^[•*-]\s*/, '')),
+      startDate: this.cleanRenderedText(match[1] || ''),
+      endDate: this.cleanRenderedText(match[2] || ''),
+    };
+  }
+
+  private parseRenderedOrganizationLine(value: string): { company: string; location: string } {
+    const [company, ...locationParts] = value.split(/\s+-\s+/);
+
+    return {
+      company: this.cleanRenderedText(company || value),
+      location: this.cleanRenderedText(locationParts.join(' - ')),
+    };
+  }
+
+  private shouldTreatRenderedLineAsBullet(line: string, current: WorkExperienceEditItem): boolean {
+    return Boolean(current.role && current.companyOrOrganization && (line.length > 60 || current.responsibilities));
+  }
+
+  private appendEditableLine(value: string, line: string): string {
+    const cleanedLine = this.cleanRenderedText(line);
+
+    if (!cleanedLine) {
+      return value;
+    }
+
+    return value ? `${value}\n${cleanedLine}` : cleanedLine;
+  }
+
+  private emptyWorkExperienceItem(): WorkExperienceEditItem {
+    return {
+      companyOrOrganization: '',
+      role: '',
+      location: '',
+      startDate: '',
+      endDate: '',
+      responsibilities: '',
+      achievements: '',
+    };
+  }
+
+  private isUsableWorkExperienceItem(item: WorkExperienceEditItem): boolean {
+    return Boolean(
+      item.role.trim() ||
+        item.companyOrOrganization.trim() ||
+        item.location.trim() ||
+        item.responsibilities.trim() ||
+        item.achievements.trim(),
+    );
+  }
+
+  private cleanRenderedText(value: string): string {
+    return value.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   private findRenderedSection(data: Record<string, unknown>, ...types: string[]): Record<string, unknown> | null {
