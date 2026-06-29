@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, forkJoin, map, of } from 'rxjs';
 
 declare global {
   interface Window {
@@ -117,7 +117,6 @@ export class ResumeApi {
   private readonly parserResumesUrl = `${this.parserApiUrl}/api/resumes`;
   private readonly templateResumesUrl = `${this.templateApiUrl}/api/Resumes`;
   private readonly parseResumeUrl = `${this.parserApiUrl}/api/resumes/parse`;
-  private readonly previewResumeUrl = `${this.templateApiUrl}/api/Resumes/preview`;
   private readonly pdfResumeUrl = `${this.templateApiUrl}/api/Resumes/pdf`;
   private readonly wordResumeUrl = `${this.templateApiUrl}/api/Resumes/word`;
 
@@ -143,9 +142,7 @@ export class ResumeApi {
   }
 
   getTemplateResume(resumeId: string): Observable<ResumeDocumentResponse> {
-    return this.http
-      .get<unknown>(`${this.templateResumesUrl}/${resumeId}`)
-      .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
+    return this.getResume(resumeId);
   }
 
   saveEditedResume(resumeId: string, request: ResumeEditRequest): Observable<ResumeDocumentResponse> {
@@ -164,9 +161,23 @@ export class ResumeApi {
   }
 
   previewResume(request: ResumePreviewRequest): Observable<ResumePreviewResponse> {
-    return this.http
-      .post<ResumePreviewResponse>(this.previewResumeUrl, request)
-      .pipe(map((response) => this.normalizePreviewResponse(response, request)));
+    const templateIds = this.resolvePreviewTemplateIds(request);
+
+    if (templateIds.length === 0) {
+      return of({
+        resumeId: request.resumeId,
+        templates: [],
+      });
+    }
+
+    return forkJoin(templateIds.map((templateId) => this.getResumeTemplateHtml(request.resumeId, templateId))).pipe(
+      map((templates) => ({
+        resumeId: request.resumeId,
+        templateId: templates[0]?.templateId,
+        html: templates[0]?.html,
+        templates,
+      })),
+    );
   }
 
   saveRenderedResume(resumeId: string, request: RenderedResumeSaveRequest): Observable<RenderedResumeSaveResponse> {
@@ -230,6 +241,38 @@ export class ResumeApi {
       templateId,
       templates,
     };
+  }
+
+  private getResumeTemplateHtml(resumeId: string, templateId: string): Observable<ResumePreviewTemplate> {
+    return this.http
+      .get(`${this.templateResumesUrl}/${encodeURIComponent(resumeId)}/html`, {
+        params: {
+          templateId,
+        },
+        responseType: 'text',
+      })
+      .pipe(
+        map((html) => ({
+          templateId,
+          html,
+        })),
+      );
+  }
+
+  private resolvePreviewTemplateIds(request: ResumePreviewRequest): string[] {
+    const seen = new Set<string>();
+    const templateIds = [request.templateId, ...request.templateIds]
+      .map((templateId) => templateId?.trim() || '')
+      .filter(Boolean);
+
+    return templateIds.filter((templateId) => {
+      if (seen.has(templateId)) {
+        return false;
+      }
+
+      seen.add(templateId);
+      return true;
+    });
   }
 
   private normalizeSavedResumesResponse(value: unknown, limit: number, skip: number): SavedResumesResponse {
