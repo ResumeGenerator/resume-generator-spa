@@ -155,7 +155,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly activeStepHeading = computed(() => this.resolveStepHeading(this.activeEditorStep()));
   protected readonly activeStepDescription = computed(() => this.resolveStepDescription(this.activeEditorStep()));
   protected readonly suggestionText = computed(() => this.resolveSuggestionText(this.activeEditorStep()));
-  protected readonly primaryExperience = computed(() => this.editWorkExperience[0]);
   protected readonly currentResumePreview = computed(() => {
     const template = this.previewResponse()?.templates[this.activeTemplateIndex()];
     return template?.html ? this.asPreviewDocument(template.html) : this.buildFallbackPreviewHtml();
@@ -340,6 +339,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       'Performance tuning',
       'Requirement analysis',
     ].filter((skill) => !existing.has(skill.toLowerCase()));
+  }
+
+  protected primaryExperience(): WorkExperienceEditItem | undefined {
+    return this.editWorkExperience[0];
   }
 
   protected addSuggestedSkill(skill: string): void {
