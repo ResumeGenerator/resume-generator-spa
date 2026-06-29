@@ -875,7 +875,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   private buildRenderedSections(baseData: Record<string, unknown>, summary: string): Record<string, unknown>[] {
     const existingSections = this.asRecordArray(baseData['sections']);
     const existingExperienceItems = this.asRecordArray(
-      this.findRenderedSectionIn(existingSections, 'experience')?.['items'],
+      this.findRenderedSectionIn(existingSections, ...this.renderedExperienceAliases())?.['items'],
     );
     const existingEducationItems = this.asRecordArray(this.findRenderedSectionIn(existingSections, 'education')?.['items']);
     const existingSkillItems = this.asRecordArray(
@@ -895,7 +895,19 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       name: skill,
       level: this.asString(this.findRenderedSkillItem(existingSkillItems, skill)['level']),
     }));
-    const knownTypes = new Set(['summary', 'experience', 'education', 'skill', 'skills', 'course', 'courses', 'certification', 'certifications']);
+    const knownTypes = new Set(
+      [
+        'summary',
+        ...this.renderedExperienceAliases(),
+        'education',
+        'skill',
+        'skills',
+        'course',
+        'courses',
+        'certification',
+        'certifications',
+      ].map((type) => this.normalizeSectionKey(type)),
+    );
 
     return [
       this.mergeRenderedSection(existingSections, ['summary'], {
@@ -903,7 +915,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         type: 'summary',
         items: summary,
       }),
-      this.mergeRenderedSection(existingSections, ['experience'], {
+      this.mergeRenderedSection(existingSections, this.renderedExperienceAliases(), {
         title: 'Work experience',
         type: 'experience',
         items: this.editWorkExperience.map((experience, index) => {
@@ -959,8 +971,17 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           end: certification.year.trim(),
         })),
       }),
-      ...existingSections.filter((section) => !knownTypes.has(this.asString(section['type']).toLowerCase())),
+      ...existingSections.filter((section) => !this.isKnownRenderedSection(section, knownTypes)),
     ];
+  }
+
+  private isKnownRenderedSection(section: Record<string, unknown>, knownTypes: Set<string>): boolean {
+    return [
+      this.asString(section['type']),
+      this.asString(section['title']),
+      this.asString(section['name']),
+      this.asString(section['heading']),
+    ].some((value) => knownTypes.has(this.normalizeSectionKey(value)));
   }
 
   private mergeRenderedSection(
@@ -1182,7 +1203,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   private populateRenderedEditForm(data: Record<string, unknown>, resume: ResumeDocumentResponse | null): void {
     const source = this.asRecord(resume?.source);
     const summarySection = this.findRenderedSection(data, 'summary');
-    const experienceSection = this.findRenderedSection(data, 'experience');
+    const experienceSection = this.findRenderedSection(data, ...this.renderedExperienceAliases());
     const educationSection = this.findRenderedSection(data, 'education');
     const skillSection = this.findRenderedSection(data, 'skill', 'skills');
     const certificationSection = this.findRenderedSection(data, 'course', 'courses', 'certification', 'certifications');
@@ -1212,16 +1233,36 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editMethodologies = '';
     this.editSoftSkills = '';
     this.editLanguages = '';
-    this.editWorkExperience = this.asRecordArray(experienceSection?.['items']).map((item) => {
-      const responsibilities = this.asEditableText(item['responsibilities']);
-      const achievements = this.asEditableText(item['achievements']);
+    this.editWorkExperience = this.resolveRenderedExperienceItems(data, experienceSection).map((item) => {
+      const responsibilities =
+        this.asEditableText(item['responsibilities']) ||
+        this.asEditableText(item['responsibility']) ||
+        this.asEditableText(item['description']) ||
+        this.asEditableText(item['details']) ||
+        this.asEditableText(item['bullets']) ||
+        this.asEditableText(item['highlights']);
+      const achievements =
+        this.asEditableText(item['achievements']) ||
+        this.asEditableText(item['achievement']) ||
+        this.asEditableText(item['accomplishments']) ||
+        this.asEditableText(item['accomplishment']);
 
       return {
-        companyOrOrganization: this.asString(item['company']) || this.asString(item['companyOrOrganization']),
-        role: this.asString(item['position']) || this.asString(item['role']),
+        companyOrOrganization:
+          this.asString(item['company']) ||
+          this.asString(item['companyOrOrganization']) ||
+          this.asString(item['employer']) ||
+          this.asString(item['organization']) ||
+          this.asString(item['organisation']),
+        role:
+          this.asString(item['position']) ||
+          this.asString(item['role']) ||
+          this.asString(item['jobTitle']) ||
+          this.asString(item['title']) ||
+          this.asString(item['designation']),
         location: this.asString(item['location']),
-        startDate: this.asString(item['start']) || this.asString(item['startDate']),
-        endDate: this.asString(item['end']) || this.asString(item['endDate']),
+        startDate: this.asString(item['start']) || this.asString(item['startDate']) || this.asString(item['from']),
+        endDate: this.asString(item['end']) || this.asString(item['endDate']) || this.asString(item['to']),
         responsibilities: responsibilities || achievements,
         achievements: responsibilities ? achievements : '',
       };
@@ -1245,11 +1286,92 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   private findRenderedSectionIn(sections: Record<string, unknown>[], ...types: string[]): Record<string, unknown> | null {
-    const normalizedTypes = new Set(types.map((type) => type.toLowerCase()));
+    const normalizedTypes = new Set(types.map((type) => this.normalizeSectionKey(type)));
 
     return (
-      sections.find((section) => normalizedTypes.has(this.asString(section['type']).toLowerCase())) ?? null
+      sections.find((section) =>
+        [
+          this.asString(section['type']),
+          this.asString(section['title']),
+          this.asString(section['name']),
+          this.asString(section['heading']),
+        ].some((value) => normalizedTypes.has(this.normalizeSectionKey(value))),
+      ) ?? null
     );
+  }
+
+  private renderedExperienceAliases(): string[] {
+    return [
+      'experience',
+      'experiences',
+      'workExperience',
+      'work_experience',
+      'work-experience',
+      'work experience',
+      'professionalExperience',
+      'professional_experience',
+      'professional-experience',
+      'professional experience',
+      'professionalExperienceSection',
+      'employment',
+      'employmentHistory',
+      'employment_history',
+      'employment-history',
+      'employment history',
+      'careerHistory',
+      'career_history',
+      'career-history',
+      'career history',
+    ];
+  }
+
+  private resolveRenderedExperienceItems(
+    data: Record<string, unknown>,
+    section: Record<string, unknown> | null,
+  ): Record<string, unknown>[] {
+    const sectionItems = this.resolveRenderedItems(section);
+
+    if (sectionItems.length) {
+      return sectionItems;
+    }
+
+    for (const key of this.renderedExperienceAliases()) {
+      const items = this.resolveRenderedItems(data[key]);
+
+      if (items.length) {
+        return items;
+      }
+    }
+
+    return [];
+  }
+
+  private resolveRenderedItems(value: unknown): Record<string, unknown>[] {
+    const directItems = this.asRecordArray(value);
+
+    if (directItems.length) {
+      return directItems;
+    }
+
+    const record = this.asRecord(value);
+
+    return (
+      this.asRecordArray(record['items']).length
+        ? this.asRecordArray(record['items'])
+        : this.asRecordArray(record['entries']).length
+          ? this.asRecordArray(record['entries'])
+          : this.asRecordArray(record['children']).length
+            ? this.asRecordArray(record['children'])
+            : this.asRecordArray(record['values']).length
+              ? this.asRecordArray(record['values'])
+              : this.asRecordArray(record['content']).length
+                ? this.asRecordArray(record['content'])
+                : this.asRecordArray(record['list'])
+    );
+  }
+
+  private normalizeSectionKey(value: string): string {
+    return value.trim().replace(/[^a-z0-9]+/gi, '').toLowerCase();
   }
 
   private asEditableText(value: unknown): string {
