@@ -467,6 +467,10 @@
   margin: 0 0 12px;
 }
 
+.experience-notes.has-ai-suggestion .work-summary-field {
+  display: none;
+}
+
 .ai-button,
 .add-wide,
 .suggestion-row button {

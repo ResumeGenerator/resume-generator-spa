@@ -133,6 +133,11 @@ describe('ResumeBuilder', () => {
       'Improved production API ownership for resume workflows.',
     );
     expect(fixture.nativeElement.querySelector('.ai-suggestion-card')).toBeNull();
+
+    const updatedTextarea = fixture.nativeElement.querySelector(
+      'textarea[aria-label="Work summary"]',
+    ) as HTMLTextAreaElement | null;
+    expect(updatedTextarea?.value).toBe('Improved production API ownership for resume workflows.');
     expect(component.pendingAiWorkSummaryIndex()).toBeNull();
     expect(component.activeEditorStep()).toBe('experience');
   });

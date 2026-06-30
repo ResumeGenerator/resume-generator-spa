@@ -410,18 +410,28 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected applyWorkSummarySuggestion(index: number): void {
     const suggestion = this.aiWorkSummarySuggestion();
-    const experience = this.editWorkExperience[index];
 
-    if (!experience || suggestion?.index !== index) {
+    if (!this.editWorkExperience[index] || suggestion?.index !== index) {
       return;
     }
 
-    experience.responsibilities = suggestion.text;
+    this.updateWorkExperienceResponsibilities(index, suggestion.text);
     this.aiWorkSummarySuggestion.set(null);
     this.pendingAiWorkSummaryIndex.set(null);
     this.aiEnhanceErrorMessage.set(null);
     this.aiEnhanceState.set('success');
     this.savedIndicator.set(false);
+  }
+
+  protected updateWorkExperienceResponsibilities(index: number, responsibilities: string): void {
+    this.editWorkExperience = this.editWorkExperience.map((item, itemIndex) =>
+      itemIndex === index
+        ? {
+            ...item,
+            responsibilities,
+          }
+        : item,
+    );
   }
 
   protected removeSuggestedSkill(skill: string): void {

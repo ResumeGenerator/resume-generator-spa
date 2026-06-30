@@ -351,17 +351,18 @@
                             </button>
                           </div>
                         </section>
-                      } @else {
-                        <label class="builder-field">
-                          <span class="sr-only">Work summary</span>
-                          <textarea
-                            name="editorExperienceResponsibilities{{ index }}"
-                            rows="8"
-                            [(ngModel)]="experience.responsibilities"
-                            aria-label="Work summary"
-                          ></textarea>
-                        </label>
                       }
+                      <label class="builder-field work-summary-field">
+                        <span class="sr-only">Work summary</span>
+                        <textarea
+                          name="editorExperienceResponsibilities{{ index }}"
+                          rows="8"
+                          [ngModel]="experience.responsibilities"
+                          [value]="experience.responsibilities"
+                          (ngModelChange)="updateWorkExperienceResponsibilities(index, $event)"
+                          aria-label="Work summary"
+                        ></textarea>
+                      </label>
                     </div>
                     }
                   </article>
