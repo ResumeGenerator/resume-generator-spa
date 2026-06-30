@@ -156,10 +156,6 @@
           </div>
         }
 
-        @if (errorMessage) {
-          <p id="login-error" class="login-note error-note" role="alert">{{ errorMessage }}</p>
-        }
-
         <button
           type="submit"
           class="submit-button"
@@ -181,6 +177,17 @@
             }}
           </span>
         </button>
+
+        @if (errorMessage) {
+          <div id="login-error" class="login-note error-note" role="alert" aria-live="assertive">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+              <path d="M10.3 4.3 2.8 17.2A2 2 0 0 0 4.5 20h15a2 2 0 0 0 1.7-2.8L13.7 4.3a2 2 0 0 0-3.4 0Z" />
+            </svg>
+            <span>{{ errorMessage }}</span>
+          </div>
+        }
       </form>
 
       <p class="signup-copy">

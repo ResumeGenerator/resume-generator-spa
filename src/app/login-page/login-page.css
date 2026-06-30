@@ -373,6 +373,9 @@
 }
 
 .login-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   margin: 0;
   padding: 11px 12px;
   border: 1px solid #d8dfff;
@@ -382,6 +385,17 @@
   font-size: 0.9rem;
   font-weight: 650;
   line-height: 1.45;
+}
+
+.login-note svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
 }
 
 .error-note {
