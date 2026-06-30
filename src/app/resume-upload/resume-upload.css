@@ -437,9 +437,7 @@ button:disabled {
 }
 
 .message,
-.empty-state,
-.api-response,
-pre {
+.empty-state {
   margin: 0 24px;
 }
 
@@ -466,36 +464,6 @@ pre {
 .empty-state {
   border: 1px solid var(--theme-border, #e3d8f7);
   background: var(--theme-accent-soft, #fbf8ff);
-}
-
-pre {
-  max-height: 360px;
-  overflow: auto;
-  padding: 16px;
-  border-radius: 8px;
-  background: #241638;
-  color: #f4efff;
-  font-size: 0.84rem;
-  line-height: 1.55;
-  white-space: pre-wrap;
-}
-
-.api-response {
-  border: 1px solid var(--theme-border, #e3d8f7);
-  border-radius: 8px;
-  background: #ffffff;
-}
-
-.api-response summary {
-  padding: 14px 16px;
-  color: var(--theme-heading, #34264d);
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.api-response pre {
-  margin: 0;
-  border-radius: 0 0 8px 8px;
 }
 
 .modal-backdrop {

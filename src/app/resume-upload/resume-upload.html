@@ -87,16 +87,10 @@
         </div>
       }
 
-      @if (parsedResume(); as resume) {
+      @if (parsedResume()) {
         <div class="message success-message">
           <strong>Resume saved successfully</strong>
-          <p>Use the parsed resume id below to request HTML previews.</p>
         </div>
-
-        <details class="api-response">
-          <summary>Parser response</summary>
-          <pre>{{ resume | json }}</pre>
-        </details>
       }
 
       @if (previewState() === 'error') {
@@ -113,15 +107,15 @@
         </div>
       }
 
-      @if (savedResumes().length > 0) {
+      @if (displayedSavedResumes().length > 0) {
         <div class="resume-list">
-          @for (resume of savedResumes(); track resume.id) {
+          @for (resume of displayedSavedResumes(); track resume.id) {
             <article class="resume-row" [class.selected]="selectedSavedResumeId() === resume.id">
               <button
                 type="button"
                 class="resume-thumbnail"
                 (click)="openResumeBuilder(resume.id)"
-                aria-label="Preview {{ resume.candidateName || resume.filename }}"
+                aria-label="Preview {{ resumeCardTitle(resume) }}"
               >
                 <span class="thumb-sidebar"></span>
                 <span class="thumb-line"></span>
@@ -131,10 +125,11 @@
                 <span class="thumb-line"></span>
               </button>
               <button type="button" class="resume-main" (click)="openResumeBuilder(resume.id)">
-                <strong>{{ resume.candidateName || resume.filename }}</strong>
-                <span>{{ resume.currentTitle || 'No current title' }}</span>
-                <small>{{ resume.candidateEmail || resume.filename }}</small>
-                <small>{{ formatDate(resume.createdAt) }}</small>
+                <strong>{{ resumeCardTitle(resume) }}</strong>
+                <span>Filename: {{ resumeCardFilename(resume) }}</span>
+                @if (resumeCardUploadedAt(resume)) {
+                  <small>Uploaded: {{ resumeCardUploadedAt(resume) }}</small>
+                }
               </button>
               <div class="resume-actions">
                 <button
@@ -146,9 +141,9 @@
                   <span aria-hidden="true">O</span>
                   Preview
                 </button>
-                <button type="button" class="history-preview-link" title="Regenerate tailoring" (click)="regenerateSavedResume(resume)">
-                  <span aria-hidden="true">R</span>
-                  Regenerate
+                <button type="button" class="history-preview-link" title="Edit tailoring" (click)="editSavedResume(resume)">
+                  <span aria-hidden="true">E</span>
+                  Edit
                 </button>
               </div>
             </article>

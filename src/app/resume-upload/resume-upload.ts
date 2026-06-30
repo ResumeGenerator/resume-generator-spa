@@ -68,6 +68,32 @@ export class ResumeUpload implements OnInit, OnDestroy {
   protected readonly editSuccessMessage = signal<string | null>(null);
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
+  protected readonly displayedSavedResumes = computed(() => {
+    const parsedResume = this.parsedResumeListItem();
+    const savedResumes = this.savedResumes();
+
+    if (!parsedResume) {
+      return savedResumes;
+    }
+
+    const matchingSavedResumeIndex = savedResumes.findIndex((resume) => resume.id === parsedResume.id);
+
+    if (matchingSavedResumeIndex === -1) {
+      return [parsedResume, ...savedResumes];
+    }
+
+    return savedResumes.map((resume, index) =>
+      index === matchingSavedResumeIndex
+        ? {
+            ...resume,
+            ...parsedResume,
+            filename: parsedResume.filename || resume.filename,
+            createdAt: parsedResume.createdAt || resume.createdAt,
+            updatedAt: parsedResume.updatedAt || resume.updatedAt,
+          }
+        : resume,
+    );
+  });
   private readonly defaultTemplateIds = [
     'modern-minimal',
     'professional-dark-blue',
@@ -507,10 +533,23 @@ export class ResumeUpload implements OnInit, OnDestroy {
     }).format(date);
   }
 
+  protected resumeCardTitle(resume: SavedResume): string {
+    return resume.currentTitle || resume.candidateName || resume.filename;
+  }
+
+  protected resumeCardFilename(resume: SavedResume): string {
+    return resume.filename;
+  }
+
+  protected resumeCardUploadedAt(resume: SavedResume): string {
+    return this.formatDate(resume.createdAt || resume.updatedAt);
+  }
+
   private extractResumeId(response: ParsedResumeResponse): string {
     const directResumeId = this.asString(response['resumeId']);
     const directId = this.asString(response['id']);
     const nestedResume = response['resume'];
+    const dataRecord = this.asRecord(response['data']);
 
     if (directResumeId) {
       return directResumeId;
@@ -521,10 +560,95 @@ export class ResumeUpload implements OnInit, OnDestroy {
     }
 
     if (typeof nestedResume === 'object' && nestedResume !== null) {
-      return this.asString((nestedResume as Record<string, unknown>)['id']) || '';
+      const nestedId = this.asString((nestedResume as Record<string, unknown>)['id']);
+
+      if (nestedId) {
+        return nestedId;
+      }
     }
 
-    return '';
+    return this.asString(dataRecord['resumeId']) || this.asString(dataRecord['id']);
+  }
+
+  private parsedResumeListItem(): SavedResume | null {
+    const response = this.parsedResume();
+
+    if (!response) {
+      return null;
+    }
+
+    const id = this.extractResumeId(response);
+
+    if (!id) {
+      return null;
+    }
+
+    const responseRecord = response as Record<string, unknown>;
+    const dataRecord = this.asRecord(responseRecord['data']);
+    const resumeRecord = this.asRecord(responseRecord['resume']);
+    const profile = this.firstRecord(responseRecord['profile'], dataRecord['profile'], resumeRecord['profile']);
+    const candidateProfile = this.asRecord(profile['candidateProfile']);
+    const renderedData = this.asRecord(profile['data']);
+    const metadata = this.firstRecord(responseRecord['metadata'], dataRecord['metadata'], resumeRecord['metadata']);
+    const source = this.firstRecord(responseRecord['source'], dataRecord['source'], resumeRecord['source']);
+    const filename =
+      this.asString(metadata['filename']) ||
+      this.asString(metadata['fileName']) ||
+      this.asString(responseRecord['fileName']) ||
+      this.asString(dataRecord['fileName']) ||
+      this.asString(source['filename']) ||
+      this.asString(source['fileName']) ||
+      this.selectedFile()?.name ||
+      `${id}.html`;
+
+    return {
+      id,
+      filename,
+      candidateName: this.asString(renderedData['name']) || this.asString(candidateProfile['fullName']),
+      candidateEmail: this.asString(renderedData['email']) || this.asString(candidateProfile['email']),
+      currentTitle:
+        this.asString(renderedData['title']) ||
+        this.asString(candidateProfile['currentTitle']) ||
+        this.asString(candidateProfile['title']) ||
+        this.asString(candidateProfile['professionalHeadline']) ||
+        this.asString(profile['title']),
+      createdAt: this.resolveUploadedAt(responseRecord, dataRecord, resumeRecord, metadata),
+      updatedAt:
+        this.asString(responseRecord['updatedAt']) ||
+        this.asString(dataRecord['updatedAt']) ||
+        this.asString(resumeRecord['updatedAt']),
+    };
+  }
+
+  private firstRecord(...values: unknown[]): Record<string, unknown> {
+    for (const value of values) {
+      const record = this.asRecord(value);
+
+      if (Object.keys(record).length > 0) {
+        return record;
+      }
+    }
+
+    return {};
+  }
+
+  private resolveUploadedAt(
+    responseRecord: Record<string, unknown>,
+    dataRecord: Record<string, unknown>,
+    resumeRecord: Record<string, unknown>,
+    metadata: Record<string, unknown>,
+  ): string {
+    return (
+      this.asString(metadata['uploadedAt']) ||
+      this.asString(metadata['uploadDate']) ||
+      this.asString(metadata['createdAt']) ||
+      this.asString(responseRecord['uploadedAt']) ||
+      this.asString(responseRecord['createdAt']) ||
+      this.asString(dataRecord['uploadedAt']) ||
+      this.asString(dataRecord['createdAt']) ||
+      this.asString(resumeRecord['uploadedAt']) ||
+      this.asString(resumeRecord['createdAt'])
+    );
   }
 
   private startUploadLoader(): void {
