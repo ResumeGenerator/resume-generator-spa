@@ -190,6 +190,47 @@ describe('ResumeApi', () => {
     });
   });
 
+  it('normalizes flat saved resume rows from a paged resumes response', () => {
+    let responseItems: unknown[] = [];
+
+    resumeApi.getTemplateSavedResumes().subscribe((response) => {
+      responseItems = response.items;
+    });
+
+    const request = httpTesting.expectOne(
+      (request) => request.method === 'GET' && request.url === 'https://template.example.test/api/Resumes',
+    );
+
+    request.flush({
+      limit: 100,
+      skip: 0,
+      total: 1,
+      resumes: [
+        {
+          id: '6a4400995be074552b90f4ba',
+          filename: 'Biju_Manayagath_CV.docx',
+          candidateName: 'BIJU MANAYAGATH',
+          candidateEmail: 'bijumanayagath@gmail.com',
+          currentTitle: 'Strategic Senior Software Engineer',
+          createdAt: '2026-06-30T17:44:57.726000Z',
+          updatedAt: '2026-06-30T17:44:57.726000Z',
+        },
+      ],
+    });
+
+    expect(responseItems).toEqual([
+      {
+        id: '6a4400995be074552b90f4ba',
+        filename: 'Biju_Manayagath_CV.docx',
+        candidateName: 'BIJU MANAYAGATH',
+        candidateEmail: 'bijumanayagath@gmail.com',
+        currentTitle: 'Strategic Senior Software Engineer',
+        createdAt: '2026-06-30T17:44:57.726000Z',
+        updatedAt: '2026-06-30T17:44:57.726000Z',
+      },
+    ]);
+  });
+
   it('normalizes edited resume save responses so the new id can be previewed', () => {
     let savedId = '';
 

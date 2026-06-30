@@ -443,17 +443,34 @@ export class ResumeApi {
       return null;
     }
 
-    const candidateName = this.asString(renderedData['name']) || this.asString(candidateProfile['fullName']);
-    const currentTitle = this.asString(renderedData['title']) || this.asString(candidateProfile['currentTitle']);
+    const candidateName =
+      this.asString(record['candidateName']) ||
+      this.asString(record['name']) ||
+      this.asString(renderedData['name']) ||
+      this.asString(candidateProfile['fullName']);
+    const currentTitle =
+      this.asString(record['currentTitle']) ||
+      this.asString(record['title']) ||
+      this.asString(renderedData['title']) ||
+      this.asString(candidateProfile['currentTitle']);
 
     return {
       id,
-      filename: this.asString(metadata['filename']) || `${candidateName || currentTitle || id}.html`,
+      filename:
+        this.asString(record['filename']) ||
+        this.asString(record['fileName']) ||
+        this.asString(metadata['filename']) ||
+        this.asString(metadata['fileName']) ||
+        `${candidateName || currentTitle || id}.html`,
       candidateName,
-      candidateEmail: this.asString(renderedData['email']) || this.asString(candidateProfile['email']),
+      candidateEmail:
+        this.asString(record['candidateEmail']) ||
+        this.asString(record['email']) ||
+        this.asString(renderedData['email']) ||
+        this.asString(candidateProfile['email']),
       currentTitle,
-      createdAt: this.asDateString(record['createdAt']),
-      updatedAt: this.asDateString(record['updatedAt']),
+      createdAt: this.asDateString(record['createdAt']) || this.asDateString(metadata['createdAt']),
+      updatedAt: this.asDateString(record['updatedAt']) || this.asDateString(metadata['updatedAt']),
     };
   }
 
