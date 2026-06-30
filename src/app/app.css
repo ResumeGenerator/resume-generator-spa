@@ -35,11 +35,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(var(--app-container), 100%);
+  width: min(var(--app-container), calc(100% - 40px));
   min-height: 74px;
   gap: 18px;
   margin: 0 auto;
-  padding: 0 20px;
 }
 
 .header-leading {
@@ -283,7 +282,7 @@
 .navigation-menu {
   position: absolute;
   top: calc(100% + 10px);
-  left: 24px;
+  left: 0;
   display: grid;
   gap: 6px;
   min-width: 240px;
@@ -319,7 +318,8 @@
     min-height: auto;
     align-items: stretch;
     flex-direction: column;
-    padding: 16px;
+    width: min(var(--app-container), calc(100% - 32px));
+    padding: 16px 0;
   }
 
   .header-leading {
@@ -355,8 +355,8 @@
   }
 
   .navigation-menu {
-    left: 16px;
-    right: 16px;
+    left: 0;
+    right: 0;
     min-width: 0;
   }
 }

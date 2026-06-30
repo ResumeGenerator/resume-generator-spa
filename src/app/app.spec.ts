@@ -47,7 +47,7 @@ describe('App', () => {
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
   });
 
-  it('shows brand navigation for the landing, upload, and login pages', () => {
+  it('shows public header actions without the hamburger menu when signed out', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
@@ -58,13 +58,21 @@ describe('App', () => {
 
     expect(brand?.textContent?.trim()).toBe('CareerKit AI');
     expect(brand?.getAttribute('href')).toBe('/');
-    expect(leadingItems[0].classList.contains('menu-toggle')).toBe(true);
-    expect(leadingItems[1].classList.contains('brand-link')).toBe(true);
+    expect(leadingItems).toHaveLength(1);
+    expect(leadingItems[0].classList.contains('brand-link')).toBe(true);
+    expect(compiled.querySelector('.menu-toggle')).toBeNull();
+    expect(compiled.querySelector('.navigation-menu')).toBeNull();
     expect(navLinks.map((link) => link.textContent?.trim())).toEqual(['Start Creating', 'Sign In']);
     expect(navLinks.map((link) => link.getAttribute('href'))).toEqual(['/login', '/login']);
   });
 
-  it('opens the left-side hamburger menu', () => {
+  it('opens the authenticated hamburger menu with protected navigation', () => {
+    isAuthenticated = true;
+    currentUser.set({
+      email: 'jane@example.com',
+      displayName: 'Jane Appleseed',
+    });
+
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
@@ -82,19 +90,19 @@ describe('App', () => {
     const menuLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.navigation-menu a'));
 
     expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
-    expect(getComputedStyle(menu as HTMLElement).left).toBe('24px');
+    expect(getComputedStyle(menu as HTMLElement).left).toBe('0px');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Home',
       'Document Workspace',
       'Resume Builder',
-      'Sign In',
     ]);
     expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual([
       '/',
       '/upload',
       '/resume-builder',
-      '/login',
     ]);
+    expect(compiled.querySelector('.mobile-profile-summary')?.textContent).toContain('Jane Appleseed');
+    expect(compiled.querySelector('.navigation-menu button')?.textContent?.trim()).toBe('Logout');
   });
 
   it('renders the login-themed header and compact action buttons', () => {
@@ -126,11 +134,13 @@ describe('App', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const navLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.header-nav a'));
+    const menuToggle = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
     const profileButton = compiled.querySelector<HTMLButtonElement>('.profile-button');
 
     expect(navLinks).toHaveLength(0);
     expect(compiled.querySelector('.primary-nav-link')).toBeNull();
     expect(compiled.querySelector('.login-nav-link')).toBeNull();
+    expect(menuToggle).toBeTruthy();
     expect(profileButton?.textContent).toContain('Jane Appleseed');
   });
 });
