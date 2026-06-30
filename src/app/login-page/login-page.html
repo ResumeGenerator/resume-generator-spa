@@ -1,96 +1,201 @@
 <main class="login-page" aria-labelledby="login-title">
-  <section class="login-card">
-    <header class="login-heading">
-      <h1 id="login-title">{{ isRegisterMode ? 'Sign up' : 'Sign in' }}</h1>
-      <p>Welcome back! Good to see you again.</p>
-    </header>
+  <section class="login-card" [class.is-submitting]="isSubmitting">
+    <aside class="brand-panel" aria-label="CareerKit AI">
+      <div class="brand-mark" aria-hidden="true">CK</div>
+      <div>
+        <p class="brand-kicker">CareerKit AI</p>
+        <h2>Build sharper resumes with a focused workspace.</h2>
+        <p class="brand-copy">
+          Sign in to upload, refine, preview, and export resume versions built for each role.
+        </p>
+      </div>
+      <ul class="brand-points" aria-label="Workspace features">
+        <li>Secure resume workspace</li>
+        <li>Template previews</li>
+        <li>PDF and Word exports</li>
+      </ul>
+    </aside>
 
-    <button type="button" class="google-button" [disabled]="isSubmitting" (click)="startGoogleLogin()">
-      <span aria-hidden="true">G</span>
-      Continue with Google
-    </button>
+    <div class="auth-panel">
+      <header class="login-heading">
+        <p class="eyebrow">{{ isRegisterMode ? 'Create account' : 'Welcome back' }}</p>
+        <h1 id="login-title">{{ isRegisterMode ? 'Sign up' : 'Sign in' }}</h1>
+        <p>
+          {{
+            isRegisterMode
+              ? 'Create your workspace account to start building resumes.'
+              : 'Use your account to continue to your resume workspace.'
+          }}
+        </p>
+      </header>
 
-    <div class="divider"><span>OR</span></div>
+      <button
+        type="button"
+        class="google-button"
+        [disabled]="isSubmitting"
+        (click)="startGoogleLogin()"
+        aria-label="Continue with Google"
+      >
+        <span class="google-mark" aria-hidden="true">G</span>
+        <span>Continue with Google</span>
+      </button>
 
-    <form class="login-form" (ngSubmit)="submitAuth()" novalidate>
-      @if (isRegisterMode) {
-        <label class="field">
-          <input
-            name="displayName"
-            type="text"
-            autocomplete="name"
-            placeholder="Display name"
-            [disabled]="isSubmitting"
-            [(ngModel)]="displayName"
-          />
-        </label>
-      }
+      <div class="divider"><span>or use email</span></div>
 
-      <label class="field">
-        <input
-          name="email"
-          type="email"
-          autocomplete="email"
-          placeholder="Email address"
-          [disabled]="isSubmitting"
-          [(ngModel)]="email"
-        />
-      </label>
+      <form
+        class="login-form"
+        (ngSubmit)="submitAuth()"
+        novalidate
+        [attr.aria-describedby]="errorMessage ? 'login-error terms-copy' : 'terms-copy'"
+      >
+        @if (isRegisterMode) {
+          <div class="field">
+            <label class="field-label" for="displayName">Display name</label>
+            <span class="field-control">
+              <span class="field-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path
+                    d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z"
+                  />
+                </svg>
+              </span>
+              <input
+                id="displayName"
+                name="displayName"
+                type="text"
+                autocomplete="name"
+                placeholder="Jane Appleseed"
+                required
+                [disabled]="isSubmitting"
+                [(ngModel)]="displayName"
+              />
+            </span>
+          </div>
+        }
 
-      <label class="field">
-        <input
-          name="password"
-          type="password"
-          [attr.autocomplete]="isRegisterMode ? 'new-password' : 'current-password'"
-          placeholder="Password"
-          [disabled]="isSubmitting"
-          [(ngModel)]="password"
-        />
-      </label>
-
-      @if (!isRegisterMode) {
-        <div class="form-row">
-          <label class="remember-me">
+        <div class="field">
+          <label class="field-label" for="email">Email address</label>
+          <span class="field-control">
+            <span class="field-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M4 6h16v12H4z" />
+                <path d="m4 7 8 6 8-6" />
+              </svg>
+            </span>
             <input
-              name="rememberMe"
-              type="checkbox"
+              id="email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              placeholder="you@example.com"
+              required
+              [attr.aria-invalid]="submitted && !email.trim() ? 'true' : null"
               [disabled]="isSubmitting"
-              [(ngModel)]="rememberMe"
+              [(ngModel)]="email"
             />
-            <span>Remember me</span>
-          </label>
+          </span>
         </div>
-      }
 
-      @if (errorMessage) {
-        <p class="login-note error-note">{{ errorMessage }}</p>
-      }
+        <div class="field">
+          <label class="field-label" for="password">Password</label>
+          <span class="field-control">
+            <span class="field-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7 11V8a5 5 0 0 1 10 0v3" />
+                <path d="M5 11h14v10H5z" />
+              </svg>
+            </span>
+            <input
+              id="password"
+              name="password"
+              [type]="passwordVisible ? 'text' : 'password'"
+              [attr.autocomplete]="isRegisterMode ? 'new-password' : 'current-password'"
+              placeholder="Enter your password"
+              required
+              [attr.minlength]="isRegisterMode ? 8 : null"
+              [attr.aria-invalid]="submitted && !password ? 'true' : null"
+              [disabled]="isSubmitting"
+              [(ngModel)]="password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              [attr.aria-label]="passwordVisible ? 'Hide password' : 'Show password'"
+              [attr.aria-pressed]="passwordVisible"
+              [disabled]="isSubmitting"
+              (click)="togglePasswordVisibility()"
+            >
+              @if (passwordVisible) {
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M3 3l18 18" />
+                  <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                  <path d="M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.4 4.2 9.5 6a12.5 12.5 0 0 1-2.1 2.8" />
+                  <path d="M6.2 6.2A13.6 13.6 0 0 0 2.5 10c1.1 1.8 4.5 6 9.5 6 1.4 0 2.7-.3 3.8-.9" />
+                </svg>
+              } @else {
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M2.5 12S5.8 6 12 6s9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" />
+                  <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                </svg>
+              }
+            </button>
+          </span>
+        </div>
 
-      <button type="submit" class="submit-button" [disabled]="isSubmitting">
-        {{
-          isSubmitting
-            ? isRegisterMode
-              ? 'Creating...'
-              : 'Signing in...'
-            : isRegisterMode
-              ? 'Sign up'
-              : 'Sign in'
-        }}
-      </button>
-    </form>
+        @if (!isRegisterMode) {
+          <div class="form-row">
+            <label class="remember-me">
+              <input
+                name="rememberMe"
+                type="checkbox"
+                [disabled]="isSubmitting"
+                [(ngModel)]="rememberMe"
+              />
+              <span>Remember me</span>
+            </label>
+          </div>
+        }
 
-    <p class="signup-copy">
-      {{ isRegisterMode ? 'Already have an account?' : "Don't have an account?" }}
-      <button type="button" (click)="isRegisterMode ? showLogin() : showRegister()">
-        {{ isRegisterMode ? 'Sign in' : 'Sign up' }}
-      </button>
-    </p>
+        @if (errorMessage) {
+          <p id="login-error" class="login-note error-note" role="alert">{{ errorMessage }}</p>
+        }
 
-    <p class="terms-copy">
-      By proceeding, you confirm that you have read and agree to our
-      <a href="/">Terms Of Use</a>
-      and
-      <a href="/">Privacy Policy</a>.
-    </p>
+        <button
+          type="submit"
+          class="submit-button"
+          [disabled]="isSubmitting"
+          [attr.aria-busy]="isSubmitting"
+        >
+          @if (isSubmitting) {
+            <span class="button-spinner" aria-hidden="true"></span>
+          }
+          <span>
+            {{
+              isSubmitting
+                ? isRegisterMode
+                  ? 'Creating account'
+                  : 'Signing in'
+                : isRegisterMode
+                  ? 'Sign up'
+                  : 'Sign in'
+            }}
+          </span>
+        </button>
+      </form>
+
+      <p class="signup-copy">
+        {{ isRegisterMode ? 'Already have an account?' : "Don't have an account?" }}
+        <button type="button" [disabled]="isSubmitting" (click)="isRegisterMode ? showLogin() : showRegister()">
+          {{ isRegisterMode ? 'Sign in' : 'Sign up' }}
+        </button>
+      </p>
+
+      <p id="terms-copy" class="terms-copy">
+        By proceeding, you confirm that you have read and agree to our
+        <a href="/">Terms Of Use</a>
+        and
+        <a href="/">Privacy Policy</a>.
+      </p>
+    </div>
   </section>
 </main>

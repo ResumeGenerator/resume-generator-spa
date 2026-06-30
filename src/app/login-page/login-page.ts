@@ -18,6 +18,7 @@ export class LoginPage {
   protected password = '';
   protected displayName = '';
   protected rememberMe = false;
+  protected passwordVisible = false;
   protected submitted = false;
   protected isSubmitting = false;
   protected errorMessage = '';
@@ -80,6 +81,10 @@ export class LoginPage {
 
   protected startGoogleLogin(): void {
     window.location.assign(this.authService.googleLoginUrl);
+  }
+
+  protected togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
   }
 
   private validateAuthForm(email: string, password: string, displayName: string): string {
