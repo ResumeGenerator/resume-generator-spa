@@ -100,12 +100,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly savedIndicator = signal(true);
   protected readonly collapsedWorkExperienceIndexes = signal<Set<number>>(new Set());
   protected readonly editorSteps: EditorStep[] = [
-    { id: 'personal', label: 'Personal details' },
-    { id: 'contact', label: 'Contact info' },
-    { id: 'experience', label: 'Work experience' },
+    { id: 'personal', label: 'Personal' },
+    { id: 'contact', label: 'Contact' },
+    { id: 'experience', label: 'Experience' },
     { id: 'skills', label: 'Skills' },
     { id: 'education', label: 'Education' },
-    { id: 'summary', label: 'Professional summary' },
+    { id: 'summary', label: 'Summary' },
   ];
   private readonly defaultTemplateIds = [
     'modern-minimal',
