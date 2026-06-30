@@ -100,7 +100,7 @@ describe('ResumeBuilder', () => {
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
   });
 
-  it('rephrases the work summary when Improve with AI is clicked', () => {
+  it('shows the improved work summary as a suggestion before applying it', () => {
     component.activeEditorStep.set('experience');
     component.editWorkExperience = [
       {
@@ -114,11 +114,25 @@ describe('ResumeBuilder', () => {
     expect(improveButton).not.toBeNull();
 
     improveButton?.click();
+    fixture.detectChanges();
 
     expect(resumeApi.rephraseResumeText).toHaveBeenCalledWith('Built APIs and fixed production defects.');
+    expect(component.editWorkExperience[0].responsibilities).toBe('Built APIs and fixed production defects.');
+    expect(component.pendingAiWorkSummaryIndex()).toBe(0);
+
+    const suggestionCard = fixture.nativeElement.querySelector('.ai-suggestion-card') as HTMLElement | null;
+    expect(suggestionCard?.textContent).toContain('Improved production API ownership for resume workflows.');
+
+    const applyButton = fixture.nativeElement.querySelector('.ai-suggestion-apply') as HTMLButtonElement | null;
+    expect(applyButton).not.toBeNull();
+
+    applyButton?.click();
+    fixture.detectChanges();
+
     expect(component.editWorkExperience[0].responsibilities).toBe(
       'Improved production API ownership for resume workflows.',
     );
+    expect(fixture.nativeElement.querySelector('.ai-suggestion-card')).toBeNull();
     expect(component.pendingAiWorkSummaryIndex()).toBeNull();
     expect(component.activeEditorStep()).toBe('experience');
   });

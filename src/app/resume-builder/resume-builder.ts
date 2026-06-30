@@ -37,6 +37,11 @@ interface WorkExperienceEditItem {
   achievements: string;
 }
 
+interface AiWorkSummarySuggestion {
+  index: number;
+  text: string;
+}
+
 interface RenderedTextBlock {
   text: string;
   tagName: string;
@@ -85,6 +90,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly aiEnhanceState = signal<AiEnhanceState>('idle');
   protected readonly aiEnhanceErrorMessage = signal<string | null>(null);
   protected readonly pendingAiWorkSummaryIndex = signal<number | null>(null);
+  protected readonly aiWorkSummarySuggestion = signal<AiWorkSummarySuggestion | null>(null);
   protected readonly renderedSaveState = signal<RenderedSaveState>('idle');
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
@@ -384,6 +390,40 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.improvePendingWorkSummary(index);
   }
 
+  protected aiWorkSummarySuggestionFor(index: number): string {
+    const suggestion = this.aiWorkSummarySuggestion();
+    return suggestion?.index === index ? suggestion.text : '';
+  }
+
+  protected cancelWorkSummarySuggestion(index: number): void {
+    if (this.aiWorkSummarySuggestion()?.index === index) {
+      this.aiWorkSummarySuggestion.set(null);
+    }
+
+    if (this.pendingAiWorkSummaryIndex() === index) {
+      this.pendingAiWorkSummaryIndex.set(null);
+    }
+
+    this.aiEnhanceErrorMessage.set(null);
+    this.aiEnhanceState.set('idle');
+  }
+
+  protected applyWorkSummarySuggestion(index: number): void {
+    const suggestion = this.aiWorkSummarySuggestion();
+    const experience = this.editWorkExperience[index];
+
+    if (!experience || suggestion?.index !== index) {
+      return;
+    }
+
+    experience.responsibilities = suggestion.text;
+    this.aiWorkSummarySuggestion.set(null);
+    this.pendingAiWorkSummaryIndex.set(null);
+    this.aiEnhanceErrorMessage.set(null);
+    this.aiEnhanceState.set('success');
+    this.savedIndicator.set(false);
+  }
+
   protected removeSuggestedSkill(skill: string): void {
     this.editHardSkills = this.hardSkillChips()
       .filter((item) => item !== skill)
@@ -467,6 +507,17 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected removeWorkExperience(index: number): void {
     this.editWorkExperience.splice(index, 1);
+    this.aiWorkSummarySuggestion.update((suggestion) => {
+      if (!suggestion) {
+        return null;
+      }
+
+      if (suggestion.index === index) {
+        return null;
+      }
+
+      return suggestion.index > index ? { ...suggestion, index: suggestion.index - 1 } : suggestion;
+    });
     this.pendingAiWorkSummaryIndex.update((pendingIndex) => {
       if (pendingIndex === null) {
         return null;
@@ -812,6 +863,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editSuccessMessage.set(null);
     this.aiEnhanceErrorMessage.set(null);
     this.pendingAiWorkSummaryIndex.set(null);
+    this.aiWorkSummarySuggestion.set(null);
     this.selectedSavedResumeId.set(null);
     this.isPreviewModalOpen.set(false);
     this.isEditModalOpen.set(false);
@@ -887,9 +939,14 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.pendingAiWorkSummaryIndex.set(index);
 
     if (!experience || !workSummary) {
+      this.clearWorkSummarySuggestion(index);
       this.aiEnhanceState.set('error');
       this.aiEnhanceErrorMessage.set('Add work summary text before using Improve with AI.');
       return;
+    }
+
+    if (this.aiWorkSummarySuggestion()?.index !== index) {
+      this.aiWorkSummarySuggestion.set(null);
     }
 
     this.aiEnhanceState.set('loading');
@@ -908,17 +965,33 @@ export class ResumeBuilder implements OnInit, OnDestroy {
             return;
           }
 
-          experience.responsibilities = improvedSummary;
-          this.pendingAiWorkSummaryIndex.set(null);
+          this.aiWorkSummarySuggestion.set({
+            index,
+            text: improvedSummary,
+          });
           this.aiEnhanceErrorMessage.set(null);
           this.aiEnhanceState.set('success');
-          this.savedIndicator.set(false);
         },
         error: (error) => {
           this.aiEnhanceErrorMessage.set(this.resolveErrorMessage(error, 'ai'));
           this.aiEnhanceState.set('error');
         },
       });
+  }
+
+  private clearWorkSummarySuggestion(index?: number): void {
+    const suggestion = this.aiWorkSummarySuggestion();
+
+    if (index === undefined || suggestion?.index === index) {
+      this.aiWorkSummarySuggestion.set(null);
+    }
+  }
+
+  private resetAiEnhancementState(): void {
+    this.aiEnhanceState.set('idle');
+    this.aiEnhanceErrorMessage.set(null);
+    this.pendingAiWorkSummaryIndex.set(null);
+    this.aiWorkSummarySuggestion.set(null);
   }
 
   private advanceEditorStep(): void {
@@ -1323,6 +1396,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   private populateEditForm(resume: ResumeDocumentResponse): void {
+    this.resetAiEnhancementState();
+
     const renderedData = this.asRecord(resume.profile['data']);
 
     if (this.hasRenderedProfileData(renderedData)) {
@@ -1389,6 +1464,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   private populateRenderedEditForm(data: Record<string, unknown>, resume: ResumeDocumentResponse | null): void {
+    this.resetAiEnhancementState();
+
     const source = this.asRecord(resume?.source);
     const summarySection = this.findRenderedSection(data, 'summary');
     const experienceSection = this.findRenderedSection(data, ...this.renderedExperienceAliases());

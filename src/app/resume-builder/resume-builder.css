@@ -457,6 +457,16 @@
   padding-top: 132px;
 }
 
+.experience-notes.has-ai-suggestion {
+  overflow: visible;
+  padding: 16px;
+}
+
+.experience-notes.has-ai-suggestion .ai-error-message {
+  position: static;
+  margin: 0 0 12px;
+}
+
 .ai-button,
 .add-wide,
 .suggestion-row button {
@@ -511,6 +521,79 @@
   color: #991b1b;
   font-size: 0.9rem;
   font-weight: 800;
+}
+
+.ai-suggestion-card {
+  display: grid;
+  gap: 16px;
+  min-height: 266px;
+  border: 1px solid #d7cdfa;
+  border-radius: 14px;
+  padding: 14px 10px 10px;
+  background: #faf7ff;
+  color: #202124;
+}
+
+.ai-suggestion-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6227f5;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.ai-suggestion-heading .sparkle-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.ai-suggestion-text {
+  white-space: pre-wrap;
+  color: #28282d;
+  font-size: 1.12rem;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.ai-suggestion-actions {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.ai-suggestion-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  border: 1px solid #cfcfd5;
+  border-radius: 10px;
+  padding: 0 14px;
+  background: #fff;
+  color: #15151a;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ai-suggestion-action.primary {
+  border-color: #6227f5;
+  background: #6227f5;
+  color: #fff;
+}
+
+.ai-suggestion-action svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.3;
 }
 
 .sparkle-icon {
@@ -809,6 +892,18 @@ button:disabled {
   .preview-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .ai-suggestion-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-suggestion-actions span {
+    display: none;
+  }
+
+  .ai-suggestion-action {
+    width: 100%;
   }
 
 }
