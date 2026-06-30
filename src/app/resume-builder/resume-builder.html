@@ -29,6 +29,7 @@
           class="step-item"
           [class.active]="activeEditorStep() === step.id"
           [class.complete]="isStepCompleted(index)"
+          [attr.aria-current]="activeEditorStep() === step.id ? 'step' : null"
           (click)="setEditorStep(step.id)"
         >
           <span class="step-marker">

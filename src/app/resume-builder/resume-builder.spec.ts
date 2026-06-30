@@ -101,6 +101,22 @@ describe('ResumeBuilder', () => {
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
   });
 
+  it('uses short section labels in the compact editor stepper', () => {
+    const stepLabels = Array.from(
+      fixture.nativeElement.querySelectorAll('.step-rail .step-item:not(.muted)'),
+      (step: Element) => step.textContent?.trim().replace(/\s+/g, ' ') ?? '',
+    );
+
+    expect(stepLabels).toEqual([
+      '1 Personal',
+      '2 Contact',
+      '3 Experience',
+      '4 Skills',
+      '5 Education',
+      '6 Summary',
+    ]);
+  });
+
   it('uses nested rendered HTML returned from save instead of refetching stale preview HTML', () => {
     component.handleRenderedSaveResponse(
       {
