@@ -101,6 +101,34 @@ describe('ResumeBuilder', () => {
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
   });
 
+  it('uses nested rendered HTML returned from save instead of refetching stale preview HTML', () => {
+    component.handleRenderedSaveResponse(
+      {
+        data: {
+          id: 'edited-2',
+          templateId: 'modern-minimal',
+          renderedHtml: '<article>Latest nested preview</article>',
+          data: {
+            name: 'Nested Candidate',
+          },
+        },
+      },
+      'resume-1',
+    );
+
+    expect(component.resumeId).toBe('edited-2');
+    expect(component.previewState()).toBe('success');
+    expect(component.previewResponse()?.html).toBe('<article>Latest nested preview</article>');
+    expect(component.previewResponse()?.templates[0]).toEqual({
+      templateId: 'modern-minimal',
+      html: '<article>Latest nested preview</article>',
+      data: {
+        name: 'Nested Candidate',
+      },
+    });
+    expect(resumeApi.previewResume).not.toHaveBeenCalled();
+  });
+
   it('shows the improved work summary as a suggestion before applying it', () => {
     component.activeEditorStep.set('experience');
     component.editWorkExperience = [

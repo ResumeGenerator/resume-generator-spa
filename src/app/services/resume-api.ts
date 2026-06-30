@@ -300,6 +300,10 @@ export class ResumeApi {
           templateId,
           _: previewRequestId,
         },
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
         responseType: 'text',
       })
       .pipe(
@@ -338,7 +342,8 @@ export class ResumeApi {
     }
 
     const record = this.asRecord(parsedResponse);
-    const html = this.asString(record['html']);
+    const dataRecord = this.asRecord(record['data']);
+    const html = this.resolveHtml(record) || this.resolveHtml(dataRecord);
 
     if (!html) {
       return {
@@ -348,10 +353,22 @@ export class ResumeApi {
     }
 
     return {
-      templateId: this.asString(record['templateId']) || fallbackTemplateId,
+      templateId: this.asString(record['templateId']) || this.asString(dataRecord['templateId']) || fallbackTemplateId,
       html,
-      data: record['data'],
+      data: dataRecord['data'] ?? record['data'],
     };
+  }
+
+  private resolveHtml(record: Record<string, unknown>): string {
+    return (
+      this.asString(record['html']) ||
+      this.asString(record['renderedHtml']) ||
+      this.asString(record['previewHtml']) ||
+      this.asString(record['templateHtml']) ||
+      this.asString(record['documentHtml']) ||
+      this.asString(record['htmlContent']) ||
+      this.asString(record['content'])
+    );
   }
 
   private parseJsonResponse(response: string): unknown {

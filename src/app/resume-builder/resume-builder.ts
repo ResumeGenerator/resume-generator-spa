@@ -834,11 +834,11 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           this.asString(template['templateId']) ||
           this.asString(template['template']) ||
           fallbackTemplateId,
-        html: this.asString(template['html']),
+        html: this.resolveRenderedHtml(template),
         data: template['data'] ?? dataRecord['data'] ?? record['data'],
       }))
       .filter((template) => template.html);
-    const html = this.asString(record['html']) || this.asString(dataRecord['html']);
+    const html = this.resolveRenderedHtml(record) || this.resolveRenderedHtml(dataRecord);
 
     if (!templates.length && html) {
       templates.push({
@@ -849,7 +849,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           this.asString(dataRecord['template']) ||
           fallbackTemplateId,
         html,
-        data: dataRecord['html'] ? dataRecord['data'] : record['data'],
+        data: this.resolveRenderedHtml(dataRecord) ? dataRecord['data'] : record['data'],
       });
     }
 
@@ -866,6 +866,18 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       data: activeTemplate.data,
       templates,
     };
+  }
+
+  private resolveRenderedHtml(record: Record<string, unknown>): string {
+    return (
+      this.asString(record['html']) ||
+      this.asString(record['renderedHtml']) ||
+      this.asString(record['previewHtml']) ||
+      this.asString(record['templateHtml']) ||
+      this.asString(record['documentHtml']) ||
+      this.asString(record['htmlContent']) ||
+      this.asString(record['content'])
+    );
   }
 
   protected trustedPreviewHtml(html: string): SafeHtml {

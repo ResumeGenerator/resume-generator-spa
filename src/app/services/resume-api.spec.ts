@@ -129,6 +129,49 @@ describe('ResumeApi', () => {
     });
   });
 
+  it('unwraps nested rendered html from json preview responses', () => {
+    let response: ResumePreviewResponse | undefined;
+    const renderedData = {
+      name: 'Latest Candidate',
+    };
+
+    resumeApi
+      .previewResume({
+        resumeId: 'resume-1',
+        templateId: 'modern-minimal',
+        templateIds: ['modern-minimal'],
+      })
+      .subscribe((value) => {
+        response = value;
+      });
+
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
+        request.params.get('templateId') === 'modern-minimal' &&
+        request.headers.get('Cache-Control') === 'no-cache',
+    );
+
+    request.flush(
+      JSON.stringify({
+        data: {
+          templateId: 'modern-minimal',
+          renderedHtml: '<article>Latest rendered resume</article>',
+          data: renderedData,
+        },
+      }),
+    );
+
+    expect(response?.html).toBe('<article>Latest rendered resume</article>');
+    expect(response?.data).toEqual(renderedData);
+    expect(response?.templates[0]).toEqual({
+      templateId: 'modern-minimal',
+      html: '<article>Latest rendered resume</article>',
+      data: renderedData,
+    });
+  });
+
   it('loads structured resume data from the parser API', () => {
     resumeApi.getTemplateResume('resume-1').subscribe((response) => {
       expect(response.id).toBe('resume-1');
