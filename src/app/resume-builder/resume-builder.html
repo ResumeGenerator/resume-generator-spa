@@ -281,7 +281,7 @@
                         class="ai-button"
                         [class.active]="pendingAiWorkSummaryIndex() === index"
                         [disabled]="aiEnhanceState() === 'loading'"
-                        (click)="queueWorkSummaryImprovement(index)"
+                        (click)="improveWorkSummary(index)"
                       >
                         <span class="sparkle-icon" aria-hidden="true">
                           <svg viewBox="0 0 24 24" focusable="false">

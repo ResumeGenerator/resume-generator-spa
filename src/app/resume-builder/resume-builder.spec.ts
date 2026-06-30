@@ -14,7 +14,6 @@ type TestableResumeBuilder = {
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
   pendingAiWorkSummaryIndex: () => number | null;
-  queueWorkSummaryImprovement: (index: number) => void;
   previewResponse: () => {
     resumeId: string;
     html?: string;
@@ -101,23 +100,26 @@ describe('ResumeBuilder', () => {
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
   });
 
-  it('rephrases the queued work summary when Next is clicked', () => {
+  it('rephrases the work summary when Improve with AI is clicked', () => {
     component.activeEditorStep.set('experience');
     component.editWorkExperience = [
       {
-        responsibilities: 'Built APIs.',
+        responsibilities: 'Built APIs and fixed production defects.',
       },
     ];
 
-    component.queueWorkSummaryImprovement(0);
-    component.editWorkExperience[0].responsibilities = 'Built APIs and fixed production defects.';
-    component.nextEditorStep();
+    fixture.detectChanges();
+
+    const improveButton = fixture.nativeElement.querySelector('.ai-button') as HTMLButtonElement | null;
+    expect(improveButton).not.toBeNull();
+
+    improveButton?.click();
 
     expect(resumeApi.rephraseResumeText).toHaveBeenCalledWith('Built APIs and fixed production defects.');
     expect(component.editWorkExperience[0].responsibilities).toBe(
       'Improved production API ownership for resume workflows.',
     );
     expect(component.pendingAiWorkSummaryIndex()).toBeNull();
-    expect(component.activeEditorStep()).toBe('skills');
+    expect(component.activeEditorStep()).toBe('experience');
   });
 });

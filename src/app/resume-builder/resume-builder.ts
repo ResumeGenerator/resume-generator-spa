@@ -312,10 +312,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   protected nextEditorStep(): void {
-    const pendingWorkSummaryIndex = this.pendingAiWorkSummaryIndex();
-
-    if (pendingWorkSummaryIndex !== null && this.activeEditorStep() === 'experience') {
-      this.improvePendingWorkSummary(pendingWorkSummaryIndex);
+    if (this.aiEnhanceState() === 'loading') {
       return;
     }
 
@@ -383,23 +380,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.savedIndicator.set(true);
   }
 
-  protected queueWorkSummaryImprovement(index: number): void {
-    if (this.aiEnhanceState() === 'loading') {
-      return;
-    }
-
-    const workSummary = this.editWorkExperience[index]?.responsibilities.trim();
-
-    if (!workSummary) {
-      this.pendingAiWorkSummaryIndex.set(index);
-      this.aiEnhanceState.set('error');
-      this.aiEnhanceErrorMessage.set('Add work summary text before using Improve with AI.');
-      return;
-    }
-
-    this.pendingAiWorkSummaryIndex.set(index);
-    this.aiEnhanceState.set('idle');
-    this.aiEnhanceErrorMessage.set(null);
+  protected improveWorkSummary(index: number): void {
+    this.improvePendingWorkSummary(index);
   }
 
   protected removeSuggestedSkill(skill: string): void {
@@ -902,11 +884,11 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     const experience = this.editWorkExperience[index];
     const workSummary = experience?.responsibilities.trim() ?? '';
+    this.pendingAiWorkSummaryIndex.set(index);
 
     if (!experience || !workSummary) {
       this.aiEnhanceState.set('error');
       this.aiEnhanceErrorMessage.set('Add work summary text before using Improve with AI.');
-      this.pendingAiWorkSummaryIndex.set(null);
       return;
     }
 
@@ -931,7 +913,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           this.aiEnhanceErrorMessage.set(null);
           this.aiEnhanceState.set('success');
           this.savedIndicator.set(false);
-          this.advanceEditorStep();
         },
         error: (error) => {
           this.aiEnhanceErrorMessage.set(this.resolveErrorMessage(error, 'ai'));
