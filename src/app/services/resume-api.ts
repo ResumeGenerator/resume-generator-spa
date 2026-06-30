@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, forkJoin, map, of } from 'rxjs';
 
+import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
+
 declare global {
   interface Window {
     __RESUME_GENERATOR_CONFIG__?: {
@@ -120,6 +122,11 @@ export interface SavedResumesResponse {
   skip?: number;
 }
 
+export interface ResumeRephraseRequest {
+  text: string;
+  prompt: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -132,6 +139,7 @@ export class ResumeApi {
   private readonly parserResumesUrl = `${this.parserApiUrl}/api/resumes`;
   private readonly templateResumesUrl = `${this.templateApiUrl}/api/Resumes`;
   private readonly parseResumeUrl = `${this.parserApiUrl}/api/resumes/parse`;
+  private readonly rephraseResumeUrl = `${this.parserApiUrl}/api/resumes/rephrase`;
   private readonly pdfResumeUrl = `${this.templateApiUrl}/api/Resumes/pdf`;
   private readonly wordResumeUrl = `${this.templateApiUrl}/api/Resumes/word`;
 
@@ -177,6 +185,17 @@ export class ResumeApi {
     }
 
     return this.http.post<ParsedResumeResponse>(this.parseResumeUrl, formData);
+  }
+
+  rephraseResumeText(text: string): Observable<string> {
+    const request: ResumeRephraseRequest = {
+      text,
+      prompt: RESUME_REPHRASE_PROMPT,
+    };
+
+    return this.http
+      .post<unknown>(this.rephraseResumeUrl, request)
+      .pipe(map((response) => this.normalizeRephraseResponse(response)));
   }
 
   previewResume(request: ResumePreviewRequest): Observable<ResumePreviewResponse> {
@@ -341,6 +360,28 @@ export class ResumeApi {
     } catch {
       return response;
     }
+  }
+
+  private normalizeRephraseResponse(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    const record = this.asRecord(value);
+    const dataRecord = this.asRecord(record['data']);
+
+    return (
+      this.asString(record['text']) ||
+      this.asString(record['rephrasedText']) ||
+      this.asString(record['improvedText']) ||
+      this.asString(record['content']) ||
+      this.asString(record['result']) ||
+      this.asString(dataRecord['text']) ||
+      this.asString(dataRecord['rephrasedText']) ||
+      this.asString(dataRecord['improvedText']) ||
+      this.asString(dataRecord['content']) ||
+      this.asString(dataRecord['result'])
+    );
   }
 
   private normalizeSavedResumesResponse(value: unknown, limit: number, skip: number): SavedResumesResponse {

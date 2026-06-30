@@ -19,6 +19,7 @@ type PreviewState = 'idle' | 'loading' | 'success' | 'error';
 type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
 type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
 type RenderedSaveState = 'idle' | 'saving' | 'success' | 'error';
+type AiEnhanceState = 'idle' | 'loading' | 'success' | 'error';
 type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'summary';
 
 interface EditorStep {
@@ -81,6 +82,9 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly editingResume = signal<ResumeDocumentResponse | null>(null);
   protected readonly editErrorMessage = signal<string | null>(null);
   protected readonly editSuccessMessage = signal<string | null>(null);
+  protected readonly aiEnhanceState = signal<AiEnhanceState>('idle');
+  protected readonly aiEnhanceErrorMessage = signal<string | null>(null);
+  protected readonly pendingAiWorkSummaryIndex = signal<number | null>(null);
   protected readonly renderedSaveState = signal<RenderedSaveState>('idle');
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
@@ -308,9 +312,14 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   protected nextEditorStep(): void {
-    const nextStep = this.editorSteps[Math.min(this.activeStepIndex() + 1, this.editorSteps.length - 1)];
-    this.activeEditorStep.set(nextStep.id);
-    this.savedIndicator.set(true);
+    const pendingWorkSummaryIndex = this.pendingAiWorkSummaryIndex();
+
+    if (pendingWorkSummaryIndex !== null && this.activeEditorStep() === 'experience') {
+      this.improvePendingWorkSummary(pendingWorkSummaryIndex);
+      return;
+    }
+
+    this.advanceEditorStep();
   }
 
   protected previousEditorStep(): void {
@@ -372,6 +381,25 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     this.editHardSkills = [...existing, skill].join('\n');
     this.savedIndicator.set(true);
+  }
+
+  protected queueWorkSummaryImprovement(index: number): void {
+    if (this.aiEnhanceState() === 'loading') {
+      return;
+    }
+
+    const workSummary = this.editWorkExperience[index]?.responsibilities.trim();
+
+    if (!workSummary) {
+      this.pendingAiWorkSummaryIndex.set(index);
+      this.aiEnhanceState.set('error');
+      this.aiEnhanceErrorMessage.set('Add work summary text before using Improve with AI.');
+      return;
+    }
+
+    this.pendingAiWorkSummaryIndex.set(index);
+    this.aiEnhanceState.set('idle');
+    this.aiEnhanceErrorMessage.set(null);
   }
 
   protected removeSuggestedSkill(skill: string): void {
@@ -457,6 +485,17 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected removeWorkExperience(index: number): void {
     this.editWorkExperience.splice(index, 1);
+    this.pendingAiWorkSummaryIndex.update((pendingIndex) => {
+      if (pendingIndex === null) {
+        return null;
+      }
+
+      if (pendingIndex === index) {
+        return null;
+      }
+
+      return pendingIndex > index ? pendingIndex - 1 : pendingIndex;
+    });
     this.collapsedWorkExperienceIndexes.update((indexes) => {
       const nextIndexes = new Set<number>();
 
@@ -789,6 +828,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.previewErrorMessage.set(null);
     this.editErrorMessage.set(null);
     this.editSuccessMessage.set(null);
+    this.aiEnhanceErrorMessage.set(null);
+    this.pendingAiWorkSummaryIndex.set(null);
     this.selectedSavedResumeId.set(null);
     this.isPreviewModalOpen.set(false);
     this.isEditModalOpen.set(false);
@@ -797,6 +838,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.clearUploadLoaderTimer();
     this.previewState.set('idle');
     this.editState.set('idle');
+    this.aiEnhanceState.set('idle');
   }
 
   protected formatDate(value?: string): string {
@@ -851,6 +893,57 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       clearTimeout(this.uploadLoaderTimer);
       this.uploadLoaderTimer = null;
     }
+  }
+
+  private improvePendingWorkSummary(index: number): void {
+    if (this.aiEnhanceState() === 'loading') {
+      return;
+    }
+
+    const experience = this.editWorkExperience[index];
+    const workSummary = experience?.responsibilities.trim() ?? '';
+
+    if (!experience || !workSummary) {
+      this.aiEnhanceState.set('error');
+      this.aiEnhanceErrorMessage.set('Add work summary text before using Improve with AI.');
+      this.pendingAiWorkSummaryIndex.set(null);
+      return;
+    }
+
+    this.aiEnhanceState.set('loading');
+    this.aiEnhanceErrorMessage.set(null);
+
+    this.resumeApi
+      .rephraseResumeText(workSummary)
+      .pipe(finalize(() => this.aiEnhanceState.update((state) => (state === 'loading' ? 'idle' : state))))
+      .subscribe({
+        next: (response) => {
+          const improvedSummary = response.trim();
+
+          if (!improvedSummary) {
+            this.aiEnhanceState.set('error');
+            this.aiEnhanceErrorMessage.set('AI could not improve this work summary. Please revise the text and try again.');
+            return;
+          }
+
+          experience.responsibilities = improvedSummary;
+          this.pendingAiWorkSummaryIndex.set(null);
+          this.aiEnhanceErrorMessage.set(null);
+          this.aiEnhanceState.set('success');
+          this.savedIndicator.set(false);
+          this.advanceEditorStep();
+        },
+        error: (error) => {
+          this.aiEnhanceErrorMessage.set(this.resolveErrorMessage(error, 'ai'));
+          this.aiEnhanceState.set('error');
+        },
+      });
+  }
+
+  private advanceEditorStep(): void {
+    const nextStep = this.editorSteps[Math.min(this.activeStepIndex() + 1, this.editorSteps.length - 1)];
+    this.activeEditorStep.set(nextStep.id);
+    this.savedIndicator.set(true);
   }
 
   private asString(value: unknown): string {
@@ -1989,7 +2082,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' | 'edit' = 'upload'): string {
+  private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' | 'edit' | 'ai' = 'upload'): string {
     if (typeof error === 'object' && error !== null && 'error' in error) {
       const payload = (error as { error?: unknown }).error;
       const status = (error as { status?: unknown }).status;
@@ -2023,6 +2116,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     if (action === 'edit') {
       return 'Unable to save the edited resume copy. Please check the parser API server and try again.';
+    }
+
+    if (action === 'ai') {
+      return 'Unable to improve the work summary. Please check the parser API server and try again.';
     }
 
     return 'Unable to upload the resume. Please check the API server and try again.';

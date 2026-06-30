@@ -275,23 +275,36 @@
                       </label>
                     </div>
 
-                    <div class="experience-notes">
-                      <button type="button" class="ai-button">
+                    <div class="experience-notes" [class.has-ai-error]="!!aiEnhanceErrorMessage() && pendingAiWorkSummaryIndex() === index">
+                      <button
+                        type="button"
+                        class="ai-button"
+                        [class.active]="pendingAiWorkSummaryIndex() === index"
+                        [disabled]="aiEnhanceState() === 'loading'"
+                        (click)="queueWorkSummaryImprovement(index)"
+                      >
                         <span class="sparkle-icon" aria-hidden="true">
                           <svg viewBox="0 0 24 24" focusable="false">
                             <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"></path>
                             <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"></path>
                           </svg>
                         </span>
-                        Improve with AI
+                        @if (aiEnhanceState() === 'loading' && pendingAiWorkSummaryIndex() === index) {
+                          Improving...
+                        } @else {
+                          Improve with AI
+                        }
                       </button>
+                      @if (aiEnhanceErrorMessage() && pendingAiWorkSummaryIndex() === index) {
+                        <p class="ai-error-message">{{ aiEnhanceErrorMessage() }}</p>
+                      }
                       <label class="builder-field">
-                        <span class="sr-only">Responsibilities</span>
+                        <span class="sr-only">Work summary</span>
                         <textarea
                           name="editorExperienceResponsibilities{{ index }}"
                           rows="8"
                           [(ngModel)]="experience.responsibilities"
-                          aria-label="Responsibilities"
+                          aria-label="Work summary"
                         ></textarea>
                       </label>
                     </div>
@@ -382,8 +395,8 @@
           <span></span>
         }
 
-        <button type="button" class="next-step" (click)="nextEditorStep()">
-          Next
+        <button type="button" class="next-step" (click)="nextEditorStep()" [disabled]="aiEnhanceState() === 'loading'">
+          {{ aiEnhanceState() === 'loading' ? 'Improving...' : 'Next' }}
           <span aria-hidden="true">›</span>
         </button>
       </footer>
