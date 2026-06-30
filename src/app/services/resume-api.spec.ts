@@ -2,6 +2,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
 import { ResumeApi, ResumePreviewResponse } from './resume-api';
 
 describe('ResumeApi', () => {
@@ -230,5 +231,29 @@ describe('ResumeApi', () => {
     });
 
     expect(savedId).toBe('edited-1');
+  });
+
+  it('sends resume text to the parser rephrase endpoint with scoped resume prompt context', () => {
+    let rephrasedText = '';
+
+    resumeApi.rephraseResumeText('Built and maintained APIs.').subscribe((response) => {
+      rephrasedText = response;
+    });
+
+    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/rephrase');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      text: 'Built and maintained APIs.',
+      prompt: RESUME_REPHRASE_PROMPT,
+    });
+
+    request.flush({
+      data: {
+        rephrasedText: 'Built and maintained production APIs for resume workflows.',
+      },
+    });
+
+    expect(rephrasedText).toBe('Built and maintained production APIs for resume workflows.');
   });
 });

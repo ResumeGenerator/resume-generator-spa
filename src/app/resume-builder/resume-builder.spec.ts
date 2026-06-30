@@ -8,6 +8,13 @@ import { ResumeBuilder } from './resume-builder';
 
 type TestableResumeBuilder = {
   handleRenderedSaveResponse: (response: unknown, fallbackResumeId: string) => void;
+  activeEditorStep: { set: (step: string) => void; (): string };
+  aiEnhanceErrorMessage: () => string | null;
+  aiEnhanceState: () => string;
+  editWorkExperience: { responsibilities: string }[];
+  nextEditorStep: () => void;
+  pendingAiWorkSummaryIndex: () => number | null;
+  queueWorkSummaryImprovement: (index: number) => void;
   previewResponse: () => {
     resumeId: string;
     html?: string;
@@ -23,6 +30,7 @@ describe('ResumeBuilder', () => {
   let resumeApi: {
     getTemplateSavedResumes: ReturnType<typeof vi.fn>;
     previewResume: ReturnType<typeof vi.fn>;
+    rephraseResumeText: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -41,6 +49,7 @@ describe('ResumeBuilder', () => {
           ],
         }),
       ),
+      rephraseResumeText: vi.fn(() => of('Improved production API ownership for resume workflows.')),
     };
 
     await TestBed.configureTestingModule({
@@ -90,5 +99,25 @@ describe('ResumeBuilder', () => {
       },
     });
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
+  });
+
+  it('rephrases the queued work summary when Next is clicked', () => {
+    component.activeEditorStep.set('experience');
+    component.editWorkExperience = [
+      {
+        responsibilities: 'Built APIs.',
+      },
+    ];
+
+    component.queueWorkSummaryImprovement(0);
+    component.editWorkExperience[0].responsibilities = 'Built APIs and fixed production defects.';
+    component.nextEditorStep();
+
+    expect(resumeApi.rephraseResumeText).toHaveBeenCalledWith('Built APIs and fixed production defects.');
+    expect(component.editWorkExperience[0].responsibilities).toBe(
+      'Improved production API ownership for resume workflows.',
+    );
+    expect(component.pendingAiWorkSummaryIndex()).toBeNull();
+    expect(component.activeEditorStep()).toBe('skills');
   });
 });
