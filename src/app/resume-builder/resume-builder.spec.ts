@@ -11,6 +11,7 @@ type TestableResumeBuilder = {
   activeEditorStep: { set: (step: string) => void; (): string };
   aiEnhanceErrorMessage: () => string | null;
   aiEnhanceState: () => string;
+  editProfessionalSummary: string;
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
   pendingAiWorkSummaryIndex: () => number | null;
@@ -140,5 +141,42 @@ describe('ResumeBuilder', () => {
     expect(updatedTextarea?.value).toBe('Improved production API ownership for resume workflows.');
     expect(component.pendingAiWorkSummaryIndex()).toBeNull();
     expect(component.activeEditorStep()).toBe('experience');
+  });
+
+  it('shows the improved professional summary as a suggestion before applying it', () => {
+    resumeApi.rephraseResumeText.mockReturnValueOnce(
+      of('Improved professional summary for senior engineering leadership.'),
+    );
+    component.activeEditorStep.set('summary');
+    component.editProfessionalSummary = 'Original professional summary.';
+
+    fixture.detectChanges();
+
+    const improveButton = fixture.nativeElement.querySelector('.summary-notes .ai-button') as HTMLButtonElement | null;
+    expect(improveButton).not.toBeNull();
+
+    improveButton?.click();
+    fixture.detectChanges();
+
+    expect(resumeApi.rephraseResumeText).toHaveBeenCalledWith('Original professional summary.');
+    expect(component.editProfessionalSummary).toBe('Original professional summary.');
+
+    const suggestionCard = fixture.nativeElement.querySelector('.summary-notes .ai-suggestion-card') as HTMLElement | null;
+    expect(suggestionCard?.textContent).toContain('Improved professional summary for senior engineering leadership.');
+
+    const applyButton = fixture.nativeElement.querySelector('.ai-summary-suggestion-apply') as HTMLButtonElement | null;
+    expect(applyButton).not.toBeNull();
+
+    applyButton?.click();
+    fixture.detectChanges();
+
+    expect(component.editProfessionalSummary).toBe('Improved professional summary for senior engineering leadership.');
+    expect(fixture.nativeElement.querySelector('.summary-notes .ai-suggestion-card')).toBeNull();
+
+    const updatedTextarea = fixture.nativeElement.querySelector(
+      'textarea[aria-label="Professional summary"]',
+    ) as HTMLTextAreaElement | null;
+    expect(updatedTextarea?.value).toBe('Improved professional summary for senior engineering leadership.');
+    expect(component.activeEditorStep()).toBe('summary');
   });
 });

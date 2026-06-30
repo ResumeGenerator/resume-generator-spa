@@ -453,7 +453,8 @@
   outline: 0;
 }
 
-.experience-notes.has-ai-error .builder-field textarea {
+.experience-notes.has-ai-error .builder-field textarea,
+.summary-notes.has-ai-error textarea {
   padding-top: 132px;
 }
 
@@ -462,12 +463,26 @@
   padding: 16px;
 }
 
-.experience-notes.has-ai-suggestion .ai-error-message {
+.experience-notes.has-ai-suggestion .ai-error-message,
+.summary-notes.has-ai-suggestion .ai-error-message {
   position: static;
   margin: 0 0 12px;
 }
 
 .experience-notes.has-ai-suggestion .work-summary-field {
+  display: none;
+}
+
+.summary-notes {
+  position: relative;
+}
+
+.summary-notes textarea {
+  min-height: 340px;
+  padding-top: 78px;
+}
+
+.summary-notes.has-ai-suggestion .summary-field-control {
   display: none;
 }
 

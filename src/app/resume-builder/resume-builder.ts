@@ -91,6 +91,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly aiEnhanceErrorMessage = signal<string | null>(null);
   protected readonly pendingAiWorkSummaryIndex = signal<number | null>(null);
   protected readonly aiWorkSummarySuggestion = signal<AiWorkSummarySuggestion | null>(null);
+  protected readonly aiProfessionalSummarySuggestion = signal('');
+  protected readonly isProfessionalSummaryAiActive = signal(false);
   protected readonly renderedSaveState = signal<RenderedSaveState>('idle');
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
@@ -432,6 +434,40 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           }
         : item,
     );
+  }
+
+  protected improveProfessionalSummary(): void {
+    this.improvePendingProfessionalSummary();
+  }
+
+  protected professionalSummaryAiErrorActive(): boolean {
+    return this.isProfessionalSummaryAiActive() && Boolean(this.aiEnhanceErrorMessage());
+  }
+
+  protected cancelProfessionalSummarySuggestion(): void {
+    this.aiProfessionalSummarySuggestion.set('');
+    this.isProfessionalSummaryAiActive.set(false);
+    this.aiEnhanceErrorMessage.set(null);
+    this.aiEnhanceState.set('idle');
+  }
+
+  protected applyProfessionalSummarySuggestion(): void {
+    const suggestion = this.aiProfessionalSummarySuggestion();
+
+    if (!suggestion) {
+      return;
+    }
+
+    this.updateProfessionalSummary(suggestion);
+    this.aiProfessionalSummarySuggestion.set('');
+    this.isProfessionalSummaryAiActive.set(false);
+    this.aiEnhanceErrorMessage.set(null);
+    this.aiEnhanceState.set('success');
+    this.savedIndicator.set(false);
+  }
+
+  protected updateProfessionalSummary(summary: string): void {
+    this.editProfessionalSummary = summary;
   }
 
   protected removeSuggestedSkill(skill: string): void {
@@ -874,6 +910,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.aiEnhanceErrorMessage.set(null);
     this.pendingAiWorkSummaryIndex.set(null);
     this.aiWorkSummarySuggestion.set(null);
+    this.aiProfessionalSummarySuggestion.set('');
+    this.isProfessionalSummaryAiActive.set(false);
     this.selectedSavedResumeId.set(null);
     this.isPreviewModalOpen.set(false);
     this.isEditModalOpen.set(false);
@@ -944,6 +982,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       return;
     }
 
+    this.isProfessionalSummaryAiActive.set(false);
     const experience = this.editWorkExperience[index];
     const workSummary = experience?.responsibilities.trim() ?? '';
     this.pendingAiWorkSummaryIndex.set(index);
@@ -989,6 +1028,49 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       });
   }
 
+  private improvePendingProfessionalSummary(): void {
+    if (this.aiEnhanceState() === 'loading') {
+      return;
+    }
+
+    const professionalSummary = this.editProfessionalSummary.trim();
+    this.isProfessionalSummaryAiActive.set(true);
+    this.pendingAiWorkSummaryIndex.set(null);
+
+    if (!professionalSummary) {
+      this.aiProfessionalSummarySuggestion.set('');
+      this.aiEnhanceState.set('error');
+      this.aiEnhanceErrorMessage.set('Add professional summary text before using Improve with AI.');
+      return;
+    }
+
+    this.aiEnhanceState.set('loading');
+    this.aiEnhanceErrorMessage.set(null);
+
+    this.resumeApi
+      .rephraseResumeText(professionalSummary)
+      .pipe(finalize(() => this.aiEnhanceState.update((state) => (state === 'loading' ? 'idle' : state))))
+      .subscribe({
+        next: (response) => {
+          const improvedSummary = response.trim();
+
+          if (!improvedSummary) {
+            this.aiEnhanceState.set('error');
+            this.aiEnhanceErrorMessage.set('AI could not improve this professional summary. Please revise the text and try again.');
+            return;
+          }
+
+          this.aiProfessionalSummarySuggestion.set(improvedSummary);
+          this.aiEnhanceErrorMessage.set(null);
+          this.aiEnhanceState.set('success');
+        },
+        error: (error) => {
+          this.aiEnhanceErrorMessage.set(this.resolveErrorMessage(error, 'ai'));
+          this.aiEnhanceState.set('error');
+        },
+      });
+  }
+
   private clearWorkSummarySuggestion(index?: number): void {
     const suggestion = this.aiWorkSummarySuggestion();
 
@@ -1002,6 +1084,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.aiEnhanceErrorMessage.set(null);
     this.pendingAiWorkSummaryIndex.set(null);
     this.aiWorkSummarySuggestion.set(null);
+    this.aiProfessionalSummarySuggestion.set('');
+    this.isProfessionalSummaryAiActive.set(false);
   }
 
   private advanceEditorStep(): void {
@@ -2187,7 +2271,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     }
 
     if (action === 'ai') {
-      return 'Unable to improve the work summary. Please check the parser API server and try again.';
+      return 'Unable to improve the resume text. Please check the parser API server and try again.';
     }
 
     return 'Unable to upload the resume. Please check the API server and try again.';
