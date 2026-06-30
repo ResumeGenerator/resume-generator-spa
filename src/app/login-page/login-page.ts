@@ -63,6 +63,7 @@ export class LoginPage {
       },
       error: (error: unknown) => {
         this.errorMessage = this.resolveAuthErrorMessage(error);
+        this.password = '';
       },
     });
   }
@@ -115,20 +116,34 @@ export class LoginPage {
     if (error instanceof HttpErrorResponse) {
       const apiMessage = this.extractApiMessage(error.error);
 
-      if (apiMessage) {
-        return apiMessage;
+      if (error.status === 401) {
+        return 'Invalid email or password.';
       }
 
-      if (error.status === 401) {
-        return 'The email or password is not correct.';
+      if (error.status === 403 || error.status === 423) {
+        return this.isDisabledAccountMessage(apiMessage)
+          ? apiMessage
+          : 'Your account has been disabled. Contact support if you think this is a mistake.';
+      }
+
+      if (error.status === 404) {
+        return 'No account found with this email.';
       }
 
       if (error.status === 409) {
         return 'An account with this email already exists.';
       }
 
+      if (error.status === 429) {
+        return 'Too many login attempts. Please try again later.';
+      }
+
       if (error.status === 0) {
-        return 'Could not reach the authentication service. Check your connection and try again.';
+        return 'Network error. Please check your connection and try again.';
+      }
+
+      if (apiMessage && !this.isGenericAuthMessage(apiMessage)) {
+        return apiMessage;
       }
     }
 
@@ -159,5 +174,13 @@ export class LoginPage {
     }
 
     return '';
+  }
+
+  private isDisabledAccountMessage(message: string): boolean {
+    return /\b(disabled|deactivated|locked|suspended)\b/i.test(message);
+  }
+
+  private isGenericAuthMessage(message: string): boolean {
+    return /^(unauthorized|forbidden|bad request|error|failed|invalid credentials)$/i.test(message.trim());
   }
 }
