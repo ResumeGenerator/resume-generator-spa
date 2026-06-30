@@ -44,7 +44,8 @@ describe('ResumeApi', () => {
       (request) =>
         request.method === 'GET' &&
         request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
-        request.params.get('templateId') === 'modern-minimal',
+        request.params.get('templateId') === 'modern-minimal' &&
+        Boolean(request.params.get('_')),
     );
     expect(modernRequest.request.responseType).toBe('text');
 
@@ -52,7 +53,8 @@ describe('ResumeApi', () => {
       (request) =>
         request.method === 'GET' &&
         request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
-        request.params.get('templateId') === 'professional-dark-blue',
+        request.params.get('templateId') === 'professional-dark-blue' &&
+        Boolean(request.params.get('_')),
     );
     expect(darkRequest.request.responseType).toBe('text');
 
@@ -98,7 +100,8 @@ describe('ResumeApi', () => {
       (request) =>
         request.method === 'GET' &&
         request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
-        request.params.get('templateId') === 'modern-minimal',
+        request.params.get('templateId') === 'modern-minimal' &&
+        Boolean(request.params.get('_')),
     );
 
     request.flush(
@@ -141,6 +144,45 @@ describe('ResumeApi', () => {
       createdAt: '',
       updatedAt: '',
     });
+  });
+
+  it('normalizes edited resume save responses so the new id can be previewed', () => {
+    let savedId = '';
+
+    resumeApi
+      .saveEditedResume('resume-1', {
+        profile: {
+          candidateProfile: {
+            fullName: 'Jane Candidate',
+          },
+        },
+        metadata: {},
+        source: {},
+      })
+      .subscribe((response) => {
+        savedId = response.id;
+      });
+
+    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/resume-1/edits');
+
+    expect(request.request.method).toBe('POST');
+
+    request.flush({
+      data: {
+        _id: {
+          $oid: 'edited-1',
+        },
+        profile: {
+          candidateProfile: {
+            fullName: 'Jane Candidate',
+          },
+        },
+        metadata: {},
+        source: {},
+      },
+    });
+
+    expect(savedId).toBe('edited-1');
   });
 
   it('saves rendered edits through the template edited document endpoint', () => {
