@@ -644,6 +644,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   private handleRenderedSaveResponse(response: unknown, fallbackResumeId: string): void {
     const savedResumeId = this.extractSavedResumeId(response) || fallbackResumeId;
     const savedResume = this.asResumeDocument(response);
+    const savedPreview = this.asRenderedPreviewResponse(response, savedResumeId, this.activeTemplateId());
 
     this.resumeId = savedResumeId;
     this.selectedSavedResumeId.set(savedResumeId);
@@ -653,6 +654,21 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     }
 
     this.loadSavedResumes();
+
+    if (savedPreview) {
+      const activeTemplate = savedPreview.templates[0];
+
+      this.previewResponse.set(savedPreview);
+      this.previewErrorMessage.set(null);
+      this.activeTemplateIndex.set(0);
+      this.previewState.set('success');
+      this.populateEditFormFromPreviewData(
+        savedPreview.data ?? activeTemplate?.data,
+        savedPreview.html || activeTemplate?.html || '',
+      );
+      return;
+    }
+
     this.previewResumeById(savedResumeId);
   }
 
@@ -682,6 +698,56 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       preview?.templateId ||
       this.defaultTemplateIds[0]
     );
+  }
+
+  private asRenderedPreviewResponse(
+    value: unknown,
+    resumeId: string,
+    fallbackTemplateId: string,
+  ): ResumePreviewResponse | null {
+    const record = this.asRecord(value);
+    const dataRecord = this.asRecord(record['data']);
+    const rawTemplates = this.asRecordArray(record['templates']).length
+      ? this.asRecordArray(record['templates'])
+      : this.asRecordArray(dataRecord['templates']);
+    const templates = rawTemplates
+      .map((template) => ({
+        templateId:
+          this.asString(template['templateId']) ||
+          this.asString(template['template']) ||
+          fallbackTemplateId,
+        html: this.asString(template['html']),
+        data: template['data'] ?? dataRecord['data'] ?? record['data'],
+      }))
+      .filter((template) => template.html);
+    const html = this.asString(record['html']) || this.asString(dataRecord['html']);
+
+    if (!templates.length && html) {
+      templates.push({
+        templateId:
+          this.asString(record['templateId']) ||
+          this.asString(record['template']) ||
+          this.asString(dataRecord['templateId']) ||
+          this.asString(dataRecord['template']) ||
+          fallbackTemplateId,
+        html,
+        data: dataRecord['html'] ? dataRecord['data'] : record['data'],
+      });
+    }
+
+    if (!templates.length) {
+      return null;
+    }
+
+    const activeTemplate = templates[0];
+
+    return {
+      resumeId,
+      templateId: activeTemplate.templateId,
+      html: activeTemplate.html,
+      data: activeTemplate.data,
+      templates,
+    };
   }
 
   protected trustedPreviewHtml(html: string): SafeHtml {

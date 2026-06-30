@@ -153,7 +153,9 @@ export class ResumeApi {
   }
 
   getResume(resumeId: string): Observable<ResumeDocumentResponse> {
-    return this.http.get<ResumeDocumentResponse>(`${this.parserResumesUrl}/${resumeId}`);
+    return this.http
+      .get<unknown>(`${this.parserResumesUrl}/${resumeId}`)
+      .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
   }
 
   getTemplateResume(resumeId: string): Observable<ResumeDocumentResponse> {
@@ -161,7 +163,9 @@ export class ResumeApi {
   }
 
   saveEditedResume(resumeId: string, request: ResumeEditRequest): Observable<ResumeDocumentResponse> {
-    return this.http.post<ResumeDocumentResponse>(`${this.parserResumesUrl}/${resumeId}/edits`, request);
+    return this.http
+      .post<unknown>(`${this.parserResumesUrl}/${resumeId}/edits`, request)
+      .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
   }
 
   parseResume(file: File, jobDescription?: string): Observable<ParsedResumeResponse> {
@@ -185,7 +189,11 @@ export class ResumeApi {
       });
     }
 
-    return forkJoin(templateIds.map((templateId) => this.getResumeTemplateHtml(request.resumeId, templateId))).pipe(
+    const previewRequestId = this.previewRequestId();
+
+    return forkJoin(
+      templateIds.map((templateId) => this.getResumeTemplateHtml(request.resumeId, templateId, previewRequestId)),
+    ).pipe(
       map((templates) => ({
         resumeId: request.resumeId,
         templateId: templates[0]?.templateId,
@@ -262,17 +270,26 @@ export class ResumeApi {
     };
   }
 
-  private getResumeTemplateHtml(resumeId: string, templateId: string): Observable<ResumePreviewTemplate> {
+  private getResumeTemplateHtml(
+    resumeId: string,
+    templateId: string,
+    previewRequestId: string,
+  ): Observable<ResumePreviewTemplate> {
     return this.http
       .get(`${this.templateResumesUrl}/${encodeURIComponent(resumeId)}/html`, {
         params: {
           templateId,
+          _: previewRequestId,
         },
         responseType: 'text',
       })
       .pipe(
         map((response) => this.normalizeTemplateHtmlResponse(response, templateId)),
       );
+  }
+
+  private previewRequestId(): string {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
   private resolvePreviewTemplateIds(request: ResumePreviewRequest): string[] {
