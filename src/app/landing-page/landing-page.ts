@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
+import { AuthService } from '../services/auth.service';
+
 interface FeatureCard {
   icon: string;
   title: string;
@@ -15,6 +17,8 @@ interface FeatureCard {
   styleUrl: './landing-page.css',
 })
 export class LandingPage {
+  constructor(protected readonly authService: AuthService) {}
+
   protected readonly features: FeatureCard[] = [
     {
       icon: 'AI',

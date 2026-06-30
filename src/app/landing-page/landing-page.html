@@ -17,8 +17,13 @@
         </ul>
 
         <div class="hero-actions">
-          <a class="primary-action" routerLink="/upload">Start Creating <span aria-hidden="true">-&gt;</span></a>
-          <a class="secondary-action" routerLink="/login">Sign In</a>
+          <a class="primary-action" [routerLink]="authService.isAuthenticated() ? '/upload' : '/login'">
+            {{ authService.isAuthenticated() ? 'Open workspace' : 'Start Creating' }}
+            <span aria-hidden="true">-&gt;</span>
+          </a>
+          @if (!authService.isAuthenticated()) {
+            <a class="secondary-action" routerLink="/login">Sign In</a>
+          }
         </div>
       </div>
 
@@ -93,7 +98,10 @@
   <section class="cta-section" aria-labelledby="cta-title">
     <h2 id="cta-title">Ready to build stronger applications?</h2>
     <p>Start with the document workspace and turn parsed profile data into downloadable templates.</p>
-    <a class="light-action" routerLink="/upload">Start Creating for Free <span aria-hidden="true">-&gt;</span></a>
+    <a class="light-action" [routerLink]="authService.isAuthenticated() ? '/upload' : '/login'">
+      {{ authService.isAuthenticated() ? 'Open workspace' : 'Start Creating for Free' }}
+      <span aria-hidden="true">-&gt;</span>
+    </a>
   </section>
 </main>
 
