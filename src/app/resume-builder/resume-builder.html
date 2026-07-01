@@ -379,20 +379,13 @@
           @case ('skills') {
             <div class="suggestion-row">
               <div>
-                <span aria-hidden="true">✦</span>
-                <strong>AI suggested for {{ editCurrentTitle || 'your role' }}</strong>
+                <strong>Skills from resume</strong>
               </div>
-              <button type="button">↻ Refresh</button>
             </div>
 
             <div class="skill-chips">
               @for (skill of hardSkillChips(); track skill) {
                 <button type="button" class="skill-chip active" (click)="removeSuggestedSkill(skill)">
-                  {{ skill }}
-                </button>
-              }
-              @for (skill of suggestedSkillChips(); track skill) {
-                <button type="button" class="skill-chip" (click)="addSuggestedSkill(skill)">
                   {{ skill }}
                 </button>
               }

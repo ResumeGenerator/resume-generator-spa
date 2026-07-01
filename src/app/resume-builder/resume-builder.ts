@@ -340,22 +340,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     return this.toChipList(this.editHardSkills);
   }
 
-  protected suggestedSkillChips(): string[] {
-    const existing = new Set(this.hardSkillChips().map((skill) => skill.toLowerCase()));
-    return [
-      'System design',
-      'Project management',
-      'Technical leadership',
-      'Code optimization',
-      'Risk assessment',
-      'Mentoring',
-      'Cross-functional collaboration',
-      'Automation',
-      'Performance tuning',
-      'Requirement analysis',
-    ].filter((skill) => !existing.has(skill.toLowerCase()));
-  }
-
   protected primaryExperience(): WorkExperienceEditItem | undefined {
     return this.editWorkExperience[0];
   }
@@ -376,16 +360,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
       return nextIndexes;
     });
-  }
-
-  protected addSuggestedSkill(skill: string): void {
-    const existing = this.hardSkillChips();
-    if (existing.some((item) => item.toLowerCase() === skill.toLowerCase())) {
-      return;
-    }
-
-    this.editHardSkills = [...existing, skill].join('\n');
-    this.savedIndicator.set(true);
   }
 
   protected improveWorkSummary(index: number): void {
