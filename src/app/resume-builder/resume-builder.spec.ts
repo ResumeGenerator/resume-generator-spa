@@ -11,6 +11,7 @@ type TestableResumeBuilder = {
   activeEditorStep: { set: (step: string) => void; (): string };
   aiEnhanceErrorMessage: () => string | null;
   aiEnhanceState: () => string;
+  editHardSkills: string;
   editProfessionalSummary: string;
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
@@ -115,6 +116,22 @@ describe('ResumeBuilder', () => {
       '5 Education',
       '6 Summary',
     ]);
+  });
+
+  it('renders only skills provided by the resume data in the skills step', () => {
+    component.activeEditorStep.set('skills');
+    component.editHardSkills = 'Angular\nTypeScript';
+
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const skillChips = Array.from(compiled.querySelectorAll('.skill-chip'), (chip) => chip.textContent?.trim() ?? '');
+
+    expect(compiled.textContent).toContain('Skills from resume');
+    expect(skillChips).toEqual(['Angular', 'TypeScript']);
+    expect(compiled.textContent).not.toContain('System design');
+    expect(compiled.textContent).not.toContain('Project management');
+    expect(compiled.textContent).not.toContain('Technical leadership');
   });
 
   it('uses nested rendered HTML returned from save instead of refetching stale preview HTML', () => {
