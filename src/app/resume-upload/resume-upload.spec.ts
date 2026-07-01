@@ -90,4 +90,34 @@ describe('ResumeUpload', () => {
     expect(compiled.textContent).toContain('Uploaded:');
     expect(compiled.textContent).not.toContain('No current title');
   });
+
+  it('renders preview iframes for parent-controlled scrolling', () => {
+    const component = fixture.componentInstance as unknown as {
+      previewResponse: {
+        set: (value: unknown) => void;
+      };
+      isPreviewModalOpen: {
+        set: (value: boolean) => void;
+      };
+    };
+
+    component.previewResponse.set({
+      templates: [
+        {
+          templateId: 'modern-minimal',
+          html: '<main><h1>Jane Candidate</h1></main>',
+        },
+      ],
+    });
+    component.isPreviewModalOpen.set(true);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const previewShell = compiled.querySelector<HTMLElement>('.single-preview-shell');
+    const previewFrame = compiled.querySelector<HTMLIFrameElement>('.template-card iframe');
+
+    expect(getComputedStyle(previewShell as HTMLElement).overflowY).toBe('auto');
+    expect(previewFrame?.getAttribute('scrolling')).toBe('no');
+    expect(previewFrame?.getAttribute('sandbox')).toBe('allow-same-origin');
+  });
 });

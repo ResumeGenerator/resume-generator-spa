@@ -530,8 +530,10 @@
                 </header>
                 <iframe
                   title="Resume template preview {{ template.templateId }}"
-                  sandbox=""
+                  sandbox="allow-same-origin"
+                  scrolling="no"
                   [srcdoc]="trustedPreviewHtml(template.html)"
+                  (load)="resizePreviewFrame($event)"
                 ></iframe>
               </article>
             }

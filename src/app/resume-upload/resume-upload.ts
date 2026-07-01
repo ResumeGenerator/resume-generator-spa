@@ -471,6 +471,18 @@ export class ResumeUpload implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustHtml(this.asPreviewDocument(html));
   }
 
+  protected resizePreviewFrame(event: Event): void {
+    const frame = event.target instanceof HTMLIFrameElement ? event.target : null;
+
+    if (!frame) {
+      return;
+    }
+
+    this.updatePreviewFrameHeight(frame);
+    this.schedulePreviewFrameResize(frame);
+    window.setTimeout(() => this.updatePreviewFrameHeight(frame), 250);
+  }
+
   protected closePreviewModal(): void {
     this.isPreviewModalOpen.set(false);
   }
@@ -894,11 +906,69 @@ export class ResumeUpload implements OnInit, OnDestroy {
   }
 
   private asPreviewDocument(html: string): string {
-    if (/<html[\s>]/i.test(html)) {
-      return html;
+    const previewFrameStyle = `
+      <style>
+        html,
+        body {
+          margin: 0 !important;
+          min-height: 0 !important;
+          overflow: hidden !important;
+          background: #ffffff;
+        }
+      </style>
+    `;
+
+    if (!/<html[\s>]/i.test(html)) {
+      return [
+        '<!doctype html><html><head><base target="_blank">',
+        previewFrameStyle,
+        '</head><body>',
+        html,
+        '</body></html>',
+      ].join('');
     }
 
-    return `<!doctype html><html><head><base target="_blank"></head><body style="margin: 0;">${html}</body></html>`;
+    const parser = new DOMParser();
+    const documentNode = parser.parseFromString(html, 'text/html');
+
+    if (!documentNode.head.querySelector('base')) {
+      const base = documentNode.createElement('base');
+      base.target = '_blank';
+      documentNode.head.prepend(base);
+    }
+
+    documentNode.head.insertAdjacentHTML('beforeend', previewFrameStyle);
+
+    return `<!doctype html>${documentNode.documentElement.outerHTML}`;
+  }
+
+  private updatePreviewFrameHeight(frame: HTMLIFrameElement): void {
+    const documentNode = frame.contentDocument;
+    const body = documentNode?.body;
+    const documentElement = documentNode?.documentElement;
+
+    if (!body || !documentElement) {
+      return;
+    }
+
+    const contentHeight = Math.max(
+      body.scrollHeight,
+      body.offsetHeight,
+      documentElement.clientHeight,
+      documentElement.scrollHeight,
+      documentElement.offsetHeight,
+    );
+
+    frame.style.height = `${Math.max(contentHeight, 640)}px`;
+  }
+
+  private schedulePreviewFrameResize(frame: HTMLIFrameElement): void {
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => this.updatePreviewFrameHeight(frame));
+      return;
+    }
+
+    window.setTimeout(() => this.updatePreviewFrameHeight(frame), 16);
   }
 
   private asExportDocument(templateId: string, html: string): string {
