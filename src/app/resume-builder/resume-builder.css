@@ -299,13 +299,13 @@
   background: #fff;
   color: #2b2d34;
   font: inherit;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.4;
 }
 
 .builder-field input {
-  min-height: 54px;
-  padding: 16px 14px 8px;
+  min-height: 48px;
+  padding: 12px 12px 8px;
 }
 
 .builder-field textarea {
@@ -325,13 +325,13 @@
 
 .field-input-shell {
   display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
+  grid-template-columns: 20px minmax(0, 1fr);
   align-items: end;
-  gap: 8px;
-  min-height: 54px;
+  gap: 7px;
+  min-height: 44px;
   border: 1px solid #dccdf6;
   border-radius: 10px;
-  padding: 16px 14px 10px;
+  padding: 10px 12px 8px;
   background: #fff;
 }
 
@@ -347,6 +347,7 @@
   border-radius: 0;
   padding: 0;
   background: transparent;
+  font-size: 0.9rem;
 }
 
 .field-input-shell input:focus {
@@ -357,8 +358,8 @@
 .field-leading-icon {
   display: inline-grid;
   place-items: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   color: #8a8c91;
 }
 
@@ -393,16 +394,11 @@
 
 .experience-card {
   display: grid;
-  gap: 16px;
-  padding: 18px;
+  gap: 14px;
+  padding: 16px;
   border: 1px solid #e0d4f2;
   border-radius: 10px;
   background: #fff;
-}
-
-.education-card {
-  gap: 14px;
-  padding: 16px;
 }
 
 .education-field-grid {
@@ -457,13 +453,13 @@
 .experience-field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .experience-meta-grid {
   display: grid;
   grid-template-columns: minmax(98px, 0.66fr) minmax(98px, 0.66fr) minmax(170px, 1.4fr);
-  gap: 14px;
+  gap: 12px;
 }
 
 .experience-notes {
