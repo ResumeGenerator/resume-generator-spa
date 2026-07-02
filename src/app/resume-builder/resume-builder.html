@@ -285,6 +285,8 @@
                         <button
                           type="button"
                           class="ai-button"
+                          aria-label="Improve with AI"
+                          title="Improve with AI"
                           [class.active]="pendingAiWorkSummaryIndex() === index"
                           [disabled]="aiEnhanceState() === 'loading'"
                           (click)="improveWorkSummary(index)"
@@ -296,9 +298,9 @@
                             </svg>
                           </span>
                           @if (aiEnhanceState() === 'loading' && pendingAiWorkSummaryIndex() === index) {
-                            Improving...
+                            Improving
                           } @else {
-                            Improve with AI
+                            Improve
                           }
                         </button>
                       }
@@ -438,6 +440,8 @@
                   <button
                     type="button"
                     class="ai-button"
+                    aria-label="Improve with AI"
+                    title="Improve with AI"
                     [class.active]="isProfessionalSummaryAiActive()"
                     [disabled]="aiEnhanceState() === 'loading'"
                     (click)="improveProfessionalSummary()"
@@ -449,9 +453,9 @@
                       </svg>
                     </span>
                     @if (aiEnhanceState() === 'loading' && isProfessionalSummaryAiActive()) {
-                      Improving...
+                      Improving
                     } @else {
-                      Improve with AI
+                      Improve
                     }
                   </button>
                 }

@@ -299,6 +299,9 @@
 .builder-field textarea {
   min-height: 150px;
   padding: 14px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.94rem;
+  line-height: 1.5;
   resize: vertical;
 }
 
@@ -443,11 +446,11 @@
   min-height: 298px;
   border: 0;
   border-radius: 0;
-  padding: 78px 22px 24px;
-  color: #5f6067;
-  font-size: 1.35rem;
-  font-weight: 600;
-  line-height: 1.6;
+  padding: 58px 22px 22px;
+  color: #4f535c;
+  font-size: 0.98rem;
+  font-weight: 400;
+  line-height: 1.58;
 }
 
 .experience-notes .builder-field textarea:focus {
@@ -457,7 +460,7 @@
 
 .experience-notes.has-ai-error .builder-field textarea,
 .summary-notes.has-ai-error textarea {
-  padding-top: 132px;
+  padding-top: 112px;
 }
 
 .experience-notes.has-ai-suggestion {
@@ -481,7 +484,7 @@
 
 .summary-notes textarea {
   min-height: 340px;
-  padding-top: 78px;
+  padding-top: 58px;
 }
 
 .summary-notes.has-ai-suggestion .summary-field-control {
@@ -505,15 +508,17 @@
 
 .ai-button {
   position: absolute;
-  top: 12px;
-  right: 14px;
+  top: 10px;
+  right: 12px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  border-radius: 14px;
-  font-size: 1.05rem;
+  gap: 7px;
+  min-height: 34px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 0.84rem;
+  font-weight: 800;
 }
 
 .ai-button.active {
@@ -528,9 +533,20 @@
   opacity: 0.72;
 }
 
+.ai-button .sparkle-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.ai-button .sparkle-icon svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 2.2;
+}
+
 .ai-error-message {
   position: absolute;
-  top: 70px;
+  top: 52px;
   right: 16px;
   left: 16px;
   z-index: 1;
