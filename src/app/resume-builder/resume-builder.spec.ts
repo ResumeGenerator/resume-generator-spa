@@ -17,6 +17,7 @@ type TestableResumeBuilder = {
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
   pendingAiWorkSummaryIndex: () => number | null;
+  previewResume: (templateIds?: string[]) => void;
   previewResponse: {
     (): {
       resumeId: string;
@@ -209,6 +210,34 @@ describe('ResumeBuilder', () => {
     expect(resumeApi.previewResume).toHaveBeenCalledTimes(1);
     expect(resumeApi.previewResume).toHaveBeenCalledWith({
       resumeId: 'edited-3',
+      templateId: 'professional-dark-blue',
+      templateIds: ['professional-dark-blue'],
+    });
+  });
+
+  it('loads only the active template when previewing from the builder', () => {
+    component.resumeId = 'resume-1';
+    component.previewResponse.set({
+      resumeId: 'resume-1',
+      templateId: 'modern-minimal',
+      templates: [
+        {
+          templateId: 'modern-minimal',
+          html: '<article>Modern preview</article>',
+        },
+        {
+          templateId: 'professional-dark-blue',
+          html: '<article>Dark preview</article>',
+        },
+      ],
+    });
+    component.activeTemplateIndex.set(1);
+
+    component.previewResume();
+
+    expect(resumeApi.previewResume).toHaveBeenCalledTimes(1);
+    expect(resumeApi.previewResume).toHaveBeenCalledWith({
+      resumeId: 'resume-1',
       templateId: 'professional-dark-blue',
       templateIds: ['professional-dark-blue'],
     });

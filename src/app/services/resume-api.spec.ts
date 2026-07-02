@@ -150,7 +150,8 @@ describe('ResumeApi', () => {
         request.method === 'GET' &&
         request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
         request.params.get('templateId') === 'modern-minimal' &&
-        request.headers.get('Cache-Control') === 'no-cache',
+        !request.headers.has('Cache-Control') &&
+        !request.headers.has('Pragma'),
     );
 
     request.flush(

@@ -602,7 +602,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editState.set('idle');
   }
 
-  protected previewResume(templateIds = this.defaultTemplateIds): void {
+  protected previewResume(templateIds = [this.activeTemplateId()]): void {
     const resumeId = this.resumeId.trim();
 
     if (!resumeId || templateIds.length === 0 || this.previewState() === 'loading') {
@@ -639,7 +639,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       });
   }
 
-  private previewResumeById(resumeId: string, templateIds = this.defaultTemplateIds): void {
+  private previewResumeById(resumeId: string, templateIds = [this.activeTemplateId()]): void {
     this.resumeId = resumeId;
     this.parsedResume.set(null);
     this.previewResponse.set(null);

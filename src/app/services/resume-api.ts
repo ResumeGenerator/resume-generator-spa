@@ -300,10 +300,6 @@ export class ResumeApi {
           templateId,
           _: previewRequestId,
         },
-        headers: {
-          'Cache-Control': 'no-cache',
-          Pragma: 'no-cache',
-        },
         responseType: 'text',
       })
       .pipe(
