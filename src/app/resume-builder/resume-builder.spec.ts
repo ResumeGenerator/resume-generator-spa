@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 
 import { ResumeApi } from '../services/resume-api';
 import { ResumeBuilder } from './resume-builder';
@@ -258,6 +258,62 @@ describe('ResumeBuilder', () => {
       templateId: 'professional-dark-blue',
       templateIds: ['professional-dark-blue'],
     });
+  });
+
+  it('keeps the selected preview visible while refreshing saved template HTML', () => {
+    const previewRefresh = new Subject<{
+      resumeId: string;
+      templateId: string;
+      html: string;
+      templates: { templateId: string; html: string }[];
+    }>();
+    resumeApi.previewResume.mockReturnValueOnce(previewRefresh.asObservable());
+    component.resumeId = 'resume-1';
+    component.previewResponse.set({
+      resumeId: 'resume-1',
+      templateId: 'modern-minimal',
+      html: '<article>Current selected preview</article>',
+      templates: [
+        {
+          templateId: 'modern-minimal',
+          html: '<article>Modern preview</article>',
+        },
+        {
+          templateId: 'professional-dark-blue',
+          html: '<article>Current selected preview</article>',
+        },
+      ],
+    });
+    component.activeTemplateIndex.set(1);
+
+    component.handleRenderedSaveResponse(
+      {
+        id: 'edited-4',
+      },
+      'resume-1',
+    );
+
+    expect(component.previewResponse()?.html).toBe('<article>Current selected preview</article>');
+    expect(resumeApi.previewResume).toHaveBeenCalledWith({
+      resumeId: 'edited-4',
+      templateId: 'professional-dark-blue',
+      templateIds: ['professional-dark-blue'],
+    });
+
+    previewRefresh.next({
+      resumeId: 'edited-4',
+      templateId: 'professional-dark-blue',
+      html: '<article>Refreshed selected preview</article>',
+      templates: [
+        {
+          templateId: 'professional-dark-blue',
+          html: '<article>Refreshed selected preview</article>',
+        },
+      ],
+    });
+    previewRefresh.complete();
+
+    expect(component.previewResponse()?.html).toBe('<article>Refreshed selected preview</article>');
   });
 
   it('loads only the active template when previewing from the builder', () => {

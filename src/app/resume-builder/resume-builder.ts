@@ -62,6 +62,10 @@ interface CertificationEditItem {
   year: string;
 }
 
+interface PreviewOptions {
+  preserveCurrentPreview?: boolean;
+}
+
 @Component({
   selector: 'app-resume-builder',
   imports: [CommonModule, FormsModule, RouterLink],
@@ -628,7 +632,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editState.set('idle');
   }
 
-  protected previewResume(templateIds = [this.activeTemplateId()]): void {
+  protected previewResume(templateIds = [this.activeTemplateId()], options: PreviewOptions = {}): void {
     const resumeId = this.resumeId.trim();
 
     if (!resumeId || templateIds.length === 0 || this.previewState() === 'loading') {
@@ -637,7 +641,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     this.previewState.set('loading');
     this.previewErrorMessage.set(null);
-    this.previewResponse.set(null);
+
+    if (!options.preserveCurrentPreview) {
+      this.previewResponse.set(null);
+    }
 
     this.resumeApi
       .previewResume({
@@ -665,13 +672,16 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       });
   }
 
-  private previewResumeById(resumeId: string, templateIds = [this.activeTemplateId()]): void {
+  private previewResumeById(
+    resumeId: string,
+    templateIds = [this.activeTemplateId()],
+    options: PreviewOptions = {},
+  ): void {
     this.resumeId = resumeId;
     this.parsedResume.set(null);
-    this.previewResponse.set(null);
     this.previewErrorMessage.set(null);
     this.previewState.set('idle');
-    this.previewResume(templateIds);
+    this.previewResume(templateIds, options);
   }
 
   private loadResumeIntoEditor(resumeId: string): void {
@@ -790,7 +800,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       return;
     }
 
-    this.previewResumeById(savedResumeId, [templateId]);
+    this.previewResumeById(savedResumeId, [templateId], { preserveCurrentPreview: true });
   }
 
   private extractSavedResumeId(value: unknown): string {
