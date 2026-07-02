@@ -563,7 +563,7 @@
           title="Resume preview"
           sandbox="allow-same-origin"
           scrolling="no"
-          [srcdoc]="trustedPreviewHtml(currentResumePreview())"
+          [srcdoc]="trustedCurrentResumePreview()"
           (load)="resizePreviewFrame($event)"
         ></iframe>
         @if (savedIndicator()) {

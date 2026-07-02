@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { DomSanitizer } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
@@ -172,6 +172,9 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const template = this.previewResponse()?.templates[this.activeTemplateIndex()];
     return template?.html ? this.asPreviewDocument(template.html) : this.buildFallbackPreviewHtml();
   });
+  protected readonly trustedCurrentResumePreview = computed(() =>
+    this.sanitizer.bypassSecurityTrustHtml(this.currentResumePreview()),
+  );
 
   constructor(
     private readonly resumeApi: ResumeApi,
@@ -855,10 +858,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       this.asString(record['htmlContent']) ||
       this.asString(record['content'])
     );
-  }
-
-  protected trustedPreviewHtml(html: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(this.asPreviewDocument(html));
   }
 
   protected resizePreviewFrame(event: Event): void {
