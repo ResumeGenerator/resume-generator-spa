@@ -2,22 +2,22 @@
   display: block;
   min-height: 100vh;
   --app-container: 940px;
-  --theme-screen: #f7fafc;
-  --theme-accent: #2563eb;
-  --theme-accent-strong: #1d4ed8;
-  --theme-accent-soft: #eef4ff;
-  --theme-accent-tint: rgba(37, 99, 235, 0.06);
-  --theme-accent-hover-tint: rgba(37, 99, 235, 0.1);
-  --theme-dropzone-border: rgba(37, 99, 235, 0.32);
-  --theme-focus: rgba(37, 99, 235, 0.16);
-  --theme-border: #d5dde8;
-  --theme-border-strong: #9db4d4;
+  --theme-screen: #f7f2ff;
+  --theme-accent: #6d28d9;
+  --theme-accent-strong: #7c3aed;
+  --theme-accent-soft: #f2eaff;
+  --theme-accent-tint: rgba(109, 40, 217, 0.07);
+  --theme-accent-hover-tint: rgba(109, 40, 217, 0.11);
+  --theme-dropzone-border: rgba(109, 40, 217, 0.32);
+  --theme-focus: rgba(124, 58, 237, 0.16);
+  --theme-border: #dccdf6;
+  --theme-border-strong: #cdbbeb;
   --theme-text: #111827;
   --theme-heading: #111827;
-  --theme-muted: #4b5563;
-  --theme-gradient-a: rgba(15, 118, 110, 0.08);
-  --theme-gradient-b: rgba(37, 99, 235, 0.1);
-  background: #f7fafc;
+  --theme-muted: #5f536f;
+  --theme-gradient-a: rgba(109, 40, 217, 0.12);
+  --theme-gradient-b: rgba(238, 120, 221, 0.08);
+  background: #f7f2ff;
 }
 
 .site-header {
@@ -35,10 +35,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(var(--app-container), calc(100% - 40px));
+  width: 100%;
   min-height: 64px;
   gap: 18px;
-  margin: 0 auto;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0 28px;
 }
 
 .header-leading {
@@ -55,7 +57,7 @@
   width: 44px;
   height: 44px;
   flex: 0 0 auto;
-  border: 1px solid #d5dde8;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
@@ -67,7 +69,7 @@
   width: 21px;
   height: 3px;
   border-radius: 999px;
-  background: #12343b;
+  background: #4c1d95;
 }
 
 .brand-link {
@@ -105,14 +107,14 @@
 }
 
 .primary-nav-link {
-  border: 1px solid #2563eb;
-  background: #2563eb;
+  border: 1px solid var(--theme-accent);
+  background: var(--theme-accent);
   color: #ffffff;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.18);
 }
 
 .login-nav-link {
-  border: 1px solid #d5dde8;
+  border: 1px solid var(--theme-border);
   background: #ffffff;
   color: #1f2937;
 }
@@ -129,7 +131,7 @@
   max-width: 260px;
   min-height: 44px;
   gap: 9px;
-  border: 1px solid #d5dde8;
+  border: 1px solid var(--theme-border);
   border-radius: 8px;
   padding: 5px 12px 5px 6px;
   background: #ffffff;
@@ -142,8 +144,8 @@
 
 .profile-button:hover,
 .profile-button[aria-expanded="true"] {
-  border-color: #9db4d4;
-  background: #f8fafc;
+  border-color: var(--theme-border-strong);
+  background: #fbf8ff;
 }
 
 .profile-avatar {
@@ -153,8 +155,8 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  background: #eef4ff;
-  color: #2563eb;
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent);
   font-size: 0.8rem;
   font-weight: 950;
   line-height: 1;
@@ -163,7 +165,7 @@
 .profile-avatar.large {
   width: 40px;
   height: 40px;
-  background: linear-gradient(145deg, #12343b 0%, #0f766e 55%, #2563eb 100%);
+  background: linear-gradient(145deg, #4c1d95 0%, #6d28d9 56%, #e65387 100%);
   color: #ffffff;
   font-size: 0.92rem;
 }
@@ -176,7 +178,7 @@
 }
 
 .profile-kicker {
-  color: #0f766e;
+  color: var(--theme-accent);
   font-size: 0.68rem;
   font-weight: 800;
   line-height: 1;
@@ -275,7 +277,7 @@
 .profile-logout:focus-visible,
 .navigation-menu a:focus-visible,
 .navigation-menu button:focus-visible {
-  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline: 3px solid var(--theme-focus);
   outline-offset: 3px;
 }
 
@@ -309,8 +311,8 @@
 
 .navigation-menu a:hover,
 .navigation-menu button:hover {
-  background: #eef4ff;
-  color: #1d4ed8;
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent-strong);
 }
 
 @media (max-width: 560px) {
@@ -318,8 +320,7 @@
     min-height: auto;
     align-items: stretch;
     flex-direction: column;
-    width: min(var(--app-container), calc(100% - 32px));
-    padding: 16px 0;
+    padding: 14px 16px;
   }
 
   .header-leading {
