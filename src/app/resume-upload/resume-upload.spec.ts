@@ -33,13 +33,14 @@ describe('ResumeUpload', () => {
     fixture.detectChanges();
   });
 
-  it('shows compact saved tailoring actions with an edit action', () => {
+  it('shows a single saved tailoring action for previewing and editing', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const actions = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.resume-actions button')).map((button) =>
       button.textContent?.trim(),
     );
 
-    expect(actions).toEqual(['O Preview', 'E Edit']);
+    expect(actions).toEqual(['O Preview and edit']);
+    expect(compiled.textContent).not.toContain('Update resume fields');
   });
 
   it('shows user-focused upload guidance and visual progress', () => {
