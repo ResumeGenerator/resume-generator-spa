@@ -491,7 +491,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
           if (regenerate) {
             this.closeEditModal();
-            this.previewResumeById(response.id);
+            this.previewResumeById(response.id, [this.activeTemplateId()]);
           }
         },
         error: (error) => {
@@ -506,7 +506,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     if (editedResumeId) {
       this.selectedSavedResumeId.set(resume.id);
-      this.previewResumeById(editedResumeId);
+      this.previewResumeById(editedResumeId, [this.activeTemplateId()]);
       return;
     }
 
@@ -602,9 +602,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editState.set('idle');
   }
 
-  protected previewResume(): void {
+  protected previewResume(templateIds = this.defaultTemplateIds): void {
     const resumeId = this.resumeId.trim();
-    const templateIds = this.defaultTemplateIds;
 
     if (!resumeId || templateIds.length === 0 || this.previewState() === 'loading') {
       return;
@@ -640,13 +639,13 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       });
   }
 
-  private previewResumeById(resumeId: string): void {
+  private previewResumeById(resumeId: string, templateIds = this.defaultTemplateIds): void {
     this.resumeId = resumeId;
     this.parsedResume.set(null);
     this.previewResponse.set(null);
     this.previewErrorMessage.set(null);
     this.previewState.set('idle');
-    this.previewResume();
+    this.previewResume(templateIds);
   }
 
   private loadResumeIntoEditor(resumeId: string): void {
@@ -724,7 +723,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         next: (response) => {
           this.renderedSaveState.set('success');
           this.savedIndicator.set(true);
-          this.handleRenderedSaveResponse(response, resumeId);
+          this.handleRenderedSaveResponse(response, resumeId, templateId);
         },
         error: (error) => {
           this.previewErrorMessage.set(this.resolveErrorMessage(error, 'edit'));
@@ -733,10 +732,14 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       });
   }
 
-  private handleRenderedSaveResponse(response: unknown, fallbackResumeId: string): void {
+  private handleRenderedSaveResponse(
+    response: unknown,
+    fallbackResumeId: string,
+    templateId = this.activeTemplateId(),
+  ): void {
     const savedResumeId = this.extractSavedResumeId(response) || fallbackResumeId;
     const savedResume = this.asResumeDocument(response);
-    const savedPreview = this.asRenderedPreviewResponse(response, savedResumeId, this.activeTemplateId());
+    const savedPreview = this.asRenderedPreviewResponse(response, savedResumeId, templateId);
 
     this.resumeId = savedResumeId;
     this.selectedSavedResumeId.set(savedResumeId);
@@ -761,7 +764,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       return;
     }
 
-    this.previewResumeById(savedResumeId);
+    this.previewResumeById(savedResumeId, [templateId]);
   }
 
   private extractSavedResumeId(value: unknown): string {

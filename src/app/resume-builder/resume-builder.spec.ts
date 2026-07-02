@@ -8,6 +8,7 @@ import { ResumeBuilder } from './resume-builder';
 
 type TestableResumeBuilder = {
   handleRenderedSaveResponse: (response: unknown, fallbackResumeId: string) => void;
+  activeTemplateIndex: { set: (index: number) => void; (): number };
   activeEditorStep: { set: (step: string) => void; (): string };
   aiEnhanceErrorMessage: () => string | null;
   aiEnhanceState: () => string;
@@ -16,13 +17,17 @@ type TestableResumeBuilder = {
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
   pendingAiWorkSummaryIndex: () => number | null;
-  previewResponse: () => {
-    resumeId: string;
-    html?: string;
-    templates: { templateId: string; html: string; data?: unknown }[];
-  } | null;
+  previewResponse: {
+    (): {
+      resumeId: string;
+      html?: string;
+      templates: { templateId: string; html: string; data?: unknown }[];
+    } | null;
+    set: (value: unknown) => void;
+  };
   previewState: () => string;
   resumeId: string;
+  saveRenderedResume: () => void;
 };
 
 describe('ResumeBuilder', () => {
@@ -32,6 +37,7 @@ describe('ResumeBuilder', () => {
     getTemplateSavedResumes: ReturnType<typeof vi.fn>;
     previewResume: ReturnType<typeof vi.fn>;
     rephraseResumeText: ReturnType<typeof vi.fn>;
+    saveRenderedResume: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -51,6 +57,11 @@ describe('ResumeBuilder', () => {
         }),
       ),
       rephraseResumeText: vi.fn(() => of('Improved production API ownership for resume workflows.')),
+      saveRenderedResume: vi.fn(() =>
+        of({
+          id: 'edited-3',
+        }),
+      ),
     };
 
     await TestBed.configureTestingModule({
@@ -160,6 +171,47 @@ describe('ResumeBuilder', () => {
       },
     });
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
+  });
+
+  it('refetches only the selected template when save response does not include rendered HTML', () => {
+    component.resumeId = 'resume-1';
+    component.previewResponse.set({
+      resumeId: 'resume-1',
+      templateId: 'modern-minimal',
+      templates: [
+        {
+          templateId: 'modern-minimal',
+          html: '<article>Modern preview</article>',
+          data: {
+            name: 'Jane Candidate',
+          },
+        },
+        {
+          templateId: 'professional-dark-blue',
+          html: '<article>Dark preview</article>',
+          data: {
+            name: 'Jane Candidate',
+          },
+        },
+      ],
+    });
+    component.activeTemplateIndex.set(1);
+
+    component.saveRenderedResume();
+
+    expect(resumeApi.saveRenderedResume).toHaveBeenCalledWith(
+      'resume-1',
+      expect.objectContaining({
+        template: 'professional-dark-blue',
+        templateId: 'professional-dark-blue',
+      }),
+    );
+    expect(resumeApi.previewResume).toHaveBeenCalledTimes(1);
+    expect(resumeApi.previewResume).toHaveBeenCalledWith({
+      resumeId: 'edited-3',
+      templateId: 'professional-dark-blue',
+      templateIds: ['professional-dark-blue'],
+    });
   });
 
   it('shows the improved work summary as a suggestion before applying it', () => {
