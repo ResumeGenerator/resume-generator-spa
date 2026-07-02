@@ -108,7 +108,7 @@
 
             <label class="builder-field icon-field">
               <span>Desired job title</span>
-              <input name="editorTitle" [(ngModel)]="editCurrentTitle" placeholder="Desired job title" />
+              <input name="editorTitle" [(ngModel)]="editCurrentTitle" (ngModelChange)="markUnsavedChanges()" placeholder="Desired job title" />
             </label>
 
             <label class="photo-button" for="resumeFile">
@@ -128,27 +128,27 @@
             <div class="field-grid two">
               <label class="builder-field">
                 <span>Email</span>
-                <input name="editorEmail" type="email" [(ngModel)]="editCandidateEmail" placeholder="Email" />
+                <input name="editorEmail" type="email" [(ngModel)]="editCandidateEmail" (ngModelChange)="markUnsavedChanges()" placeholder="Email" />
               </label>
               <label class="builder-field">
                 <span>Phone number</span>
-                <input name="editorPhone" [(ngModel)]="editCandidatePhone" placeholder="Phone number" />
+                <input name="editorPhone" [(ngModel)]="editCandidatePhone" (ngModelChange)="markUnsavedChanges()" placeholder="Phone number" />
               </label>
               <label class="builder-field">
                 <span>Country</span>
-                <input name="editorCountry" [(ngModel)]="editCareerLevel" placeholder="Country" />
+                <input name="editorCountry" [(ngModel)]="editCareerLevel" (ngModelChange)="markUnsavedChanges()" placeholder="Country" />
               </label>
               <label class="builder-field">
                 <span>City</span>
-                <input name="editorLocation" [(ngModel)]="editCandidateLocation" placeholder="City" />
+                <input name="editorLocation" [(ngModel)]="editCandidateLocation" (ngModelChange)="markUnsavedChanges()" placeholder="City" />
               </label>
               <label class="builder-field">
                 <span>Address</span>
-                <input name="editorAddress" [(ngModel)]="editIndustry" placeholder="Address" />
+                <input name="editorAddress" [(ngModel)]="editIndustry" (ngModelChange)="markUnsavedChanges()" placeholder="Address" />
               </label>
               <label class="builder-field">
                 <span>Postal code</span>
-                <input name="editorPostal" [(ngModel)]="editSpecialization" placeholder="Postal code" />
+                <input name="editorPostal" [(ngModel)]="editSpecialization" (ngModelChange)="markUnsavedChanges()" placeholder="Postal code" />
               </label>
             </div>
           }
@@ -206,7 +206,7 @@
                               <path d="M4 13h16"></path>
                             </svg>
                           </span>
-                          <input name="editorExperienceRole{{ index }}" [(ngModel)]="experience.role" placeholder="Job title" />
+                          <input name="editorExperienceRole{{ index }}" [(ngModel)]="experience.role" (ngModelChange)="updateExperienceField(index, 'role', $event)" placeholder="Job title" />
                         </div>
                       </label>
                       <label class="builder-field icon-field">
@@ -227,6 +227,7 @@
                           <input
                             name="editorExperienceCompany{{ index }}"
                             [(ngModel)]="experience.companyOrOrganization"
+                            (ngModelChange)="updateExperienceField(index, 'companyOrOrganization', $event)"
                             placeholder="Company"
                           />
                         </div>
@@ -245,7 +246,7 @@
                               <path d="M4 10h16"></path>
                             </svg>
                           </span>
-                          <input name="editorExperienceStart{{ index }}" [(ngModel)]="experience.startDate" placeholder="2024" />
+                          <input name="editorExperienceStart{{ index }}" [(ngModel)]="experience.startDate" (ngModelChange)="updateExperienceField(index, 'startDate', $event)" placeholder="2024" />
                         </div>
                       </label>
                       <label class="builder-field icon-field compact">
@@ -259,7 +260,7 @@
                               <path d="M4 10h16"></path>
                             </svg>
                           </span>
-                          <input name="editorExperienceEnd{{ index }}" [(ngModel)]="experience.endDate" placeholder="2026" />
+                          <input name="editorExperienceEnd{{ index }}" [(ngModel)]="experience.endDate" (ngModelChange)="updateExperienceField(index, 'endDate', $event)" placeholder="2026" />
                         </div>
                       </label>
                       <label class="builder-field icon-field">
@@ -271,7 +272,7 @@
                               <circle cx="12" cy="10" r="2.2"></circle>
                             </svg>
                           </span>
-                          <input name="editorExperienceLocation{{ index }}" [(ngModel)]="experience.location" placeholder="Location" />
+                          <input name="editorExperienceLocation{{ index }}" [(ngModel)]="experience.location" (ngModelChange)="updateExperienceField(index, 'location', $event)" placeholder="Location" />
                         </div>
                       </label>
                     </div>
@@ -423,23 +424,23 @@
                   </label>
                   <label class="builder-field span-2">
                     <span>Institution</span>
-                    <input name="editorEducationInstitution{{ $index }}" [(ngModel)]="education.institution" />
+                    <input name="editorEducationInstitution{{ $index }}" [(ngModel)]="education.institution" (ngModelChange)="updateEducationField($index, 'institution', $event)" />
                   </label>
                   <label class="builder-field">
                     <span>Field of study</span>
-                    <input name="editorEducationMajor{{ $index }}" [(ngModel)]="education.majorOrFieldOfStudy" />
+                    <input name="editorEducationMajor{{ $index }}" [(ngModel)]="education.majorOrFieldOfStudy" (ngModelChange)="updateEducationField($index, 'majorOrFieldOfStudy', $event)" />
                   </label>
                   <label class="builder-field">
                     <span>Location</span>
-                    <input name="editorEducationLocation{{ $index }}" [(ngModel)]="education.location" />
+                    <input name="editorEducationLocation{{ $index }}" [(ngModel)]="education.location" (ngModelChange)="updateEducationField($index, 'location', $event)" />
                   </label>
                   <label class="builder-field compact-field">
                     <span>From</span>
-                    <input name="editorEducationStart{{ $index }}" [(ngModel)]="education.startDate" placeholder="2011" />
+                    <input name="editorEducationStart{{ $index }}" [(ngModel)]="education.startDate" (ngModelChange)="updateEducationField($index, 'startDate', $event)" placeholder="2011" />
                   </label>
                   <label class="builder-field compact-field">
                     <span>To</span>
-                    <input name="editorEducationEnd{{ $index }}" [(ngModel)]="education.endDate" placeholder="2014" />
+                    <input name="editorEducationEnd{{ $index }}" [(ngModel)]="education.endDate" (ngModelChange)="updateEducationField($index, 'endDate', $event)" placeholder="2014" />
                   </label>
                 </div>
               </article>
@@ -585,8 +586,10 @@
           [srcdoc]="trustedCurrentResumePreview()"
           (load)="resizePreviewFrame($event)"
         ></iframe>
-        @if (savedIndicator()) {
-          <span class="saved-pill">✓ Saved</span>
+        @if (previewResponse() || hasUnsavedChanges() || renderedSaveState() !== 'idle') {
+          <span class="saved-pill" [class.saving]="savePillState() === 'saving'" [class.error]="savePillState() === 'error'" [class.dirty]="savePillState() === 'dirty'">
+            {{ savePillText() }}
+          </span>
         }
       </div>
     </section>

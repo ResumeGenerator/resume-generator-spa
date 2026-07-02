@@ -99,10 +99,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly aiProfessionalSummarySuggestion = signal('');
   protected readonly isProfessionalSummaryAiActive = signal(false);
   protected readonly renderedSaveState = signal<RenderedSaveState>('idle');
+  protected readonly hasUnsavedChanges = signal(false);
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
   protected readonly activeTemplateIndex = signal(0);
   protected readonly activeEditorStep = signal<EditorStepId>('personal');
   protected readonly savedIndicator = signal(true);
+  protected readonly hasUnsavedChanges = signal(false);
   protected readonly collapsedWorkExperienceIndexes = signal<Set<number>>(new Set());
   protected readonly editorSteps: EditorStep[] = [
     { id: 'personal', label: 'Personal' },
@@ -119,6 +121,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     'clean-blue-header',
   ];
   private uploadLoaderTimer: ReturnType<typeof setTimeout> | null = null;
+  private autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
   protected jobDescription = '';
   protected resumeId = '';
   protected editCandidateName = '';
@@ -182,6 +185,42 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.sanitizer.bypassSecurityTrustHtml(this.currentResumePreview()),
   );
 
+  protected readonly savePillText = computed(() => {
+    if (this.renderedSaveState() === 'saving') {
+      return 'Saving...';
+    }
+
+    if (this.renderedSaveState() === 'error') {
+      return 'Save failed';
+    }
+
+    if (this.hasUnsavedChanges()) {
+      return 'Unsaved changes';
+    }
+
+    if (this.savedIndicator()) {
+      return '✓ Saved';
+    }
+
+    return 'Saved';
+  });
+
+  protected readonly savePillState = computed(() => {
+    if (this.renderedSaveState() === 'saving') {
+      return 'saving';
+    }
+
+    if (this.renderedSaveState() === 'error') {
+      return 'error';
+    }
+
+    if (this.hasUnsavedChanges()) {
+      return 'dirty';
+    }
+
+    return 'saved';
+  });
+
   constructor(
     private readonly resumeApi: ResumeApi,
     private readonly sanitizer: DomSanitizer,
@@ -203,6 +242,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearUploadLoaderTimer();
+    this.cancelAutoSave();
   }
 
   protected loadSavedResumes(): void {
@@ -405,7 +445,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.pendingAiWorkSummaryIndex.set(null);
     this.aiEnhanceErrorMessage.set(null);
     this.aiEnhanceState.set('success');
-    this.savedIndicator.set(false);
+    this.markUnsavedChanges();
   }
 
   protected updateWorkExperienceResponsibilities(index: number, responsibilities: string): void {
@@ -417,6 +457,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           }
         : item,
     );
+    this.markUnsavedChanges();
   }
 
   protected improveProfessionalSummary(): void {
@@ -446,15 +487,38 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.isProfessionalSummaryAiActive.set(false);
     this.aiEnhanceErrorMessage.set(null);
     this.aiEnhanceState.set('success');
-    this.savedIndicator.set(false);
+    this.markUnsavedChanges();
   }
 
   protected updateProfessionalSummary(summary: string): void {
     this.editProfessionalSummary = summary;
+    this.markUnsavedChanges();
+  }
+
+  protected updateExperienceField(index: number, field: keyof WorkExperienceEditItem, value: string): void {
+    this.editWorkExperience = this.editWorkExperience.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item,
+    );
+    this.markUnsavedChanges();
+  }
+
+  protected updateEducationField(index: number, field: keyof EducationEditItem, value: string): void {
+    this.editEducation = this.editEducation.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item,
+    );
+    this.markUnsavedChanges();
+  }
+
+  protected updateCertificationField(index: number, field: keyof CertificationEditItem, value: string): void {
+    this.editCertifications = this.editCertifications.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item,
+    );
+    this.markUnsavedChanges();
   }
 
   protected removeSuggestedSkill(skill: string): void {
     this.setHardSkills(this.hardSkillChips().filter((item) => item !== skill));
+    this.markUnsavedChanges();
   }
 
   protected addSkillFromInput(): void {
@@ -466,6 +530,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     this.setHardSkills([...this.hardSkillChips(), ...skills]);
     this.newSkill = '';
+    this.markUnsavedChanges();
   }
 
   protected handleSkillInputKeydown(event: KeyboardEvent): void {
@@ -479,7 +544,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private setHardSkills(skills: string[]): void {
     this.editHardSkills = this.uniqueLines(skills).join('\n');
-    this.savedIndicator.set(true);
+    this.markUnsavedChanges();
   }
 
   protected saveEditedResume(regenerate = false): void {
@@ -554,10 +619,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       responsibilities: '',
       achievements: '',
     });
+    this.markUnsavedChanges();
   }
 
   protected removeWorkExperience(index: number): void {
     this.editWorkExperience.splice(index, 1);
+    this.markUnsavedChanges();
     this.aiWorkSummarySuggestion.update((suggestion) => {
       if (!suggestion) {
         return null;
@@ -604,10 +671,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       startDate: '',
       endDate: '',
     });
+    this.markUnsavedChanges();
   }
 
   protected removeEducation(index: number): void {
     this.editEducation.splice(index, 1);
+    this.markUnsavedChanges();
   }
 
   protected addCertification(): void {
@@ -616,10 +685,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       issuer: '',
       year: '',
     });
+    this.markUnsavedChanges();
   }
 
   protected removeCertification(index: number): void {
     this.editCertifications.splice(index, 1);
+    this.markUnsavedChanges();
   }
 
   protected closeEditModal(): void {
@@ -691,6 +762,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       next: (response) => {
         this.editingResume.set(response);
         this.populateEditForm(response);
+        this.hasUnsavedChanges.set(false);
       },
       error: () => undefined,
     });
@@ -741,6 +813,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       return;
     }
 
+    this.cancelAutoSave();
+
     const resumeId = this.resumeId.trim() || this.editingResume()?.id || this.selectedSavedResumeId() || '';
 
     if (!resumeId) {
@@ -760,12 +834,14 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           this.renderedSaveState.set('success');
+          this.hasUnsavedChanges.set(false);
           this.savedIndicator.set(true);
           this.handleRenderedSaveResponse(response, resumeId, templateId);
         },
         error: (error) => {
           this.previewErrorMessage.set(this.resolveErrorMessage(error, 'edit'));
           this.renderedSaveState.set('error');
+          this.hasUnsavedChanges.set(true);
         },
       });
   }
@@ -953,6 +1029,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.activeTemplateIndex.set(0);
     this.uploadState.set('idle');
     this.clearUploadLoaderTimer();
+    this.cancelAutoSave();
     this.previewState.set('idle');
     this.editState.set('idle');
     this.aiEnhanceState.set('idle');
@@ -1123,6 +1200,37 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.isProfessionalSummaryAiActive.set(false);
   }
 
+  private markUnsavedChanges(): void {
+    if (this.renderedSaveState() === 'saving') {
+      return;
+    }
+
+    this.hasUnsavedChanges.set(true);
+    this.savedIndicator.set(false);
+    this.renderedSaveState.set('idle');
+
+    this.cancelAutoSave();
+    this.autoSaveTimer = window.setTimeout(() => {
+      this.autoSaveTimer = null;
+      this.autoSaveIfNeeded();
+    }, 1200);
+  }
+
+  private cancelAutoSave(): void {
+    if (this.autoSaveTimer) {
+      clearTimeout(this.autoSaveTimer);
+      this.autoSaveTimer = null;
+    }
+  }
+
+  private autoSaveIfNeeded(): void {
+    if (!this.hasUnsavedChanges() || this.renderedSaveState() === 'saving') {
+      return;
+    }
+
+    this.saveRenderedResume();
+  }
+
   private advanceEditorStep(): void {
     const nextStep = this.editorSteps[Math.min(this.activeStepIndex() + 1, this.editorSteps.length - 1)];
     this.activeEditorStep.set(nextStep.id);
@@ -1143,12 +1251,12 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected updateFirstName(value: string): void {
     this.editCandidateName = [value.trim(), this.lastName()].filter(Boolean).join(' ');
-    this.savedIndicator.set(true);
+    this.markUnsavedChanges();
   }
 
   protected updateLastName(value: string): void {
     this.editCandidateName = [this.firstName(), value.trim()].filter(Boolean).join(' ');
-    this.savedIndicator.set(true);
+    this.markUnsavedChanges();
   }
 
   private resolveStepHeading(step: EditorStepId): string {

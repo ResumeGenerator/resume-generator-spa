@@ -901,10 +901,26 @@
   min-height: 72px;
   border-radius: 999px;
   padding: 0 24px;
-  background: #eeeeee;
-  color: #0f172a;
+  background: #eef2ff;
+  color: #1e3a8a;
   font-size: 1.25rem;
   font-weight: 800;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.saved-pill.saving {
+  background: #fefce8;
+  color: #92400e;
+}
+
+.saved-pill.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.saved-pill.dirty {
+  background: #f3f4f6;
+  color: #374151;
 }
 
 button:disabled {
