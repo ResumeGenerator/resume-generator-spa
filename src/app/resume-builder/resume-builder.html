@@ -412,16 +412,16 @@
 
           @case ('education') {
             @for (education of editEducation; track $index) {
-              <article class="experience-card">
+              <article class="experience-card education-card">
                 <header>
                   <strong>{{ education.degree || 'Education' }}</strong>
                 </header>
-                <div class="field-grid two">
-                  <label class="builder-field">
+                <div class="education-field-grid">
+                  <label class="builder-field span-2">
                     <span>Degree</span>
                     <input name="editorEducationDegree{{ $index }}" [(ngModel)]="education.degree" />
                   </label>
-                  <label class="builder-field">
+                  <label class="builder-field span-2">
                     <span>Institution</span>
                     <input name="editorEducationInstitution{{ $index }}" [(ngModel)]="education.institution" />
                   </label>
@@ -432,6 +432,14 @@
                   <label class="builder-field">
                     <span>Location</span>
                     <input name="editorEducationLocation{{ $index }}" [(ngModel)]="education.location" />
+                  </label>
+                  <label class="builder-field compact-field">
+                    <span>From</span>
+                    <input name="editorEducationStart{{ $index }}" [(ngModel)]="education.startDate" placeholder="2011" />
+                  </label>
+                  <label class="builder-field compact-field">
+                    <span>To</span>
+                    <input name="editorEducationEnd{{ $index }}" [(ngModel)]="education.endDate" placeholder="2014" />
                   </label>
                 </div>
               </article>

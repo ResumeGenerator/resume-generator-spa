@@ -53,6 +53,7 @@ interface EducationEditItem {
   majorOrFieldOfStudy: string;
   institution: string;
   location: string;
+  startDate: string;
   endDate: string;
 }
 
@@ -600,6 +601,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       majorOrFieldOfStudy: '',
       institution: '',
       location: '',
+      startDate: '',
       endDate: '',
     });
   }
@@ -1335,8 +1337,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           faculty: this.asString(existingEducationItems[index]?.['faculty']),
           department: education.majorOrFieldOfStudy.trim(),
           location: education.location.trim(),
-          years: education.endDate.trim(),
-          start: this.asString(existingEducationItems[index]?.['start']),
+          years: this.formatEducationYears(education.startDate, education.endDate),
+          start: education.startDate.trim(),
           end: education.endDate.trim(),
           highlights: existingEducationItems[index]?.['highlights'] ?? [],
         })),
@@ -1394,6 +1396,27 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         return itemName.trim().toLowerCase() === normalizedSkill;
       }) ?? {}
     );
+  }
+
+  private formatEducationYears(startDate: string, endDate: string): string {
+    const start = startDate.trim();
+    const end = endDate.trim();
+
+    if (start && end) {
+      return start === end ? end : `${start} - ${end}`;
+    }
+
+    return start || end;
+  }
+
+  private extractEducationYearRange(item: Record<string, unknown>): { start: string; end: string } {
+    const years = this.asString(item['years']);
+    const [start, end] = years.split(/\s*(?:-|to|–|—)\s*/i).map((value) => value?.trim() ?? '');
+
+    return {
+      start: start || '',
+      end: end || '',
+    };
   }
 
   private buildFallbackPreviewHtml(): string {
@@ -1581,6 +1604,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       majorOrFieldOfStudy: this.asString(item['majorOrFieldOfStudy']),
       institution: this.asString(item['institution']),
       location: this.asString(item['location']),
+      startDate: this.asString(item['startDate']),
       endDate: this.asString(item['endDate']),
     }));
     this.editCertifications = this.asRecordArray(resume.profile['certificationsAndLicenses']).map((item) => ({
@@ -1661,11 +1685,20 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     });
     this.resetWorkExperienceCollapseState();
     this.editEducation = this.asRecordArray(educationSection?.['items']).map((item) => ({
-      degree: this.asString(item['degree']),
-      majorOrFieldOfStudy: this.asString(item['department']) || this.asString(item['faculty']),
-      institution: this.asString(item['school']) || this.asString(item['institution']),
+      degree: this.asString(item['degree']) || this.asString(item['title']),
+      majorOrFieldOfStudy:
+        this.asString(item['department']) ||
+        this.asString(item['faculty']) ||
+        this.asString(item['major']) ||
+        this.asString(item['fieldOfStudy']),
+      institution: this.asString(item['school']) || this.asString(item['institution']) || this.asString(item['college']),
       location: this.asString(item['location']),
-      endDate: this.asString(item['end']) || this.asString(item['years']),
+      startDate: this.asString(item['start']) || this.asString(item['startDate']) || this.extractEducationYearRange(item).start,
+      endDate:
+        this.asString(item['end']) ||
+        this.asString(item['endDate']) ||
+        this.extractEducationYearRange(item).end ||
+        this.asString(item['years']),
     }));
     this.editCertifications = this.asRecordArray(certificationSection?.['items']).map((item) => ({
       name: this.asString(item['course']) || this.asString(item['name']),
@@ -2121,6 +2154,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       majorOrFieldOfStudy: edited.majorOrFieldOfStudy.trim(),
       institution: edited.institution.trim(),
       location: edited.location.trim(),
+      startDate: edited.startDate.trim() || null,
       endDate: edited.endDate.trim() || null,
     }));
     profile['certificationsAndLicenses'] = this.mergeRecordArray(

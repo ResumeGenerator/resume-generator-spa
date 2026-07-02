@@ -13,6 +13,13 @@ type TestableResumeBuilder = {
   aiEnhanceErrorMessage: () => string | null;
   aiEnhanceState: () => string;
   editHardSkills: string;
+  editEducation: {
+    degree: string;
+    institution: string;
+    location: string;
+    startDate: string;
+    endDate: string;
+  }[];
   editProfessionalSummary: string;
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
@@ -314,6 +321,47 @@ describe('ResumeBuilder', () => {
     previewRefresh.complete();
 
     expect(component.previewResponse()?.html).toBe('<article>Refreshed selected preview</article>');
+  });
+
+  it('captures education start and end dates from rendered data', () => {
+    component.handleRenderedSaveResponse(
+      {
+        id: 'edited-education',
+        templateId: 'modern-minimal',
+        html: '<article>Education preview</article>',
+        data: {
+          name: 'Jane Candidate',
+          sections: [
+            {
+              title: 'Education',
+              type: 'education',
+              items: [
+                {
+                  degree: 'Master of Computer Application (Computers)',
+                  school: 'PSG College',
+                  faculty: '',
+                  department: '',
+                  location: 'Coimbatore, India',
+                  years: '01-01-2011',
+                  start: '01-01-2011',
+                  end: '01-01-2011',
+                  highlights: [],
+                },
+              ],
+            },
+          ],
+        },
+      },
+      'resume-1',
+    );
+
+    expect(component.editEducation[0]).toMatchObject({
+      degree: 'Master of Computer Application (Computers)',
+      institution: 'PSG College',
+      location: 'Coimbatore, India',
+      startDate: '01-01-2011',
+      endDate: '01-01-2011',
+    });
   });
 
   it('loads only the active template when previewing from the builder', () => {

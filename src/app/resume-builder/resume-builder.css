@@ -400,6 +400,27 @@
   background: #fff;
 }
 
+.education-card {
+  gap: 14px;
+  padding: 16px;
+}
+
+.education-field-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.education-field-grid .span-2 {
+  grid-column: span 2;
+}
+
+.education-card .builder-field input {
+  min-height: 42px;
+  padding: 10px 12px;
+  font-size: 0.88rem;
+}
+
 .experience-list {
   display: grid;
   gap: 14px;
@@ -681,7 +702,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px 12px;
-  padding-top: 2px;
 }
 
 .skill-chip {
@@ -712,23 +732,14 @@
   place-items: center;
   width: 20px;
   height: 20px;
-  min-height: 20px;
   border: 1px solid #d9c6fb;
   border-radius: 50%;
   padding: 0;
   background: #ffffff;
   color: #6d28d9;
-  font: inherit;
   font-size: 0.9rem;
   font-weight: 900;
-  line-height: 1;
   cursor: pointer;
-}
-
-.skill-remove:hover {
-  border-color: #7c3aed;
-  background: #6d28d9;
-  color: #ffffff;
 }
 
 .skill-add-row {
@@ -969,8 +980,13 @@ button:disabled {
   }
 
   .experience-field-grid,
-  .experience-meta-grid {
+  .experience-meta-grid,
+  .education-field-grid {
     grid-template-columns: 1fr;
+  }
+
+  .education-field-grid .span-2 {
+    grid-column: auto;
   }
 
   .editor-card {
