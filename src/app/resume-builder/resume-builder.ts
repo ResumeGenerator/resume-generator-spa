@@ -104,7 +104,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly activeTemplateIndex = signal(0);
   protected readonly activeEditorStep = signal<EditorStepId>('personal');
   protected readonly savedIndicator = signal(true);
-  protected readonly hasUnsavedChanges = signal(false);
   protected readonly collapsedWorkExperienceIndexes = signal<Set<number>>(new Set());
   protected readonly editorSteps: EditorStep[] = [
     { id: 'personal', label: 'Personal' },
@@ -1200,7 +1199,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.isProfessionalSummaryAiActive.set(false);
   }
 
-  private markUnsavedChanges(): void {
+  protected markUnsavedChanges(): void {
     if (this.renderedSaveState() === 'saving') {
       return;
     }
