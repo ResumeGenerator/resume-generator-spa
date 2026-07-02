@@ -130,6 +130,15 @@ describe('ResumeBuilder', () => {
     ]);
   });
 
+  it('renders the inline preview iframe without its own scrollbars', () => {
+    const previewFrame = fixture.nativeElement.querySelector(
+      '.resume-preview-frame iframe',
+    ) as HTMLIFrameElement | null;
+
+    expect(previewFrame?.getAttribute('sandbox')).toBe('allow-same-origin');
+    expect(previewFrame?.getAttribute('scrolling')).toBe('no');
+  });
+
   it('renders only skills provided by the resume data in the skills step', () => {
     component.activeEditorStep.set('skills');
     component.editHardSkills = 'Angular\nTypeScript';

@@ -559,7 +559,13 @@
       </header>
 
       <div class="resume-preview-frame">
-        <iframe title="Resume preview" sandbox="" [srcdoc]="trustedPreviewHtml(currentResumePreview())"></iframe>
+        <iframe
+          title="Resume preview"
+          sandbox="allow-same-origin"
+          scrolling="no"
+          [srcdoc]="trustedPreviewHtml(currentResumePreview())"
+          (load)="resizePreviewFrame($event)"
+        ></iframe>
         @if (savedIndicator()) {
           <span class="saved-pill">✓ Saved</span>
         }
