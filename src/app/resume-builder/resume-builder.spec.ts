@@ -146,13 +146,49 @@ describe('ResumeBuilder', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const skillChips = Array.from(compiled.querySelectorAll('.skill-chip'), (chip) => chip.textContent?.trim() ?? '');
+    const skillChips = Array.from(
+      compiled.querySelectorAll('.skill-label'),
+      (chip) => chip.textContent?.trim() ?? '',
+    );
 
     expect(compiled.textContent).toContain('Skills from resume');
     expect(skillChips).toEqual(['Angular', 'TypeScript']);
+    expect(compiled.querySelector('textarea[name="editorSkills"]')).toBeNull();
     expect(compiled.textContent).not.toContain('System design');
     expect(compiled.textContent).not.toContain('Project management');
     expect(compiled.textContent).not.toContain('Technical leadership');
+  });
+
+  it('adds and removes skills directly as chips', () => {
+    component.activeEditorStep.set('skills');
+    component.editHardSkills = 'Angular\nTypeScript';
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input[name="editorSkillInput"]') as HTMLInputElement | null;
+    input?.focus();
+    input!.value = 'RxJS';
+    input?.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const addButton = fixture.nativeElement.querySelector('.skill-add-button') as HTMLButtonElement | null;
+    addButton?.click();
+    fixture.detectChanges();
+
+    const skillLabels = (): string[] =>
+      Array.from(
+        fixture.nativeElement.querySelectorAll('.skill-label'),
+        (chip: Element) => chip.textContent?.trim() ?? '',
+      );
+
+    expect(skillLabels()).toEqual(['Angular', 'TypeScript', 'RxJS']);
+
+    const removeButton = fixture.nativeElement.querySelector(
+      'button[aria-label="Remove Angular"]',
+    ) as HTMLButtonElement | null;
+    removeButton?.click();
+    fixture.detectChanges();
+
+    expect(skillLabels()).toEqual(['TypeScript', 'RxJS']);
   });
 
   it('uses nested rendered HTML returned from save instead of refetching stale preview HTML', () => {

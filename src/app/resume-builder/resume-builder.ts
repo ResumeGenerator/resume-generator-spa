@@ -136,6 +136,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected editProjectHighlights = '';
   protected editIndustryHighlights = '';
   protected editHardSkills = '';
+  protected newSkill = '';
   protected editToolsAndSoftware = '';
   protected editMethodologies = '';
   protected editSoftSkills = '';
@@ -448,9 +449,31 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   }
 
   protected removeSuggestedSkill(skill: string): void {
-    this.editHardSkills = this.hardSkillChips()
-      .filter((item) => item !== skill)
-      .join('\n');
+    this.setHardSkills(this.hardSkillChips().filter((item) => item !== skill));
+  }
+
+  protected addSkillFromInput(): void {
+    const skills = this.toChipList(this.newSkill);
+
+    if (skills.length === 0) {
+      return;
+    }
+
+    this.setHardSkills([...this.hardSkillChips(), ...skills]);
+    this.newSkill = '';
+  }
+
+  protected handleSkillInputKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' && event.key !== ',') {
+      return;
+    }
+
+    event.preventDefault();
+    this.addSkillFromInput();
+  }
+
+  private setHardSkills(skills: string[]): void {
+    this.editHardSkills = this.uniqueLines(skills).join('\n');
     this.savedIndicator.set(true);
   }
 

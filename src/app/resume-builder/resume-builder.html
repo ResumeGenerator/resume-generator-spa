@@ -387,16 +387,27 @@
 
             <div class="skill-chips">
               @for (skill of hardSkillChips(); track skill) {
-                <button type="button" class="skill-chip active" (click)="removeSuggestedSkill(skill)">
-                  {{ skill }}
-                </button>
+                <span class="skill-chip active">
+                  <span class="skill-label">{{ skill }}</span>
+                  <button type="button" class="skill-remove" aria-label="Remove {{ skill }}" (click)="removeSuggestedSkill(skill)">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </span>
               }
             </div>
 
-            <label class="builder-field">
-              <span>Additional skills</span>
-              <textarea name="editorSkills" rows="5" [(ngModel)]="editHardSkills"></textarea>
-            </label>
+            <div class="skill-add-row">
+              <label class="builder-field skill-add-field">
+                <span>Add skill</span>
+                <input
+                  name="editorSkillInput"
+                  [(ngModel)]="newSkill"
+                  (keydown)="handleSkillInputKeydown($event)"
+                  placeholder="Type a skill and press Enter"
+                />
+              </label>
+              <button type="button" class="skill-add-button" (click)="addSkillFromInput()">Add</button>
+            </div>
           }
 
           @case ('education') {

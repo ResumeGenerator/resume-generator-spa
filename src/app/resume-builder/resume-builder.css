@@ -680,24 +680,80 @@
 .skill-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px 12px;
+  padding-top: 2px;
 }
 
 .skill-chip {
-  min-height: 48px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
   border: 0;
   border-radius: 999px;
-  padding: 0 18px;
+  padding: 0 28px 0 13px;
   background: #eee4ff;
   color: #111827;
   font: inherit;
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.1;
 }
 
 .skill-chip.active {
   background: #f2eaff;
+}
+
+.skill-remove {
+  position: absolute;
+  top: -6px;
+  right: -5px;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  border: 1px solid #d9c6fb;
+  border-radius: 50%;
+  padding: 0;
+  background: #ffffff;
+  color: #6d28d9;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.skill-remove:hover {
+  border-color: #7c3aed;
+  background: #6d28d9;
+  color: #ffffff;
+}
+
+.skill-add-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 360px) auto;
+  align-items: end;
+  gap: 10px;
+}
+
+.skill-add-field input {
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.skill-add-button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #6d28d9;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 850;
+  cursor: pointer;
 }
 
 .editor-footer {
@@ -716,12 +772,12 @@
   justify-content: center;
   gap: 8px;
   min-width: 112px;
-  min-height: 44px;
+  min-height: 40px;
   border-radius: 8px;
-  padding: 0 16px;
+  padding: 0 14px;
   font: inherit;
-  font-size: 0.98rem;
-  font-weight: 900;
+  font-size: 0.84rem;
+  font-weight: 850;
   cursor: pointer;
 }
 
@@ -987,6 +1043,14 @@ button:disabled {
   }
 
   .ai-suggestion-action {
+    width: 100%;
+  }
+
+  .skill-add-row {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-add-button {
     width: 100%;
   }
 
