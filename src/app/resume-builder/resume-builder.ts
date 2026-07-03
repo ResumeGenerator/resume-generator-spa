@@ -112,6 +112,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly activeEditorStep = signal<EditorStepId>('personal');
   protected readonly savedIndicator = signal(true);
   protected readonly collapsedWorkExperienceIndexes = signal<Set<number>>(new Set());
+  protected readonly collapsedCourseIndexes = signal<Set<number>>(new Set());
   protected readonly editorSteps: EditorStep[] = [
     { id: 'personal', label: 'Personal' },
     { id: 'contact', label: 'Contact' },
@@ -419,6 +420,24 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     });
   }
 
+  protected isCourseCollapsed(index: number): boolean {
+    return this.collapsedCourseIndexes().has(index);
+  }
+
+  protected toggleCourse(index: number): void {
+    this.collapsedCourseIndexes.update((indexes) => {
+      const nextIndexes = new Set(indexes);
+
+      if (nextIndexes.has(index)) {
+        nextIndexes.delete(index);
+      } else {
+        nextIndexes.add(index);
+      }
+
+      return nextIndexes;
+    });
+  }
+
   protected improveWorkSummary(index: number): void {
     this.improvePendingWorkSummary(index);
   }
@@ -663,6 +682,19 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       return pendingIndex > index ? pendingIndex - 1 : pendingIndex;
     });
     this.collapsedWorkExperienceIndexes.update((indexes) => {
+      const nextIndexes = new Set<number>();
+
+      indexes.forEach((collapsedIndex) => {
+        if (collapsedIndex < index) {
+          nextIndexes.add(collapsedIndex);
+        } else if (collapsedIndex > index) {
+          nextIndexes.add(collapsedIndex - 1);
+        }
+      });
+
+      return nextIndexes;
+    });
+    this.collapsedCourseIndexes.update((indexes) => {
       const nextIndexes = new Set<number>();
 
       indexes.forEach((collapsedIndex) => {
@@ -1838,6 +1870,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       };
     });
     this.resetWorkExperienceCollapseState();
+    this.resetCourseCollapseState();
     this.editEducation = this.asRecordArray(educationSection?.['items']).map((item) => ({
       degree: this.asString(item['degree']) || this.asString(item['title']),
       majorOrFieldOfStudy:
@@ -1883,6 +1916,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private resetWorkExperienceCollapseState(): void {
     this.collapsedWorkExperienceIndexes.set(new Set());
+  }
+
+  private resetCourseCollapseState(): void {
+    this.collapsedCourseIndexes.set(new Set());
   }
 
   private hasUsableWorkExperience(): boolean {
