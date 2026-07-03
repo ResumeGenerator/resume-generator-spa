@@ -413,10 +413,39 @@
 
           @case ('education') {
             @for (education of editEducation; track $index) {
-              <article class="experience-card education-card">
-                <header>
+              <article class="experience-card education-card" [class.collapsed]="isEducationCollapsed($index)">
+                <header class="experience-card-header">
+                  <span class="drag-handle" aria-hidden="true"></span>
                   <strong>{{ education.degree || 'Education' }}</strong>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    [attr.aria-expanded]="!isEducationCollapsed($index)"
+                    [attr.aria-label]="isEducationCollapsed($index) ? 'Expand education entry' : 'Collapse education entry'"
+                    (click)="toggleEducation($index)"
+                  >
+                    @if (isEducationCollapsed($index)) {
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M6 9l6 6 6-6"></path>
+                      </svg>
+                    } @else {
+                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M6 15l6-6 6 6"></path>
+                      </svg>
+                    }
+                  </button>
+                  <button type="button" class="icon-button" aria-label="Delete education entry" (click)="removeEducation($index)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M3 6h18"></path>
+                      <path d="M8 6V4h8v2"></path>
+                      <path d="M6 6l1 15h10l1-15"></path>
+                      <path d="M10 11v6"></path>
+                      <path d="M14 11v6"></path>
+                    </svg>
+                  </button>
                 </header>
+
+                @if (!isEducationCollapsed($index)) {
                 <div class="education-field-grid">
                   <label class="builder-field span-2">
                     <span>Degree</span>
@@ -443,6 +472,7 @@
                     <input name="editorEducationEnd{{ $index }}" [(ngModel)]="education.endDate" (ngModelChange)="updateEducationField($index, 'endDate', $event)" placeholder="2014" />
                   </label>
                 </div>
+                }
               </article>
             }
             <button type="button" class="add-wide" (click)="addEducation()">Add education</button>

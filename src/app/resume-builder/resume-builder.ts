@@ -112,6 +112,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly activeEditorStep = signal<EditorStepId>('personal');
   protected readonly savedIndicator = signal(true);
   protected readonly collapsedWorkExperienceIndexes = signal<Set<number>>(new Set());
+  protected readonly collapsedEducationIndexes = signal<Set<number>>(new Set());
   protected readonly collapsedCourseIndexes = signal<Set<number>>(new Set());
   protected readonly editorSteps: EditorStep[] = [
     { id: 'personal', label: 'Personal' },
@@ -408,6 +409,24 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected toggleWorkExperience(index: number): void {
     this.collapsedWorkExperienceIndexes.update((indexes) => {
+      const nextIndexes = new Set(indexes);
+
+      if (nextIndexes.has(index)) {
+        nextIndexes.delete(index);
+      } else {
+        nextIndexes.add(index);
+      }
+
+      return nextIndexes;
+    });
+  }
+
+  protected isEducationCollapsed(index: number): boolean {
+    return this.collapsedEducationIndexes().has(index);
+  }
+
+  protected toggleEducation(index: number): void {
+    this.collapsedEducationIndexes.update((indexes) => {
       const nextIndexes = new Set(indexes);
 
       if (nextIndexes.has(index)) {
@@ -1916,6 +1935,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private resetWorkExperienceCollapseState(): void {
     this.collapsedWorkExperienceIndexes.set(new Set());
+  }
+
+  private resetEducationCollapseState(): void {
+    this.collapsedEducationIndexes.set(new Set());
   }
 
   private resetCourseCollapseState(): void {
