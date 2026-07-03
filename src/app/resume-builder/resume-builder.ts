@@ -20,7 +20,7 @@ type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
 type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
 type RenderedSaveState = 'idle' | 'saving' | 'success' | 'error';
 type AiEnhanceState = 'idle' | 'loading' | 'success' | 'error';
-type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'summary';
+type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'courses' | 'summary';
 
 interface EditorStep {
   id: EditorStepId;
@@ -61,6 +61,13 @@ interface CertificationEditItem {
   name: string;
   issuer: string;
   year: string;
+}
+
+interface CourseEditItem {
+  course: string;
+  institution: string;
+  startDate: string;
+  endDate: string;
 }
 
 interface PreviewOptions {
@@ -111,6 +118,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     { id: 'experience', label: 'Experience' },
     { id: 'skills', label: 'Skills' },
     { id: 'education', label: 'Education' },
+    { id: 'courses', label: 'Courses' },
     { id: 'summary', label: 'Summary' },
   ];
   private readonly defaultTemplateIds = [
@@ -150,6 +158,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected editLanguages = '';
   protected editWorkExperience: WorkExperienceEditItem[] = [];
   protected editEducation: EducationEditItem[] = [];
+  protected editCourses: CourseEditItem[] = [];
   protected editCertifications: CertificationEditItem[] = [];
 
   protected readonly fileMeta = computed(() => {
@@ -508,6 +517,13 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.markUnsavedChanges();
   }
 
+  protected updateCourseField(index: number, field: keyof CourseEditItem, value: string): void {
+    this.editCourses = this.editCourses.map((item, itemIndex) =>
+      itemIndex === index ? { ...item, [field]: value } : item,
+    );
+    this.markUnsavedChanges();
+  }
+
   protected updateCertificationField(index: number, field: keyof CertificationEditItem, value: string): void {
     this.editCertifications = this.editCertifications.map((item, itemIndex) =>
       itemIndex === index ? { ...item, [field]: value } : item,
@@ -675,6 +691,21 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   protected removeEducation(index: number): void {
     this.editEducation.splice(index, 1);
+    this.markUnsavedChanges();
+  }
+
+  protected addCourse(): void {
+    this.editCourses.push({
+      course: '',
+      institution: '',
+      startDate: '',
+      endDate: '',
+    });
+    this.markUnsavedChanges();
+  }
+
+  protected removeCourse(index: number): void {
+    this.editCourses.splice(index, 1);
     this.markUnsavedChanges();
   }
 
@@ -1265,6 +1296,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       experience: 'Work experience',
       skills: 'Skills',
       education: 'Education',
+      courses: 'Courses and training',
       summary: 'Professional summary',
     };
 
@@ -1278,6 +1310,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       experience: 'Use this section to show what you achieved in each role. Recruiters notice results more than duties.',
       skills: "We've suggested some skills from your experience. Add or edit them to show recruiters what you do best.",
       education: 'Add degrees, institutions, and certifications that strengthen your profile.',
+      courses: 'Use this section to capture training, coursework, and professional development that supports your goals.',
       summary: 'Write a concise summary that connects your experience to the role you want next.',
     };
 
@@ -1376,8 +1409,11 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const existingSkillItems = this.asRecordArray(
       this.findRenderedSectionIn(existingSections, 'skill', 'skills')?.['items'],
     );
+    const existingCourseItems = this.asRecordArray(
+      this.findRenderedSectionIn(existingSections, 'course', 'courses')?.['items'],
+    );
     const existingCertificationItems = this.asRecordArray(
-      this.findRenderedSectionIn(existingSections, 'course', 'courses', 'certification', 'certifications')?.['items'],
+      this.findRenderedSectionIn(existingSections, 'certification', 'certifications')?.['items'],
     );
     const skillItems = this.uniqueLines([
       ...this.toChipList(this.editHardSkills),
@@ -1455,15 +1491,25 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         type: 'skill',
         items: skillItems,
       }),
-      this.mergeRenderedSection(existingSections, ['course', 'courses', 'certification', 'certifications'], {
+      this.mergeRenderedSection(existingSections, ['course', 'courses'], {
         title: 'Courses',
         type: 'course',
+        items: this.editCourses.map((course, index) => ({
+          ...(existingCourseItems[index] ?? {}),
+          course: course.course.trim(),
+          institution: course.institution.trim(),
+          start: course.startDate.trim(),
+          end: course.endDate.trim(),
+        })),
+      }),
+      this.mergeRenderedSection(existingSections, ['certification', 'certifications'], {
+        title: 'Certifications',
+        type: 'certification',
         items: this.editCertifications.map((certification, index) => ({
           ...(existingCertificationItems[index] ?? {}),
-          course: certification.name.trim(),
-          institution: certification.issuer.trim(),
-          start: this.asString(existingCertificationItems[index]?.['start']),
-          end: certification.year.trim(),
+          name: certification.name.trim(),
+          issuer: certification.issuer.trim(),
+          year: certification.year.trim(),
         })),
       }),
       ...existingSections.filter((section) => !this.isKnownRenderedSection(section, knownTypes)),
@@ -1729,7 +1775,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const experienceSection = this.findRenderedSection(data, ...this.renderedExperienceAliases());
     const educationSection = this.findRenderedSection(data, 'education');
     const skillSection = this.findRenderedSection(data, 'skill', 'skills');
-    const certificationSection = this.findRenderedSection(data, 'course', 'courses', 'certification', 'certifications');
+    const courseSection = this.findRenderedSection(data, 'course', 'courses');
+    const certificationSection = this.findRenderedSection(data, 'certification', 'certifications');
     const summary = this.asEditableText(summarySection?.['items']) || this.asString(data['summary']);
 
     this.editCandidateName = this.asString(data['name']);
@@ -1807,10 +1854,17 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         this.extractEducationYearRange(item).end ||
         this.asString(item['years']),
     }));
+    this.editCourses = this.asRecordArray(courseSection?.['items']).map((item) => ({
+      course: this.asString(item['course']) || this.asString(item['name']) || this.asString(item['title']),
+      institution: this.asString(item['institution']) || this.asString(item['issuer']),
+      startDate: this.asString(item['start']) || this.asString(item['startDate']) || '',
+      endDate: this.asString(item['end']) || this.asString(item['endDate']) || this.asEditableNumber(item['year']),
+    }));
+
     this.editCertifications = this.asRecordArray(certificationSection?.['items']).map((item) => ({
-      name: this.asString(item['course']) || this.asString(item['name']),
-      issuer: this.asString(item['institution']) || this.asString(item['issuer']),
-      year: this.asString(item['end']) || this.asEditableNumber(item['year']),
+      name: this.asString(item['name']) || this.asString(item['course']),
+      issuer: this.asString(item['issuer']) || this.asString(item['institution']),
+      year: this.asString(item['year']) || this.asString(item['end']),
     }));
   }
 
@@ -2274,6 +2328,14 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         year: this.toOptionalNumber(edited.year),
       }),
     );
+
+    profile['courses'] = this.mergeRecordArray(profile['courses'], this.editCourses, (original, edited) => ({
+      ...original,
+      course: edited.course.trim(),
+      institution: edited.institution.trim() || null,
+      startDate: edited.startDate.trim() || null,
+      endDate: edited.endDate.trim() || null,
+    }));
 
     return profile;
   }

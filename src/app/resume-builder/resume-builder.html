@@ -420,7 +420,7 @@
                 <div class="education-field-grid">
                   <label class="builder-field span-2">
                     <span>Degree</span>
-                    <input name="editorEducationDegree{{ $index }}" [(ngModel)]="education.degree" />
+                    <input name="editorEducationDegree{{ $index }}" [(ngModel)]="education.degree" (ngModelChange)="updateEducationField($index, 'degree', $event)" />
                   </label>
                   <label class="builder-field span-2">
                     <span>Institution</span>
@@ -446,6 +446,38 @@
               </article>
             }
             <button type="button" class="add-wide" (click)="addEducation()">Add education</button>
+          }
+
+          @case ('courses') {
+            @for (course of editCourses; track $index) {
+              <article class="experience-card education-card">
+                <header>
+                  <strong>{{ course.course || 'Course or training' }}</strong>
+                </header>
+                <div class="education-field-grid">
+                  <label class="builder-field span-2">
+                    <span>Course or training</span>
+                    <input name="editorCourseName{{ $index }}" [(ngModel)]="course.course" (ngModelChange)="updateCourseField($index, 'course', $event)" />
+                  </label>
+                  <label class="builder-field span-2">
+                    <span>Institution</span>
+                    <input name="editorCourseInstitution{{ $index }}" [(ngModel)]="course.institution" (ngModelChange)="updateCourseField($index, 'institution', $event)" />
+                  </label>
+                  <label class="builder-field compact-field">
+                    <span>Start</span>
+                    <input name="editorCourseStart{{ $index }}" [(ngModel)]="course.startDate" (ngModelChange)="updateCourseField($index, 'startDate', $event)" placeholder="2024" />
+                  </label>
+                  <label class="builder-field compact-field">
+                    <span>End</span>
+                    <input name="editorCourseEnd{{ $index }}" [(ngModel)]="course.endDate" (ngModelChange)="updateCourseField($index, 'endDate', $event)" placeholder="2024" />
+                  </label>
+                </div>
+                <div class="editor-actions-row">
+                  <button type="button" class="remove-button" (click)="removeCourse($index)">Remove</button>
+                </div>
+              </article>
+            }
+            <button type="button" class="add-wide" (click)="addCourse()">Add course or training</button>
           }
 
           @case ('summary') {
