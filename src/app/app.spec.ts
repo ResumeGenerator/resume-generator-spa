@@ -90,7 +90,7 @@ describe('App', () => {
     const menuLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.navigation-menu a'));
 
     expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
-    expect(getComputedStyle(menu as HTMLElement).left).toBe('0px');
+    expect(getComputedStyle(menu as HTMLElement).left).toBe('32px');
     expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
       'Home',
       'Document Workspace',

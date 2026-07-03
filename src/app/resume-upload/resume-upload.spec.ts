@@ -39,7 +39,7 @@ describe('ResumeUpload', () => {
       button.textContent?.trim(),
     );
 
-    expect(actions).toEqual(['O Preview and edit']);
+    expect(actions).toEqual(['Preview and edit']);
     expect(compiled.textContent).not.toContain('Update resume fields');
   });
 
@@ -47,8 +47,8 @@ describe('ResumeUpload', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     const dropZone = compiled.querySelector<HTMLElement>('.drop-zone');
 
-    expect(compiled.textContent).toContain('Document workspace');
-    expect(compiled.textContent).toContain('Step 1: Your Input');
+    expect(compiled.textContent).toContain('Resume tailoring workspace');
+    expect(compiled.textContent).toContain('Your input');
     expect(compiled.textContent).toContain('Saved Tailorings');
     expect(compiled.textContent).toContain('Supports PDF, DOC, or DOCX (Max 5MB).');
     expect(compiled.textContent).not.toContain('multipart/form-data');

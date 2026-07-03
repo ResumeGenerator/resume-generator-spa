@@ -2,6 +2,10 @@
   <div class="site-header-inner">
     <div class="header-leading">
       <a class="brand-link" routerLink="/" aria-label="CareerKit AI home" (click)="closeMenu()">
+        <span class="brand-mark" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </span>
         <span>CareerKit AI</span>
       </a>
 
@@ -36,6 +40,7 @@
               <span class="profile-kicker">Signed in</span>
               <span class="profile-label">{{ profileName() }}</span>
             </span>
+            <span class="profile-chevron" aria-hidden="true"></span>
           </button>
 
           @if (isProfileOpen()) {

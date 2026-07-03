@@ -24,9 +24,9 @@
   position: sticky;
   top: 0;
   z-index: 40;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  border-bottom: 1px solid rgba(124, 58, 237, 0.14);
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 10px 30px rgba(76, 29, 149, 0.08);
   backdrop-filter: blur(16px);
 }
 
@@ -36,11 +36,11 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  min-height: 64px;
+  min-height: 68px;
   gap: 18px;
   box-sizing: border-box;
   margin: 0;
-  padding: 0 28px;
+  padding: 0 32px;
 }
 
 .header-leading {
@@ -53,34 +53,69 @@
 .menu-toggle {
   display: inline-grid;
   place-content: center;
-  gap: 5px;
-  width: 44px;
-  height: 44px;
+  gap: 4px;
+  width: 40px;
+  height: 40px;
   flex: 0 0 auto;
-  border: 1px solid var(--theme-border);
+  border: 1px solid #d8c8f3;
   border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+  background: #f8f5ff;
+  color: #4c1d95;
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.1);
   cursor: pointer;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .menu-toggle span {
   display: block;
-  width: 21px;
-  height: 3px;
+  width: 19px;
+  height: 2px;
   border-radius: 999px;
-  background: #4c1d95;
+  background: currentColor;
+}
+
+.menu-toggle:hover,
+.menu-toggle[aria-expanded="true"] {
+  border-color: #7c3aed;
+  background: #efe7ff;
+  box-shadow: 0 10px 22px rgba(76, 29, 149, 0.14);
+  transform: translateY(-1px);
 }
 
 .brand-link {
   display: inline-flex;
   align-items: center;
+  gap: 10px;
   min-width: 0;
   color: #111827;
-  font-size: 1.04rem;
+  font-size: 1.08rem;
   font-weight: 950;
   line-height: 1.1;
   text-decoration: none;
+}
+
+.brand-mark {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-content: center;
+  gap: 4px;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #4c1d95 0%, #6d28d9 55%, #e65387 100%);
+  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.22);
+}
+
+.brand-mark span {
+  display: block;
+  width: 17px;
+  height: 2px;
+  border-radius: 999px;
+  background: #ffffff;
 }
 
 .header-nav {
@@ -110,7 +145,7 @@
   border: 1px solid var(--theme-accent);
   background: var(--theme-accent);
   color: #ffffff;
-  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.18);
+  box-shadow: 0 12px 24px rgba(109, 40, 217, 0.22);
 }
 
 .login-nav-link {
@@ -128,24 +163,31 @@
 .profile-button {
   display: inline-flex;
   align-items: center;
-  max-width: 260px;
-  min-height: 44px;
-  gap: 9px;
-  border: 1px solid var(--theme-border);
+  max-width: 300px;
+  min-height: 46px;
+  gap: 10px;
+  border: 1px solid #d8c8f3;
   border-radius: 8px;
-  padding: 5px 12px 5px 6px;
+  padding: 5px 11px 5px 5px;
   background: #ffffff;
   color: #111827;
   font: inherit;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.07);
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.1);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .profile-button:hover,
 .profile-button[aria-expanded="true"] {
-  border-color: var(--theme-border-strong);
+  border-color: #7c3aed;
   background: #fbf8ff;
+  box-shadow: 0 12px 24px rgba(76, 29, 149, 0.14);
+  transform: translateY(-1px);
 }
 
 .profile-avatar {
@@ -155,8 +197,8 @@
   flex: 0 0 auto;
   place-items: center;
   border-radius: 8px;
-  background: var(--theme-accent-soft);
-  color: var(--theme-accent);
+  background: linear-gradient(145deg, #ede4ff 0%, #f7d8e7 100%);
+  color: #6d28d9;
   font-size: 0.8rem;
   font-weight: 950;
   line-height: 1;
@@ -189,6 +231,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.1;
+}
+
+.profile-chevron {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-right: 2px solid #8a7a9d;
+  border-bottom: 2px solid #8a7a9d;
+  transform: rotate(45deg) translateY(-1px);
 }
 
 .profile-panel {
@@ -284,7 +335,7 @@
 .navigation-menu {
   position: absolute;
   top: calc(100% + 10px);
-  left: 0;
+  left: 32px;
   display: grid;
   gap: 6px;
   min-width: 240px;
