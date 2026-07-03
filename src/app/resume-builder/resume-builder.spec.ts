@@ -138,6 +138,7 @@ describe('ResumeBuilder', () => {
       '7 Languages',
       '8 Summary',
     ]);
+    expect(fixture.nativeElement.querySelector('.step-rail')?.textContent).not.toContain('Add section');
   });
 
   it('renders the inline preview iframe without its own scrollbars', () => {

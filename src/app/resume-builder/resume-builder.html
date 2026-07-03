@@ -42,11 +42,6 @@
           <span>{{ step.label }}</span>
         </button>
       }
-
-      <button type="button" class="step-item muted">
-        <span class="step-marker">+</span>
-        <span>Add section</span>
-      </button>
     </aside>
 
     <section class="editor-card" aria-labelledby="editor-title">
@@ -286,8 +281,8 @@
                         <button
                           type="button"
                           class="ai-button"
-                          aria-label="Improve with AI"
-                          title="Improve with AI"
+                          aria-label="Rewrite work summary with AI"
+                          title="Rewrite work summary with AI"
                           [class.active]="pendingAiWorkSummaryIndex() === index"
                           [disabled]="aiEnhanceState() === 'loading'"
                           (click)="improveWorkSummary(index)"
@@ -299,9 +294,9 @@
                             </svg>
                           </span>
                           @if (aiEnhanceState() === 'loading' && pendingAiWorkSummaryIndex() === index) {
-                            Improving
+                            Rewriting...
                           } @else {
-                            Improve
+                            Rewrite with AI
                           }
                         </button>
                       }
@@ -581,8 +576,8 @@
                   <button
                     type="button"
                     class="ai-button"
-                    aria-label="Improve with AI"
-                    title="Improve with AI"
+                    aria-label="Rewrite professional summary with AI"
+                    title="Rewrite professional summary with AI"
                     [class.active]="isProfessionalSummaryAiActive()"
                     [disabled]="aiEnhanceState() === 'loading'"
                     (click)="improveProfessionalSummary()"
@@ -594,9 +589,9 @@
                       </svg>
                     </span>
                     @if (aiEnhanceState() === 'loading' && isProfessionalSummaryAiActive()) {
-                      Improving
+                      Rewriting...
                     } @else {
-                      Improve
+                      Rewrite with AI
                     }
                   </button>
                 }
