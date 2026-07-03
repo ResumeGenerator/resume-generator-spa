@@ -2859,25 +2859,25 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     }
 
     if (action === 'preview') {
-      return 'Unable to preview the resume. Please check the preview API server, resume id, and template ids.';
+      return 'Unable to preview the resume. Please check the API gateway, template route, resume id, and template ids.';
     }
 
     if (action === 'saved') {
-      return 'Unable to load saved resumes. Please check the template API server and try again.';
+      return 'Unable to load saved resumes. Please check the API gateway and saved resume route, then try again.';
     }
 
     if (action === 'edit') {
-      return 'Unable to save the edited resume copy. Please check the parser API server and try again.';
+      return 'Unable to save the edited resume copy. Please check the API gateway and parser route, then try again.';
     }
 
     if (action === 'ai') {
-      return 'Unable to improve the resume text. Please check the parser API server and try again.';
+      return 'Unable to improve the resume text. Please check the API gateway and parser route, then try again.';
     }
 
     if (action === 'image') {
-      return 'Unable to upload the resume photo. Please check the parser API server and try again.';
+      return 'Unable to upload the resume photo. Please check the API gateway and parser route, then try again.';
     }
 
-    return 'Unable to upload the resume. Please check the API server and try again.';
+    return 'Unable to upload the resume. Please check the API gateway and parser route, then try again.';
   }
 }

@@ -7,6 +7,7 @@ import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
 declare global {
   interface Window {
     __RESUME_GENERATOR_CONFIG__?: {
+      apiGatewayUrl?: string;
       parserApiUrl?: string;
       templateApiUrl?: string;
       authApiUrl?: string;
@@ -131,9 +132,12 @@ export interface ResumeRephraseRequest {
   providedIn: 'root',
 })
 export class ResumeApi {
-  private readonly parserApiUrl = this.resolveBaseUrl(window.__RESUME_GENERATOR_CONFIG__?.parserApiUrl, 'http://localhost:8000');
+  private readonly runtimeConfig = window.__RESUME_GENERATOR_CONFIG__;
+  private readonly apiGatewayUrl = this.resolveOptionalBaseUrl(this.runtimeConfig?.apiGatewayUrl);
+  private readonly parserApiUrl =
+    this.apiGatewayUrl ?? this.resolveBaseUrl(this.runtimeConfig?.parserApiUrl, 'http://localhost:8000');
   private readonly templateApiUrl = this.resolveBaseUrl(
-    window.__RESUME_GENERATOR_CONFIG__?.templateApiUrl,
+    this.apiGatewayUrl ?? this.runtimeConfig?.templateApiUrl,
     'http://localhost:8080',
   );
   private readonly parserResumesUrl = `${this.parserApiUrl}/api/resumes`;
@@ -269,6 +273,11 @@ export class ResumeApi {
     const resolved = value?.trim() || fallback;
     const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(resolved) ? resolved : `https://${resolved}`;
     return withProtocol.replace(/\/+$/, '');
+  }
+
+  private resolveOptionalBaseUrl(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed ? this.resolveBaseUrl(trimmed, trimmed) : undefined;
   }
 
   private normalizePreviewResponse(

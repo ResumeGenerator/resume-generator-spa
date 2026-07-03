@@ -11,6 +11,7 @@ describe('ResumeApi', () => {
 
   beforeEach(() => {
     window.__RESUME_GENERATOR_CONFIG__ = {
+      apiGatewayUrl: 'https://gateway.example.test',
       parserApiUrl: 'https://parser.example.test',
       templateApiUrl: 'https://template.example.test',
     };
@@ -44,7 +45,7 @@ describe('ResumeApi', () => {
     const modernRequest = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
         request.params.get('templateId') === 'modern-minimal' &&
         Boolean(request.params.get('_')),
     );
@@ -53,7 +54,7 @@ describe('ResumeApi', () => {
     const darkRequest = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
         request.params.get('templateId') === 'professional-dark-blue' &&
         Boolean(request.params.get('_')),
     );
@@ -100,7 +101,7 @@ describe('ResumeApi', () => {
     const request = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
         request.params.get('templateId') === 'modern-minimal' &&
         Boolean(request.params.get('_')),
     );
@@ -148,7 +149,7 @@ describe('ResumeApi', () => {
     const request = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://template.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
         request.params.get('templateId') === 'modern-minimal' &&
         !request.headers.has('Cache-Control') &&
         !request.headers.has('Pragma'),
@@ -178,7 +179,7 @@ describe('ResumeApi', () => {
       expect(response.id).toBe('resume-1');
     });
 
-    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/resume-1');
+    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/resume-1');
     expect(request.request.method).toBe('GET');
 
     request.flush({
@@ -199,7 +200,7 @@ describe('ResumeApi', () => {
     });
 
     const request = httpTesting.expectOne(
-      (request) => request.method === 'GET' && request.url === 'https://template.example.test/api/Resumes',
+      (request) => request.method === 'GET' && request.url === 'https://gateway.example.test/api/Resumes',
     );
 
     request.flush({
@@ -249,7 +250,7 @@ describe('ResumeApi', () => {
         savedId = response.id;
       });
 
-    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/resume-1/edits');
+    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/resume-1/edits');
 
     expect(request.request.method).toBe('POST');
 
@@ -279,7 +280,7 @@ describe('ResumeApi', () => {
       uploadedAvatar = String(response.profile['data'] && (response.profile['data'] as Record<string, unknown>)['avatar']);
     });
 
-    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/resume-1/image');
+    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/resume-1/image');
 
     expect(request.request.method).toBe('POST');
     expect(request.request.body instanceof FormData).toBe(true);
@@ -315,7 +316,7 @@ describe('ResumeApi', () => {
         savedId = response.id || '';
       });
 
-    const request = httpTesting.expectOne('https://template.example.test/api/Resumes/edited/resume-1');
+    const request = httpTesting.expectOne('https://gateway.example.test/api/Resumes/edited/resume-1');
 
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({
@@ -347,7 +348,7 @@ describe('ResumeApi', () => {
       rephrasedText = response;
     });
 
-    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/rephrase');
+    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/rephrase');
 
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({

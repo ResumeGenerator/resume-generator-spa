@@ -39,6 +39,7 @@ const SURNAME_CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/sur
 
 interface RuntimeConfigWindow extends Window {
   __RESUME_GENERATOR_CONFIG__?: {
+    apiGatewayUrl?: string;
     parserApiUrl?: string;
     templateApiUrl?: string;
     authApiUrl?: string;
@@ -51,13 +52,14 @@ interface RuntimeConfigWindow extends Window {
 })
 export class AuthService {
   private readonly tokenStorageKey = 'resumeGeneratorAuthToken';
+  private readonly runtimeConfig = (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__;
+  private readonly apiGatewayUrl = this.resolveOptionalBaseUrl(this.runtimeConfig?.apiGatewayUrl);
   private readonly authApiUrl = this.resolveBaseUrl(
-    (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__?.authApiUrl,
+    this.apiGatewayUrl ?? this.runtimeConfig?.authApiUrl,
     'https://resume-generator-auth-api-staging.up.railway.app',
   );
   private readonly authRedirectUri =
-    (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__?.authRedirectUri?.trim() ||
-    `${window.location.origin}/auth/auth-callback`;
+    this.runtimeConfig?.authRedirectUri?.trim() || `${window.location.origin}/auth/auth-callback`;
   private readonly authenticated = signal(Boolean(this.getToken()));
   readonly currentUser = signal<CurrentUser | null>(this.getUserFromToken());
 
@@ -118,6 +120,11 @@ export class AuthService {
     const resolved = value?.trim() || fallback;
     const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(resolved) ? resolved : `https://${resolved}`;
     return withProtocol.replace(/\/+$/, '');
+  }
+
+  private resolveOptionalBaseUrl(value: string | undefined): string | undefined {
+    const trimmed = value?.trim();
+    return trimmed ? this.resolveBaseUrl(trimmed, trimmed) : undefined;
   }
 
   private getUserFromToken(token = this.getToken()): CurrentUser | null {

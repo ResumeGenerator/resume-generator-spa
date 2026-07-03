@@ -77,21 +77,29 @@ The shape is declared in `src/app/services/resume-api.ts`:
 
 ```ts
 {
+  apiGatewayUrl?: string;
   parserApiUrl?: string;
   templateApiUrl?: string;
+  authApiUrl?: string;
+  authRedirectUri?: string;
 }
 ```
 
 Local defaults:
 
+- API Gateway: unset
 - Parser API: `http://localhost:8000`
 - Template API: `http://localhost:8080`
 
 Docker/Railway values are injected by `docker-entrypoint.sh` from:
 
+- `API_GATEWAY_URL`
 - `PARSER_API_URL`
 - `TEMPLATE_API_URL`
+- `AUTH_API_URL`
 - `PORT`
+
+When `apiGatewayUrl` / `API_GATEWAY_URL` is set, parser, template, and auth service calls use that base URL. The gateway must route the current frontend paths (`/api/resumes/*`, `/api/Resumes/*`, and `/api/auth/*`) to the appropriate backend services. The split service URLs remain as fallbacks for local development and non-gateway deployments.
 
 The `ResumeApi.resolveBaseUrl` helper normalizes missing protocols to `https://` and trims trailing slashes.
 
@@ -219,10 +227,10 @@ At container startup, `docker-entrypoint.sh` writes `/usr/share/nginx/html/runti
 
 For Railway:
 
-- Set `PARSER_API_URL`.
-- Set `TEMPLATE_API_URL`.
+- Set `API_GATEWAY_URL` when routing service calls through a gateway.
+- Keep `PARSER_API_URL`, `TEMPLATE_API_URL`, and `AUTH_API_URL` only as fallback values for non-gateway deployments.
 - Railway provides `PORT`.
-- Backend services must allow the SPA origin in CORS.
+- The API gateway must allow the SPA origin in CORS; downstream services may also need the SPA origin if they own CORS headers.
 
 ## Agent Workflow
 
