@@ -20,7 +20,7 @@ type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
 type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
 type RenderedSaveState = 'idle' | 'saving' | 'success' | 'error';
 type AiEnhanceState = 'idle' | 'loading' | 'success' | 'error';
-type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'courses' | 'summary';
+type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'courses' | 'languages' | 'summary';
 
 interface EditorStep {
   id: EditorStepId;
@@ -121,6 +121,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     { id: 'skills', label: 'Skills' },
     { id: 'education', label: 'Education' },
     { id: 'courses', label: 'Courses' },
+    { id: 'languages', label: 'Languages' },
     { id: 'summary', label: 'Summary' },
   ];
   private readonly defaultTemplateIds = [
@@ -158,6 +159,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected editMethodologies = '';
   protected editSoftSkills = '';
   protected editLanguages = '';
+  protected newLanguage = '';
   protected editWorkExperience: WorkExperienceEditItem[] = [];
   protected editEducation: EducationEditItem[] = [];
   protected editCourses: CourseEditItem[] = [];
@@ -399,6 +401,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     return this.toChipList(this.editHardSkills);
   }
 
+  protected languageChips(): string[] {
+    return this.toChipList(this.editLanguages);
+  }
+
   protected primaryExperience(): WorkExperienceEditItem | undefined {
     return this.editWorkExperience[0];
   }
@@ -597,6 +603,35 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private setHardSkills(skills: string[]): void {
     this.editHardSkills = this.uniqueLines(skills).join('\n');
+    this.markUnsavedChanges();
+  }
+
+  protected removeLanguage(language: string): void {
+    this.setLanguages(this.languageChips().filter((item) => item !== language));
+  }
+
+  protected addLanguageFromInput(): void {
+    const languages = this.toChipList(this.newLanguage);
+
+    if (languages.length === 0) {
+      return;
+    }
+
+    this.setLanguages([...this.languageChips(), ...languages]);
+    this.newLanguage = '';
+  }
+
+  protected handleLanguageInputKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter' && event.key !== ',') {
+      return;
+    }
+
+    event.preventDefault();
+    this.addLanguageFromInput();
+  }
+
+  private setLanguages(languages: string[]): void {
+    this.editLanguages = this.uniqueLines(languages).join('\n');
     this.markUnsavedChanges();
   }
 
@@ -1348,6 +1383,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       skills: 'Skills',
       education: 'Education',
       courses: 'Courses and training',
+      languages: 'Languages',
       summary: 'Professional summary',
     };
 
@@ -1362,6 +1398,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       skills: "We've suggested some skills from your experience. Add or edit them to show recruiters what you do best.",
       education: 'Add degrees, institutions, and certifications that strengthen your profile.',
       courses: 'Use this section to capture training, coursework, and professional development that supports your goals.',
+      languages: 'Add the languages you can use professionally.',
       summary: 'Write a concise summary that connects your experience to the role you want next.',
     };
 
@@ -1463,6 +1500,9 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const existingCourseItems = this.asRecordArray(
       this.findRenderedSectionIn(existingSections, 'course', 'courses')?.['items'],
     );
+    const existingLanguageItems = this.asRecordArray(
+      this.findRenderedSectionIn(existingSections, 'language', 'languages')?.['items'],
+    );
     const existingCertificationItems = this.asRecordArray(
       this.findRenderedSectionIn(existingSections, 'certification', 'certifications')?.['items'],
     );
@@ -1471,11 +1511,15 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       ...this.toChipList(this.editToolsAndSoftware),
       ...this.toChipList(this.editMethodologies),
       ...this.toChipList(this.editSoftSkills),
-      ...this.toChipList(this.editLanguages),
     ]).map((skill) => ({
       ...this.findRenderedSkillItem(existingSkillItems, skill),
       name: skill,
       level: this.asString(this.findRenderedSkillItem(existingSkillItems, skill)['level']),
+    }));
+    const languageItems = this.uniqueLines(this.toChipList(this.editLanguages)).map((language) => ({
+      ...this.findRenderedLanguageItem(existingLanguageItems, language),
+      language,
+      level: this.asString(this.findRenderedLanguageItem(existingLanguageItems, language)['level']),
     }));
     const knownTypes = new Set(
       [
@@ -1486,6 +1530,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         'skills',
         'course',
         'courses',
+        'language',
+        'languages',
         'certification',
         'certifications',
       ].map((type) => this.normalizeSectionKey(type)),
@@ -1553,6 +1599,11 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           end: course.endDate.trim(),
         })),
       }),
+      this.mergeRenderedSection(existingSections, ['language', 'languages'], {
+        title: 'Languages',
+        type: 'language',
+        items: languageItems,
+      }),
       this.mergeRenderedSection(existingSections, ['certification', 'certifications'], {
         title: 'Certifications',
         type: 'certification',
@@ -1598,6 +1649,20 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       items.find((item) => {
         const itemName = this.asString(item['name']) || this.asString(item['skill']) || this.asString(item['title']);
         return itemName.trim().toLowerCase() === normalizedSkill;
+      }) ?? {}
+    );
+  }
+
+  private findRenderedLanguageItem(items: Record<string, unknown>[], language: string): Record<string, unknown> {
+    const normalizedLanguage = language.trim().toLowerCase();
+
+    return (
+      items.find((item) => {
+        const itemLanguage =
+          this.asString(item['language']) ||
+          this.asString(item['name']) ||
+          this.asString(item['title']);
+        return itemLanguage.trim().toLowerCase() === normalizedLanguage;
       }) ?? {}
     );
   }
@@ -1827,6 +1892,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const educationSection = this.findRenderedSection(data, 'education');
     const skillSection = this.findRenderedSection(data, 'skill', 'skills');
     const courseSection = this.findRenderedSection(data, 'course', 'courses');
+    const languageSection = this.findRenderedSection(data, 'language', 'languages');
     const certificationSection = this.findRenderedSection(data, 'certification', 'certifications');
     const summary = this.asEditableText(summarySection?.['items']) || this.asString(data['summary']);
 
@@ -1853,7 +1919,11 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editToolsAndSoftware = '';
     this.editMethodologies = '';
     this.editSoftSkills = '';
-    this.editLanguages = '';
+    this.editLanguages = this.uniqueLines([
+      ...this.extractRenderedLanguageNames(languageSection?.['items']),
+      ...this.extractRenderedLanguageNames(data['languages']),
+      ...this.extractRenderedLanguageNames(data['language']),
+    ]).join('\n');
     this.editWorkExperience = this.resolveRenderedExperienceItems(data, experienceSection).map((item) => {
       const responsibilities =
         this.asEditableText(item['responsibilities']) ||
@@ -2036,6 +2106,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       'projects',
       'certifications',
       'courses',
+      'languages',
+      'language',
       'licenses',
       'contact',
       'contacts',
@@ -2310,6 +2382,27 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
         const record = this.asRecord(item);
         return this.asString(record['name']) || this.asString(record['skill']) || this.asString(record['title']);
+      })
+      .filter(Boolean);
+  }
+
+  private extractRenderedLanguageNames(value: unknown): string[] {
+    if (typeof value === 'string') {
+      return this.toChipList(value);
+    }
+
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item;
+        }
+
+        const record = this.asRecord(item);
+        return this.asString(record['language']) || this.asString(record['name']) || this.asString(record['title']);
       })
       .filter(Boolean);
   }

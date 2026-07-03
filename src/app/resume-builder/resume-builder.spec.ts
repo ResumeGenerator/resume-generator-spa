@@ -13,6 +13,7 @@ type TestableResumeBuilder = {
   aiEnhanceErrorMessage: () => string | null;
   aiEnhanceState: () => string;
   editHardSkills: string;
+  editLanguages: string;
   editEducation: {
     degree: string;
     institution: string;
@@ -133,7 +134,9 @@ describe('ResumeBuilder', () => {
       '3 Experience',
       '4 Skills',
       '5 Education',
-      '6 Summary',
+      '6 Courses',
+      '7 Languages',
+      '8 Summary',
     ]);
   });
 
@@ -196,6 +199,85 @@ describe('ResumeBuilder', () => {
     fixture.detectChanges();
 
     expect(skillLabels()).toEqual(['TypeScript', 'RxJS']);
+  });
+
+  it('adds and removes languages directly as chips', () => {
+    component.activeEditorStep.set('languages');
+    component.editLanguages = 'English\nArabic';
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input[name="editorLanguageInput"]') as HTMLInputElement | null;
+    input?.focus();
+    input!.value = 'French';
+    input?.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const addButton = fixture.nativeElement.querySelector('.skill-add-button') as HTMLButtonElement | null;
+    addButton?.click();
+    fixture.detectChanges();
+
+    const languageLabels = (): string[] =>
+      Array.from(
+        fixture.nativeElement.querySelectorAll('.skill-label'),
+        (chip: Element) => chip.textContent?.trim() ?? '',
+      );
+
+    expect(languageLabels()).toEqual(['English', 'Arabic', 'French']);
+
+    const removeButton = fixture.nativeElement.querySelector(
+      'button[aria-label="Remove language English"]',
+    ) as HTMLButtonElement | null;
+    removeButton?.click();
+    fixture.detectChanges();
+
+    expect(languageLabels()).toEqual(['Arabic', 'French']);
+  });
+
+  it('saves languages as a separate rendered section and preserves existing levels', () => {
+    component.handleRenderedSaveResponse(
+      {
+        id: 'edited-language',
+        templateId: 'modern-minimal',
+        html: '<article>Language preview</article>',
+        data: {
+          sections: [
+            {
+              title: 'Skills',
+              type: 'skill',
+              items: [{ name: 'Angular', level: '' }],
+            },
+            {
+              title: 'Languages',
+              type: 'language',
+              items: [{ language: 'English', level: 'Native' }],
+            },
+          ],
+        },
+      },
+      'resume-1',
+    );
+
+    component.editHardSkills = 'Angular';
+    component.editLanguages = 'English\nFrench';
+    component.saveRenderedResume();
+
+    const request = resumeApi.saveRenderedResume.mock.calls[0][1] as {
+      data: {
+        sections: { type?: string; items?: unknown }[];
+      };
+    };
+    const skillItems = request.data.sections.find((section) => section.type === 'skill')?.items as
+      | Record<string, unknown>[]
+      | undefined;
+    const languageItems = request.data.sections.find((section) => section.type === 'language')?.items as
+      | Record<string, unknown>[]
+      | undefined;
+
+    expect(skillItems?.map((item) => item['name'])).toEqual(['Angular']);
+    expect(languageItems).toEqual([
+      expect.objectContaining({ language: 'English', level: 'Native' }),
+      expect.objectContaining({ language: 'French', level: '' }),
+    ]);
   });
 
   it('uses nested rendered HTML returned from save instead of refetching stale preview HTML', () => {

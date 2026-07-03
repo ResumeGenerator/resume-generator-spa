@@ -537,6 +537,38 @@
             <button type="button" class="add-wide" (click)="addCourse()">Add course or training</button>
           }
 
+          @case ('languages') {
+            <div class="suggestion-row">
+              <div>
+                <strong>Languages</strong>
+              </div>
+            </div>
+
+            <div class="skill-chips">
+              @for (language of languageChips(); track language) {
+                <span class="skill-chip active">
+                  <span class="skill-label">{{ language }}</span>
+                  <button type="button" class="skill-remove" aria-label="Remove language {{ language }}" (click)="removeLanguage(language)">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </span>
+              }
+            </div>
+
+            <div class="skill-add-row">
+              <label class="builder-field skill-add-field">
+                <span>Add language</span>
+                <input
+                  name="editorLanguageInput"
+                  [(ngModel)]="newLanguage"
+                  (keydown)="handleLanguageInputKeydown($event)"
+                  placeholder="Type a language and press Enter"
+                />
+              </label>
+              <button type="button" class="skill-add-button" (click)="addLanguageFromInput()">Add</button>
+            </div>
+          }
+
           @case ('summary') {
             <div class="builder-field">
               <span>Professional summary</span>
