@@ -176,6 +176,15 @@ export class ResumeApi {
       .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
   }
 
+  uploadResumeImage(resumeId: string, file: File): Observable<ResumeDocumentResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http
+      .post<unknown>(`${this.parserResumesUrl}/${encodeURIComponent(resumeId)}/image`, formData)
+      .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
+  }
+
   parseResume(file: File, jobDescription?: string): Observable<ParsedResumeResponse> {
     const formData = new FormData();
     formData.append('file', file);
@@ -494,7 +503,8 @@ export class ResumeApi {
         data['resumeId'] !== undefined ||
         data['_id'] !== undefined ||
         data['sections'] !== undefined ||
-        data['name'] !== undefined)
+        data['name'] !== undefined ||
+        data['avatar'] !== undefined)
     ) {
       return data;
     }

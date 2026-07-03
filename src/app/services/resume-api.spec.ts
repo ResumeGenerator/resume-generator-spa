@@ -271,6 +271,28 @@ describe('ResumeApi', () => {
     expect(savedId).toBe('edited-1');
   });
 
+  it('uploads resume images to the parser image endpoint as form data', () => {
+    let uploadedAvatar = '';
+    const imageFile = new File(['image-bytes'], 'avatar.png', { type: 'image/png' });
+
+    resumeApi.uploadResumeImage('resume-1', imageFile).subscribe((response) => {
+      uploadedAvatar = String(response.profile['data'] && (response.profile['data'] as Record<string, unknown>)['avatar']);
+    });
+
+    const request = httpTesting.expectOne('https://parser.example.test/api/resumes/resume-1/image');
+
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body instanceof FormData).toBe(true);
+    expect(request.request.body.get('file')).toBe(imageFile);
+
+    request.flush({
+      id: 'resume-1',
+      avatar: 'https://cdn.example.test/avatar.png',
+    });
+
+    expect(uploadedAvatar).toBe('https://cdn.example.test/avatar.png');
+  });
+
   it('saves rendered edits through the template edited document endpoint', () => {
     let savedId = '';
 

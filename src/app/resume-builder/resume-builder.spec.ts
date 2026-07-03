@@ -12,6 +12,7 @@ type TestableResumeBuilder = {
   activeEditorStep: { set: (step: string) => void; (): string };
   aiEnhanceErrorMessage: () => string | null;
   aiEnhanceState: () => string;
+  editAvatar: string;
   editHardSkills: string;
   editLanguages: string;
   editEducation: {
@@ -24,7 +25,9 @@ type TestableResumeBuilder = {
   editProfessionalSummary: string;
   editWorkExperience: { responsibilities: string }[];
   nextEditorStep: () => void;
+  onPhotoSelected: (event: Event) => void;
   pendingAiWorkSummaryIndex: () => number | null;
+  photoUploadState: () => string;
   previewResume: (templateIds?: string[]) => void;
   previewResponse: {
     (): {
@@ -47,6 +50,7 @@ describe('ResumeBuilder', () => {
     previewResume: ReturnType<typeof vi.fn>;
     rephraseResumeText: ReturnType<typeof vi.fn>;
     saveRenderedResume: ReturnType<typeof vi.fn>;
+    uploadResumeImage: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -69,6 +73,20 @@ describe('ResumeBuilder', () => {
       saveRenderedResume: vi.fn(() =>
         of({
           id: 'edited-3',
+        }),
+      ),
+      uploadResumeImage: vi.fn(() =>
+        of({
+          id: 'resume-1',
+          profile: {
+            data: {
+              avatar: 'https://cdn.example.test/avatar.png',
+            },
+          },
+          metadata: {},
+          source: {},
+          createdAt: '',
+          updatedAt: '',
         }),
       ),
     };
@@ -148,6 +166,40 @@ describe('ResumeBuilder', () => {
 
     expect(previewFrame?.getAttribute('sandbox')).toBe('allow-same-origin');
     expect(previewFrame?.getAttribute('scrolling')).toBe('no');
+  });
+
+  it('uploads the personal photo to the parser image endpoint and saves the returned avatar', () => {
+    component.resumeId = 'resume-1';
+    const imageFile = new File(['image-bytes'], 'avatar.png', { type: 'image/png' });
+
+    component.onPhotoSelected({
+      target: {
+        files: {
+          item: () => imageFile,
+        },
+        value: 'avatar.png',
+      },
+    } as unknown as Event);
+
+    expect(resumeApi.uploadResumeImage).toHaveBeenCalledWith('resume-1', imageFile);
+    expect(component.photoUploadState()).toBe('success');
+    expect(component.editAvatar).toBe('https://cdn.example.test/avatar.png');
+
+    component.saveRenderedResume();
+
+    const request = resumeApi.saveRenderedResume.mock.calls[0][1] as {
+      avatar?: string;
+      withPhoto?: boolean;
+      data: Record<string, unknown>;
+      profile?: {
+        data?: Record<string, unknown>;
+      };
+    };
+
+    expect(request.withPhoto).toBe(true);
+    expect(request.avatar).toBe('https://cdn.example.test/avatar.png');
+    expect(request.data['avatar']).toBe('https://cdn.example.test/avatar.png');
+    expect(request.profile?.data?.['avatar']).toBe('https://cdn.example.test/avatar.png');
   });
 
   it('renders only skills provided by the resume data in the skills step', () => {

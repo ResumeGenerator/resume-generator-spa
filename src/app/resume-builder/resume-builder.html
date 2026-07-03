@@ -106,17 +106,38 @@
               <input name="editorTitle" [(ngModel)]="editCurrentTitle" (ngModelChange)="markUnsavedChanges()" placeholder="Desired job title" />
             </label>
 
-            <label class="photo-button" for="resumeFile">
+            <label class="photo-button" for="resumePhoto" [class.uploading]="photoUploadState() === 'uploading'">
               <input
-                #fileInput
-                id="resumeFile"
+                id="resumePhoto"
                 type="file"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                (change)="onFileSelected($event)"
+                accept="image/png,image/jpeg,image/webp,image/gif,image/*"
+                [disabled]="photoUploadState() === 'uploading'"
+                (change)="onPhotoSelected($event)"
               />
-              <span aria-hidden="true">▣</span>
-              Add photo
+              <span class="photo-preview" aria-hidden="true">
+                @if (editAvatar) {
+                  <img [src]="editAvatar" alt="" />
+                } @else {
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M4 20h16"></path>
+                    <path d="M6 20V8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12"></path>
+                    <path d="M9 6V4h6v2"></path>
+                    <circle cx="12" cy="12" r="2.5"></circle>
+                  </svg>
+                }
+              </span>
+              <span class="photo-copy">
+                <strong>{{ photoUploadState() === 'uploading' ? 'Uploading photo...' : editAvatar ? 'Change photo' : 'Add photo' }}</strong>
+                <small>JPG, PNG, or WebP</small>
+              </span>
             </label>
+
+            @if (photoUploadState() === 'success') {
+              <p class="photo-status">Photo saved to this resume.</p>
+            }
+            @if (photoUploadState() === 'error') {
+              <p class="photo-status error">{{ photoUploadErrorMessage() }}</p>
+            }
           }
 
           @case ('contact') {

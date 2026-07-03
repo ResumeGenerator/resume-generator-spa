@@ -20,6 +20,7 @@ type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
 type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
 type RenderedSaveState = 'idle' | 'saving' | 'success' | 'error';
 type AiEnhanceState = 'idle' | 'loading' | 'success' | 'error';
+type PhotoUploadState = 'idle' | 'uploading' | 'success' | 'error';
 type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'courses' | 'languages' | 'summary';
 
 interface EditorStep {
@@ -101,6 +102,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly editSuccessMessage = signal<string | null>(null);
   protected readonly aiEnhanceState = signal<AiEnhanceState>('idle');
   protected readonly aiEnhanceErrorMessage = signal<string | null>(null);
+  protected readonly photoUploadState = signal<PhotoUploadState>('idle');
+  protected readonly photoUploadErrorMessage = signal<string | null>(null);
   protected readonly pendingAiWorkSummaryIndex = signal<number | null>(null);
   protected readonly aiWorkSummarySuggestion = signal<AiWorkSummarySuggestion | null>(null);
   protected readonly aiProfessionalSummarySuggestion = signal('');
@@ -149,6 +152,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected editSecondarySpecialization = '';
   protected editJobDescription = '';
   protected editProfessionalSummary = '';
+  protected editAvatar = '';
   protected editTechnicalHighlights = '';
   protected editLeadershipHighlights = '';
   protected editProjectHighlights = '';
@@ -299,6 +303,48 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.previewErrorMessage.set(null);
     this.uploadState.set('idle');
     this.previewState.set('idle');
+  }
+
+  protected onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0) ?? null;
+    input.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    if (file.type && !file.type.startsWith('image/')) {
+      this.photoUploadErrorMessage.set('Choose an image file for the resume photo.');
+      this.photoUploadState.set('error');
+      return;
+    }
+
+    const resumeId = this.activeResumeId();
+
+    if (!resumeId) {
+      this.photoUploadErrorMessage.set('Unable to upload photo. Select or upload a resume first.');
+      this.photoUploadState.set('error');
+      return;
+    }
+
+    this.photoUploadState.set('uploading');
+    this.photoUploadErrorMessage.set(null);
+    this.previewErrorMessage.set(null);
+
+    this.resumeApi
+      .uploadResumeImage(resumeId, file)
+      .pipe(finalize(() => this.photoUploadState.update((state) => (state === 'uploading' ? 'idle' : state))))
+      .subscribe({
+        next: (response) => {
+          this.applyUploadedImageResponse(response, resumeId);
+          this.photoUploadState.set('success');
+        },
+        error: (error) => {
+          this.photoUploadErrorMessage.set(this.resolveErrorMessage(error, 'image'));
+          this.photoUploadState.set('error');
+        },
+      });
   }
 
   protected submitResume(): void {
@@ -924,6 +970,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.downloadWordTemplate(this.activeTemplateId());
   }
 
+  private activeResumeId(): string {
+    return this.resumeId.trim() || this.editingResume()?.id || this.selectedSavedResumeId() || '';
+  }
+
   protected saveRenderedResume(): void {
     if (this.renderedSaveState() === 'saving') {
       return;
@@ -931,7 +981,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     this.cancelAutoSave();
 
-    const resumeId = this.resumeId.trim() || this.editingResume()?.id || this.selectedSavedResumeId() || '';
+    const resumeId = this.activeResumeId();
 
     if (!resumeId) {
       this.previewErrorMessage.set('Unable to save template edits. Select or upload a resume first.');
@@ -997,6 +1047,69 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.previewResumeById(savedResumeId, [templateId], { preserveCurrentPreview: true });
   }
 
+  private applyUploadedImageResponse(response: ResumeDocumentResponse, fallbackResumeId: string): void {
+    const savedResumeId = response.id || fallbackResumeId;
+    const avatar = this.extractAvatar(response);
+    const mergedResume = this.mergeUploadedImageResponse(response, savedResumeId, avatar);
+
+    this.resumeId = savedResumeId;
+    this.selectedSavedResumeId.set(savedResumeId);
+    this.editingResume.set(mergedResume);
+
+    if (avatar) {
+      this.editAvatar = avatar;
+    }
+
+    this.savedIndicator.set(true);
+    this.hasUnsavedChanges.set(false);
+    this.renderedSaveState.set('success');
+    this.loadSavedResumes();
+    this.previewResumeById(savedResumeId, [this.activeTemplateId()], { preserveCurrentPreview: true });
+  }
+
+  private mergeUploadedImageResponse(
+    response: ResumeDocumentResponse,
+    resumeId: string,
+    avatar: string,
+  ): ResumeDocumentResponse {
+    const existingResume = this.editingResume();
+    const existingProfile = this.asRecord(existingResume?.profile);
+    const responseProfile = this.asRecord(response.profile);
+    const existingData = this.asRecord(existingProfile['data']);
+    const responseData = this.asRecord(responseProfile['data']);
+    const existingCandidateProfile = this.asRecord(existingProfile['candidateProfile']);
+    const responseCandidateProfile = this.asRecord(responseProfile['candidateProfile']);
+    const resolvedAvatar = avatar || this.editAvatar || this.extractAvatar(existingResume);
+
+    return {
+      id: resumeId,
+      profile: {
+        ...existingProfile,
+        ...responseProfile,
+        data: {
+          ...existingData,
+          ...responseData,
+          ...(resolvedAvatar ? { avatar: resolvedAvatar } : {}),
+        },
+        candidateProfile: {
+          ...existingCandidateProfile,
+          ...responseCandidateProfile,
+          ...(resolvedAvatar ? { avatar: resolvedAvatar } : {}),
+        },
+      },
+      metadata: {
+        ...this.asRecord(existingResume?.metadata),
+        ...this.asRecord(response.metadata),
+      },
+      source: {
+        ...this.asRecord(existingResume?.source),
+        ...this.asRecord(response.source),
+      },
+      createdAt: response.createdAt || existingResume?.createdAt || '',
+      updatedAt: response.updatedAt || existingResume?.updatedAt || '',
+    };
+  }
+
   private extractSavedResumeId(value: unknown): string {
     const record = this.asRecord(value);
     const dataRecord = this.asRecord(record['data']);
@@ -1012,6 +1125,34 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       this.asString(dataRecord['resumeId']) ||
       this.asString(dataRecord['templateResumeId']) ||
       this.asString(dataMongoId['$oid'])
+    );
+  }
+
+  private extractAvatar(value: unknown): string {
+    const record = this.asRecord(value);
+    const dataRecord = this.asRecord(record['data']);
+    const profile = this.asRecord(record['profile']);
+    const profileData = this.asRecord(profile['data']);
+    const profileDataData = this.asRecord(profileData['data']);
+    const candidateProfile = this.asRecord(profile['candidateProfile']);
+    const dataProfile = this.asRecord(dataRecord['profile']);
+    const dataProfileData = this.asRecord(dataProfile['data']);
+    const dataCandidateProfile = this.asRecord(dataProfile['candidateProfile']);
+
+    return (
+      this.asString(record['avatar']) ||
+      this.asString(record['photo']) ||
+      this.asString(record['imageUrl']) ||
+      this.asString(dataRecord['avatar']) ||
+      this.asString(dataRecord['photo']) ||
+      this.asString(dataRecord['imageUrl']) ||
+      this.asString(profile['avatar']) ||
+      this.asString(profileData['avatar']) ||
+      this.asString(profileDataData['avatar']) ||
+      this.asString(candidateProfile['avatar']) ||
+      this.asString(dataProfile['avatar']) ||
+      this.asString(dataProfileData['avatar']) ||
+      this.asString(dataCandidateProfile['avatar'])
     );
   }
 
@@ -1428,6 +1569,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const editingResume = this.editingResume();
     const data = this.buildRenderedResumeData();
     const source = this.asRecord(editingResume?.source);
+    const avatar = this.asString(data['avatar']);
 
     return {
       resumeId: this.resumeId.trim(),
@@ -1446,8 +1588,8 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       },
       font: 'Arial',
       color: '#000000',
-      withPhoto: false,
-      avatar: '',
+      withPhoto: Boolean(avatar),
+      avatar,
       contactsTitle: 'Contacts',
       detailsTitle: 'Details',
     };
@@ -1456,6 +1598,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   private buildRenderedResumeData(): Record<string, unknown> {
     const baseData = this.currentRenderedData();
     const summary = this.editProfessionalSummary.trim() || this.editProfessionalHeadline.trim();
+    const avatar = this.editAvatar || this.asString(baseData['avatar']);
 
     return {
       ...baseData,
@@ -1472,6 +1615,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       address: this.editIndustry.trim(),
       postalCode: this.editSpecialization.trim(),
       secondaryAddress: baseData['secondaryAddress'] ?? null,
+      avatar,
       sections: this.buildRenderedSections(baseData, summary),
     };
   }
@@ -1810,6 +1954,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       this.asString(data['name']) ||
         this.asString(data['title']) ||
         this.asString(data['email']) ||
+        this.asString(data['avatar']) ||
         this.asRecordArray(data['sections']).length,
     );
   }
@@ -1837,6 +1982,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editCandidateLocation = this.asString(candidateProfile['location']);
     this.editCurrentTitle = this.asString(candidateProfile['currentTitle']);
     this.editProfessionalHeadline = this.asString(candidateProfile['professionalHeadline']);
+    this.editAvatar = this.extractAvatar(resume);
     this.editTotalExperienceYears = this.asEditableNumber(candidateProfile['totalExperienceYears']);
     this.editCareerLevel = this.asString(careerProgression['careerLevel']) || this.asString(careerClassification['seniorityLevel']);
     this.editIndustry = this.asString(careerClassification['industry']);
@@ -1902,6 +2048,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editCandidateLocation = this.asString(data['location']);
     this.editCurrentTitle = this.asString(data['title']);
     this.editProfessionalHeadline = summary;
+    this.editAvatar = this.extractAvatar(data) || this.extractAvatar(resume);
     this.editTotalExperienceYears = '';
     this.editCareerLevel = '';
     this.editIndustry = this.asString(data['address']);
@@ -2420,6 +2567,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       currentTitle: this.editCurrentTitle.trim(),
       professionalHeadline: this.editProfessionalHeadline.trim(),
       totalExperienceYears: this.toOptionalNumber(this.editTotalExperienceYears),
+      avatar: this.editAvatar || null,
     };
     profile['professionalSummaryPoints'] = summaryPoints;
     profile['careerClassification'] = {
@@ -2683,7 +2831,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' | 'edit' | 'ai' = 'upload'): string {
+  private resolveErrorMessage(
+    error: unknown,
+    action: 'upload' | 'preview' | 'saved' | 'edit' | 'ai' | 'image' = 'upload',
+  ): string {
     if (typeof error === 'object' && error !== null && 'error' in error) {
       const payload = (error as { error?: unknown }).error;
       const status = (error as { status?: unknown }).status;
@@ -2721,6 +2872,10 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     if (action === 'ai') {
       return 'Unable to improve the resume text. Please check the parser API server and try again.';
+    }
+
+    if (action === 'image') {
+      return 'Unable to upload the resume photo. Please check the parser API server and try again.';
     }
 
     return 'Unable to upload the resume. Please check the API server and try again.';
