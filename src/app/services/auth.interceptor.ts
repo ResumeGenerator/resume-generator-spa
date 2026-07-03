@@ -6,7 +6,7 @@ import { AuthService } from './auth.service';
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const token = inject(AuthService).getToken();
 
-  if (!token || isAuthRequest(request.url)) {
+  if (!token || isAnonymousAuthRequest(request.url)) {
     return next(request);
   }
 
@@ -19,6 +19,6 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   );
 };
 
-function isAuthRequest(url: string): boolean {
-  return /\/api\/auth\/(?:login|register|google-login)(?:\?|$)/i.test(url);
+function isAnonymousAuthRequest(url: string): boolean {
+  return /\/api\/auth\/(?:login|register)(?:[?#]|$)/i.test(url);
 }
