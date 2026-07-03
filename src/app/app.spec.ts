@@ -66,7 +66,7 @@ describe('App', () => {
     expect(navLinks.map((link) => link.getAttribute('href'))).toEqual(['/login', '/login']);
   });
 
-  it('opens the authenticated hamburger menu with protected navigation', () => {
+  it('keeps the authenticated header compact without the hamburger menu', () => {
     isAuthenticated = true;
     currentUser.set({
       email: 'jane@example.com',
@@ -78,31 +78,20 @@ describe('App', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const menuToggle = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
+    const profileButton = compiled.querySelector<HTMLButtonElement>('.profile-button');
 
-    expect(menuToggle).toBeTruthy();
-    expect(menuToggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(menuToggle).toBeNull();
     expect(compiled.querySelector('.navigation-menu')).toBeNull();
+    expect(profileButton?.textContent?.trim()).toBe('JA');
+    expect(profileButton?.getAttribute('aria-label')).toBe('Open account menu');
+    expect(profileButton?.textContent).not.toContain('Jane Appleseed');
 
-    menuToggle?.click();
+    profileButton?.click();
     fixture.detectChanges();
 
-    const menu = compiled.querySelector<HTMLElement>('.navigation-menu');
-    const menuLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.navigation-menu a'));
-
-    expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
-    expect(getComputedStyle(menu as HTMLElement).left).toBe('32px');
-    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
-      'Home',
-      'Document Workspace',
-      'Resume Builder',
-    ]);
-    expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual([
-      '/',
-      '/upload',
-      '/resume-builder',
-    ]);
-    expect(compiled.querySelector('.mobile-profile-summary')?.textContent).toContain('Jane Appleseed');
-    expect(compiled.querySelector('.navigation-menu button')?.textContent?.trim()).toBe('Logout');
+    expect(profileButton?.getAttribute('aria-expanded')).toBe('true');
+    expect(compiled.querySelector('.profile-panel')?.textContent).toContain('Jane Appleseed');
+    expect(compiled.querySelector('.profile-logout')?.textContent?.trim()).toBe('Sign out');
   });
 
   it('renders the login-themed header and compact action buttons', () => {
@@ -140,7 +129,8 @@ describe('App', () => {
     expect(navLinks).toHaveLength(0);
     expect(compiled.querySelector('.primary-nav-link')).toBeNull();
     expect(compiled.querySelector('.login-nav-link')).toBeNull();
-    expect(menuToggle).toBeTruthy();
-    expect(profileButton?.textContent).toContain('Jane Appleseed');
+    expect(menuToggle).toBeNull();
+    expect(profileButton?.textContent?.trim()).toBe('JA');
+    expect(profileButton?.textContent).not.toContain('Jane Appleseed');
   });
 });

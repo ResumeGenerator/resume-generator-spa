@@ -1,28 +1,13 @@
 <header class="site-header">
   <div class="site-header-inner">
     <div class="header-leading">
-      <a class="brand-link" routerLink="/" aria-label="CareerKit AI home" (click)="closeMenu()">
+      <a class="brand-link" routerLink="/" aria-label="CareerKit AI home">
         <span class="brand-mark" aria-hidden="true">
           <span></span>
           <span></span>
         </span>
         <span>CareerKit AI</span>
       </a>
-
-      @if (authService.isAuthenticated()) {
-        <button
-          type="button"
-          class="menu-toggle"
-          [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
-          aria-controls="main-navigation-menu"
-          [attr.aria-expanded]="isMenuOpen()"
-          (click)="toggleMenu()"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-      }
     </div>
 
     <nav class="header-nav" aria-label="Main navigation">
@@ -31,15 +16,12 @@
           <button
             type="button"
             class="profile-button"
+            [attr.aria-label]="isProfileOpen() ? 'Close account menu' : 'Open account menu'"
             [attr.aria-expanded]="isProfileOpen()"
             aria-controls="profile-menu-panel"
             (click)="toggleProfileMenu()"
           >
             <span class="profile-avatar" aria-hidden="true">{{ profileInitials() }}</span>
-            <span class="profile-text">
-              <span class="profile-kicker">Signed in</span>
-              <span class="profile-label">{{ profileName() }}</span>
-            </span>
             <span class="profile-chevron" aria-hidden="true"></span>
           </button>
 
@@ -59,23 +41,10 @@
           }
         </div>
       } @else {
-        <a class="primary-nav-link" routerLink="/login" (click)="closeMenu()">Start Creating</a>
-        <a class="login-nav-link" routerLink="/login" (click)="closeMenu()">Sign In</a>
+        <a class="primary-nav-link" routerLink="/login">Start Creating</a>
+        <a class="login-nav-link" routerLink="/login">Sign In</a>
       }
     </nav>
-
-    @if (authService.isAuthenticated() && isMenuOpen()) {
-      <nav id="main-navigation-menu" class="navigation-menu" aria-label="Menu navigation">
-        <a routerLink="/" (click)="closeMenu()">Home</a>
-        <a routerLink="/upload" (click)="closeMenu()">Document Workspace</a>
-        <a routerLink="/resume-builder" (click)="closeMenu()">Resume Builder</a>
-        <div class="mobile-profile-summary">
-          <span class="profile-avatar" aria-hidden="true">{{ profileInitials() }}</span>
-          <span>{{ profileName() }}</span>
-        </div>
-        <button type="button" (click)="logout()">Logout</button>
-      </nav>
-    }
   </div>
 </header>
 
