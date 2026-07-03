@@ -46,20 +46,51 @@
 .header-leading {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 10px;
   min-width: 0;
+}
+
+.brand-menu-button {
+  display: inline-grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.brand-menu-button .brand-mark {
+  transition:
+    box-shadow 160ms ease,
+    transform 160ms ease,
+    filter 160ms ease;
+}
+
+.brand-menu-button:hover .brand-mark,
+.brand-menu-button[aria-expanded="true"] .brand-mark {
+  box-shadow: 0 14px 28px rgba(109, 40, 217, 0.3);
+  filter: saturate(1.08);
+  transform: translateY(-1px);
 }
 
 .brand-link {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   min-width: 0;
   color: #111827;
   font-size: 1.02rem;
   font-weight: 820;
   line-height: 1.1;
   text-decoration: none;
+}
+
+.brand-text-link {
+  gap: 0;
 }
 
 .brand-mark {
@@ -248,12 +279,47 @@
 }
 
 .brand-link:focus-visible,
+.brand-menu-button:focus-visible,
 .primary-nav-link:focus-visible,
 .login-nav-link:focus-visible,
 .profile-button:focus-visible,
 .profile-logout:focus-visible {
   outline: 3px solid var(--theme-focus);
   outline-offset: 3px;
+}
+
+.navigation-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 32px;
+  display: grid;
+  gap: 6px;
+  min-width: 240px;
+  padding: 8px;
+  border: 1px solid rgba(124, 58, 237, 0.14);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 38px rgba(76, 29, 149, 0.14);
+}
+
+.navigation-menu a,
+.navigation-menu button {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #111827;
+  font: inherit;
+  font-weight: 760;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.navigation-menu a:hover,
+.navigation-menu button:hover {
+  background: var(--theme-accent-soft);
+  color: var(--theme-accent-strong);
 }
 
 @media (max-width: 560px) {
@@ -293,5 +359,11 @@
 
   .profile-panel {
     right: 0;
+  }
+
+  .navigation-menu {
+    left: 16px;
+    right: 16px;
+    min-width: 0;
   }
 }

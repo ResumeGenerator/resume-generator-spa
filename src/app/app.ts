@@ -11,6 +11,7 @@ import { AuthService } from './services/auth.service';
   styleUrl: './app.css',
 })
 export class App implements OnInit {
+  protected readonly isMenuOpen = signal(false);
   protected readonly isProfileOpen = signal(false);
   protected readonly profileName = computed(() => {
     const user = this.authService.currentUser();
@@ -51,8 +52,18 @@ export class App implements OnInit {
     });
   }
 
+  protected toggleMenu(): void {
+    this.isMenuOpen.update((isOpen) => !isOpen);
+    this.closeProfileMenu();
+  }
+
+  protected closeMenu(): void {
+    this.isMenuOpen.set(false);
+  }
+
   protected toggleProfileMenu(): void {
     this.isProfileOpen.update((isOpen) => !isOpen);
+    this.closeMenu();
   }
 
   protected closeProfileMenu(): void {
@@ -61,6 +72,7 @@ export class App implements OnInit {
 
   protected logout(): void {
     this.authService.logout();
+    this.closeMenu();
     this.closeProfileMenu();
     void this.router.navigate(['/login']);
   }

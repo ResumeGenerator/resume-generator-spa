@@ -60,13 +60,13 @@ describe('App', () => {
     expect(brand?.getAttribute('href')).toBe('/');
     expect(leadingItems).toHaveLength(1);
     expect(leadingItems[0].classList.contains('brand-link')).toBe(true);
-    expect(compiled.querySelector('.menu-toggle')).toBeNull();
+    expect(compiled.querySelector('.brand-menu-button')).toBeNull();
     expect(compiled.querySelector('.navigation-menu')).toBeNull();
     expect(navLinks.map((link) => link.textContent?.trim())).toEqual(['Start Creating', 'Sign In']);
     expect(navLinks.map((link) => link.getAttribute('href'))).toEqual(['/login', '/login']);
   });
 
-  it('keeps the authenticated header compact without the hamburger menu', () => {
+  it('opens the authenticated navigation from the left brand menu button', () => {
     isAuthenticated = true;
     currentUser.set({
       email: 'jane@example.com',
@@ -77,18 +77,39 @@ describe('App', () => {
     fixture.detectChanges();
 
     const compiled = fixture.nativeElement as HTMLElement;
-    const menuToggle = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
+    const menuToggle = compiled.querySelector<HTMLButtonElement>('.brand-menu-button');
     const profileButton = compiled.querySelector<HTMLButtonElement>('.profile-button');
 
-    expect(menuToggle).toBeNull();
+    expect(menuToggle).toBeTruthy();
+    expect(menuToggle?.getAttribute('aria-expanded')).toBe('false');
     expect(compiled.querySelector('.navigation-menu')).toBeNull();
     expect(profileButton?.textContent?.trim()).toBe('JA');
     expect(profileButton?.getAttribute('aria-label')).toBe('Open account menu');
     expect(profileButton?.textContent).not.toContain('Jane Appleseed');
 
+    menuToggle?.click();
+    fixture.detectChanges();
+
+    const menuLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.navigation-menu a'));
+
+    expect(menuToggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(menuLinks.map((link) => link.textContent?.trim())).toEqual([
+      'Home',
+      'Document Workspace',
+      'Resume Builder',
+    ]);
+    expect(menuLinks.map((link) => link.getAttribute('href'))).toEqual([
+      '/',
+      '/upload',
+      '/resume-builder',
+    ]);
+    expect(compiled.querySelector('.navigation-menu button')?.textContent?.trim()).toBe('Sign out');
+    expect(compiled.querySelector('.navigation-menu')?.textContent).not.toContain('Jane Appleseed');
+
     profileButton?.click();
     fixture.detectChanges();
 
+    expect(compiled.querySelector('.navigation-menu')).toBeNull();
     expect(profileButton?.getAttribute('aria-expanded')).toBe('true');
     expect(compiled.querySelector('.profile-panel')?.textContent).toContain('Jane Appleseed');
     expect(compiled.querySelector('.profile-logout')?.textContent?.trim()).toBe('Sign out');
@@ -123,13 +144,13 @@ describe('App', () => {
 
     const compiled = fixture.nativeElement as HTMLElement;
     const navLinks = Array.from(compiled.querySelectorAll<HTMLAnchorElement>('.header-nav a'));
-    const menuToggle = compiled.querySelector<HTMLButtonElement>('.menu-toggle');
+    const menuToggle = compiled.querySelector<HTMLButtonElement>('.brand-menu-button');
     const profileButton = compiled.querySelector<HTMLButtonElement>('.profile-button');
 
     expect(navLinks).toHaveLength(0);
     expect(compiled.querySelector('.primary-nav-link')).toBeNull();
     expect(compiled.querySelector('.login-nav-link')).toBeNull();
-    expect(menuToggle).toBeNull();
+    expect(menuToggle).toBeTruthy();
     expect(profileButton?.textContent?.trim()).toBe('JA');
     expect(profileButton?.textContent).not.toContain('Jane Appleseed');
   });

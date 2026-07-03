@@ -1,13 +1,32 @@
 <header class="site-header">
   <div class="site-header-inner">
     <div class="header-leading">
-      <a class="brand-link" routerLink="/" aria-label="CareerKit AI home">
-        <span class="brand-mark" aria-hidden="true">
-          <span></span>
-          <span></span>
-        </span>
-        <span>CareerKit AI</span>
-      </a>
+      @if (authService.isAuthenticated()) {
+        <button
+          type="button"
+          class="brand-menu-button"
+          [attr.aria-label]="isMenuOpen() ? 'Close navigation menu' : 'Open navigation menu'"
+          aria-controls="main-navigation-menu"
+          [attr.aria-expanded]="isMenuOpen()"
+          (click)="toggleMenu()"
+        >
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+        </button>
+        <a class="brand-link brand-text-link" routerLink="/" aria-label="CareerKit AI home" (click)="closeMenu()">
+          CareerKit AI
+        </a>
+      } @else {
+        <a class="brand-link" routerLink="/" aria-label="CareerKit AI home">
+          <span class="brand-mark" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </span>
+          <span>CareerKit AI</span>
+        </a>
+      }
     </div>
 
     <nav class="header-nav" aria-label="Main navigation">
@@ -45,6 +64,15 @@
         <a class="login-nav-link" routerLink="/login">Sign In</a>
       }
     </nav>
+
+    @if (authService.isAuthenticated() && isMenuOpen()) {
+      <nav id="main-navigation-menu" class="navigation-menu" aria-label="Menu navigation">
+        <a routerLink="/" (click)="closeMenu()">Home</a>
+        <a routerLink="/upload" (click)="closeMenu()">Document Workspace</a>
+        <a routerLink="/resume-builder" (click)="closeMenu()">Resume Builder</a>
+        <button type="button" (click)="logout()">Sign out</button>
+      </nav>
+    }
   </div>
 </header>
 
