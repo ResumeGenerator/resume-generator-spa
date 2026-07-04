@@ -100,6 +100,7 @@ Docker/Railway values are injected by `docker-entrypoint.sh` from:
 - `PORT`
 
 When `apiGatewayUrl` / `API_GATEWAY_URL` is set, parser, template, and auth service calls use that base URL. The gateway must route the current frontend paths (`/api/resumes/*` and `/api/auth/*`) to the appropriate backend services. The split service URLs remain as fallbacks for local development and non-gateway deployments.
+`AUTH_API_URL` has no built-in deployed default; leave it unset when using the gateway.
 
 The `ResumeApi.resolveBaseUrl` helper normalizes missing protocols to `https://` and trims trailing slashes.
 
@@ -233,7 +234,7 @@ At container startup, `docker-entrypoint.sh` writes `/usr/share/nginx/html/runti
 For Railway:
 
 - Set `API_GATEWAY_URL` when routing service calls through a gateway.
-- Keep `PARSER_API_URL`, `TEMPLATE_API_URL`, and `AUTH_API_URL` only as fallback values for non-gateway deployments.
+- Keep `PARSER_API_URL`, `TEMPLATE_API_URL`, and `AUTH_API_URL` only as explicit fallback values for non-gateway deployments.
 - Railway provides `PORT`.
 - The API gateway must allow the SPA origin in CORS; downstream services may also need the SPA origin if they own CORS headers.
 

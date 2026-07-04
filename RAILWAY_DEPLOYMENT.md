@@ -17,7 +17,7 @@ When `API_GATEWAY_URL` is set, the SPA sends parser, template, and auth service 
 /api/auth/*
 ```
 
-`PARSER_API_URL`, `TEMPLATE_API_URL`, and `AUTH_API_URL` are still supported as fallbacks for local development or older deployments that do not use the gateway.
+`PARSER_API_URL`, `TEMPLATE_API_URL`, and `AUTH_API_URL` are still supported as explicit fallbacks for local development or older deployments that do not use the gateway. Leave `AUTH_API_URL` unset when auth should go through `API_GATEWAY_URL`.
 
 Railway provides `PORT` automatically. The container uses it at startup.
 

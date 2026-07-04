@@ -5,7 +5,7 @@ set -eu
 : "${API_GATEWAY_URL:=}"
 : "${PARSER_API_URL:=http://localhost:8000}"
 : "${TEMPLATE_API_URL:=http://localhost:8080}"
-: "${AUTH_API_URL:=https://resume-generator-auth-api-staging.up.railway.app}"
+: "${AUTH_API_URL:=}"
 : "${FRONTEND_POPUP_COMPLETE_URL:=https://resume-generator-spa-staging.up.railway.app/auth/auth-callback}"
 
 normalize_url() {
@@ -24,7 +24,7 @@ normalize_optional_url() {
 API_GATEWAY_URL="$(normalize_optional_url "$API_GATEWAY_URL")"
 PARSER_API_URL="$(normalize_url "$PARSER_API_URL")"
 TEMPLATE_API_URL="$(normalize_url "$TEMPLATE_API_URL")"
-AUTH_API_URL="$(normalize_url "$AUTH_API_URL")"
+AUTH_API_URL="$(normalize_optional_url "$AUTH_API_URL")"
 
 cat > /usr/share/nginx/html/runtime-config.js <<EOF
 window.__RESUME_GENERATOR_CONFIG__ = {

@@ -57,7 +57,7 @@ export class AuthService {
   private readonly apiGatewayUrl = this.resolveOptionalBaseUrl(this.runtimeConfig?.apiGatewayUrl);
   private readonly authApiUrl = this.resolveBaseUrl(
     this.apiGatewayUrl ?? this.runtimeConfig?.authApiUrl,
-    'https://resume-generator-auth-api-staging.up.railway.app',
+    window.location.origin,
   );
   private readonly authRedirectUri =
     this.runtimeConfig?.authRedirectUri?.trim() || `${window.location.origin}/auth/auth-callback`;
