@@ -340,7 +340,12 @@ describe('ResumeApi', () => {
 
     resumeApi.parseResume(resumeFile, ' Build APIs ').subscribe();
 
-    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/parse');
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'POST' &&
+        request.url === 'https://gateway.example.test/api/resumes/parse' &&
+        request.params.get('userId') === 'user-1',
+    );
     expect(request.request.method).toBe('POST');
     expect(request.request.body instanceof FormData).toBe(true);
     expect(request.request.body.get('file')).toBe(resumeFile);

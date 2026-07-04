@@ -223,7 +223,11 @@ export class ResumeApi {
       formData.append('jobDescription', jobDescription.trim());
     }
 
-    return this.http.post<ParsedResumeResponse>(this.parseResumeUrl, formData);
+    return this.http.post<ParsedResumeResponse>(this.parseResumeUrl, formData, {
+      params: {
+        userId,
+      },
+    });
   }
 
   rephraseResumeText(text: string): Observable<string> {

@@ -110,7 +110,7 @@ Centralize backend calls in `src/app/services/resume-api.ts`.
 Parser API endpoints currently used:
 
 - `GET /api/resumes/{resumeId}?userId={userId}`
-- `POST /api/resumes/parse` as form data with `file`, `userId`, and optional `jobDescription`
+- `POST /api/resumes/parse?userId={userId}` as form data with `file`, `userId`, and optional `jobDescription`
 - `POST /api/resumes/{resumeId}/edits?userId={userId}` with `ResumeProfile` JSON
 - `POST /api/resumes/{resumeId}/image?userId={userId}` as form data with `file`
 - `POST /api/resumes/rephrase`
