@@ -14,7 +14,6 @@ When `API_GATEWAY_URL` is set, the SPA sends parser, template, and auth service 
 
 ```text
 /api/resumes/*
-/api/Resumes/*
 /api/auth/*
 ```
 

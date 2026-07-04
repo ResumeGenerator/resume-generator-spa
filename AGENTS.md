@@ -99,7 +99,7 @@ Docker/Railway values are injected by `docker-entrypoint.sh` from:
 - `AUTH_API_URL`
 - `PORT`
 
-When `apiGatewayUrl` / `API_GATEWAY_URL` is set, parser, template, and auth service calls use that base URL. The gateway must route the current frontend paths (`/api/resumes/*`, `/api/Resumes/*`, and `/api/auth/*`) to the appropriate backend services. The split service URLs remain as fallbacks for local development and non-gateway deployments.
+When `apiGatewayUrl` / `API_GATEWAY_URL` is set, parser, template, and auth service calls use that base URL. The gateway must route the current frontend paths (`/api/resumes/*` and `/api/auth/*`) to the appropriate backend services. The split service URLs remain as fallbacks for local development and non-gateway deployments.
 
 The `ResumeApi.resolveBaseUrl` helper normalizes missing protocols to `https://` and trims trailing slashes.
 
@@ -109,16 +109,21 @@ Centralize backend calls in `src/app/services/resume-api.ts`.
 
 Parser API endpoints currently used:
 
-- `GET /api/resumes?limit=100&skip=0`
-- `GET /api/resumes/{resumeId}`
-- `POST /api/resumes/parse`
-- `POST /api/resumes/{resumeId}/edits`
+- `GET /api/resumes/{resumeId}?userId={userId}`
+- `POST /api/resumes/parse` as form data with `file`, `userId`, and optional `jobDescription`
+- `POST /api/resumes/{resumeId}/edits?userId={userId}` with `ResumeProfile` JSON
+- `POST /api/resumes/{resumeId}/image?userId={userId}` as form data with `file`
+- `POST /api/resumes/rephrase`
 
 Template API endpoints currently used:
 
-- `POST /api/Resumes/preview`
-- `POST /api/Resumes/pdf`
-- `POST /api/Resumes/word`
+- `GET /api/resumes?userId={userId}&limit=100&skip=0`
+- `GET /api/resumes/{resumeId}/html?userId={userId}&templateId={templateId}`
+- `POST /api/resumes/edited/{resumeId}?userId={userId}`
+- `POST /api/resumes/pdf` with `{ resumeId, userId, templateId }`
+- `POST /api/resumes/word` with `{ resumeId, userId, templateId }`
+
+Parser and template API calls include `userId` from `AuthService.getCurrentUserId()`.
 
 Current template IDs:
 
@@ -160,7 +165,7 @@ When editing resume data:
 - Preserve unknown fields by cloning and spreading existing records.
 - Convert textarea line lists to arrays with trimming and de-duplication.
 - Keep empty optional date fields as `null` where the current code does so.
-- Keep edited resumes as new saved copies through `/api/resumes/{resumeId}/edits`; do not overwrite the original record unless the backend contract changes.
+- Keep edited resumes as new saved copies through `/api/resumes/{resumeId}/edits?userId={userId}`; do not overwrite the original record unless the backend contract changes.
 
 ## UI Guidelines For This App
 

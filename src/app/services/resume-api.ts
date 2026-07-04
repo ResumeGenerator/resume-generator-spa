@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, forkJoin, map, of } from 'rxjs';
 
+import { AuthService } from './auth.service';
 import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
 
 declare global {
@@ -141,22 +142,28 @@ export class ResumeApi {
     'http://localhost:8080',
   );
   private readonly parserResumesUrl = `${this.parserApiUrl}/api/resumes`;
-  private readonly templateResumesUrl = `${this.templateApiUrl}/api/Resumes`;
+  private readonly templateResumesUrl = `${this.templateApiUrl}/api/resumes`;
   private readonly parseResumeUrl = `${this.parserApiUrl}/api/resumes/parse`;
   private readonly rephraseResumeUrl = `${this.parserApiUrl}/api/resumes/rephrase`;
-  private readonly pdfResumeUrl = `${this.templateApiUrl}/api/Resumes/pdf`;
-  private readonly wordResumeUrl = `${this.templateApiUrl}/api/Resumes/word`;
+  private readonly pdfResumeUrl = `${this.templateResumesUrl}/pdf`;
+  private readonly wordResumeUrl = `${this.templateResumesUrl}/word`;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly authService: AuthService,
+  ) {}
 
   getSavedResumes(limit = 100, skip = 0): Observable<SavedResumesResponse> {
     return this.getTemplateSavedResumes(limit, skip);
   }
 
   getTemplateSavedResumes(limit = 100, skip = 0): Observable<SavedResumesResponse> {
+    const userId = this.resolveCurrentUserId();
+
     return this.http
       .get<unknown>(this.templateResumesUrl, {
         params: {
+          userId,
           limit,
           skip,
         },
@@ -165,8 +172,14 @@ export class ResumeApi {
   }
 
   getResume(resumeId: string): Observable<ResumeDocumentResponse> {
+    const userId = this.resolveCurrentUserId();
+
     return this.http
-      .get<unknown>(`${this.parserResumesUrl}/${resumeId}`)
+      .get<unknown>(`${this.parserResumesUrl}/${encodeURIComponent(resumeId)}`, {
+        params: {
+          userId,
+        },
+      })
       .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
   }
 
@@ -175,23 +188,36 @@ export class ResumeApi {
   }
 
   saveEditedResume(resumeId: string, request: ResumeEditRequest): Observable<ResumeDocumentResponse> {
+    const userId = this.resolveCurrentUserId();
+
     return this.http
-      .post<unknown>(`${this.parserResumesUrl}/${resumeId}/edits`, request)
+      .post<unknown>(`${this.parserResumesUrl}/${encodeURIComponent(resumeId)}/edits`, request.profile, {
+        params: {
+          userId,
+        },
+      })
       .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
   }
 
   uploadResumeImage(resumeId: string, file: File): Observable<ResumeDocumentResponse> {
+    const userId = this.resolveCurrentUserId();
     const formData = new FormData();
     formData.append('file', file);
 
     return this.http
-      .post<unknown>(`${this.parserResumesUrl}/${encodeURIComponent(resumeId)}/image`, formData)
+      .post<unknown>(`${this.parserResumesUrl}/${encodeURIComponent(resumeId)}/image`, formData, {
+        params: {
+          userId,
+        },
+      })
       .pipe(map((response) => this.normalizeResumeDocument(response, resumeId)));
   }
 
   parseResume(file: File, jobDescription?: string): Observable<ParsedResumeResponse> {
+    const userId = this.resolveCurrentUserId();
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('userId', userId);
 
     if (jobDescription?.trim()) {
       formData.append('jobDescription', jobDescription.trim());
@@ -213,6 +239,7 @@ export class ResumeApi {
 
   previewResume(request: ResumePreviewRequest): Observable<ResumePreviewResponse> {
     const templateIds = this.resolvePreviewTemplateIds(request);
+    const userId = this.resolveCurrentUserId();
 
     if (templateIds.length === 0) {
       return of({
@@ -221,10 +248,8 @@ export class ResumeApi {
       });
     }
 
-    const previewRequestId = this.previewRequestId();
-
     return forkJoin(
-      templateIds.map((templateId) => this.getResumeTemplateHtml(request.resumeId, templateId, previewRequestId)),
+      templateIds.map((templateId) => this.getResumeTemplateHtml(request.resumeId, userId, templateId)),
     ).pipe(
       map((templates) => ({
         resumeId: request.resumeId,
@@ -237,17 +262,27 @@ export class ResumeApi {
   }
 
   saveRenderedResume(resumeId: string, request: RenderedResumeSaveRequest): Observable<RenderedResumeSaveResponse> {
+    const userId = this.resolveCurrentUserId();
+
     return this.http.post<RenderedResumeSaveResponse>(
       `${this.templateResumesUrl}/edited/${encodeURIComponent(resumeId)}`,
       request,
+      {
+        params: {
+          userId,
+        },
+      },
     );
   }
 
   downloadResumePdf(resumeId: string, templateId: string): Observable<Blob> {
+    const userId = this.resolveCurrentUserId();
+
     return this.http.post(
       this.pdfResumeUrl,
       {
         resumeId,
+        userId,
         templateId,
       },
       {
@@ -257,10 +292,13 @@ export class ResumeApi {
   }
 
   downloadResumeWord(resumeId: string, templateId: string): Observable<Blob> {
+    const userId = this.resolveCurrentUserId();
+
     return this.http.post(
       this.wordResumeUrl,
       {
         resumeId,
+        userId,
         templateId,
       },
       {
@@ -278,6 +316,10 @@ export class ResumeApi {
   private resolveOptionalBaseUrl(value: string | undefined): string | undefined {
     const trimmed = value?.trim();
     return trimmed ? this.resolveBaseUrl(trimmed, trimmed) : undefined;
+  }
+
+  private resolveCurrentUserId(): string {
+    return this.authService.getCurrentUserId();
   }
 
   private normalizePreviewResponse(
@@ -309,24 +351,20 @@ export class ResumeApi {
 
   private getResumeTemplateHtml(
     resumeId: string,
+    userId: string,
     templateId: string,
-    previewRequestId: string,
   ): Observable<ResumePreviewTemplate> {
     return this.http
       .get(`${this.templateResumesUrl}/${encodeURIComponent(resumeId)}/html`, {
         params: {
+          userId,
           templateId,
-          _: previewRequestId,
         },
         responseType: 'text',
       })
       .pipe(
         map((response) => this.normalizeTemplateHtmlResponse(response, templateId)),
       );
-  }
-
-  private previewRequestId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
   private resolvePreviewTemplateIds(request: ResumePreviewRequest): string[] {

@@ -36,6 +36,7 @@ const NAME_CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name';
 const EMAIL_CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress';
 const GIVEN_NAME_CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname';
 const SURNAME_CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname';
+const USER_ID_CLAIM = 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier';
 
 interface RuntimeConfigWindow extends Window {
   __RESUME_GENERATOR_CONFIG__?: {
@@ -106,6 +107,10 @@ export class AuthService {
     return localStorage.getItem(this.tokenStorageKey);
   }
 
+  getCurrentUserId(): string {
+    return this.resolveUserId(this.currentUser());
+  }
+
   storeToken(token: string): void {
     localStorage.setItem(this.tokenStorageKey, token);
     this.authenticated.set(true);
@@ -113,7 +118,17 @@ export class AuthService {
   }
 
   refreshCurrentUser(): Observable<CurrentUser> {
-    return this.getCurrentUser().pipe(tap((user) => this.currentUser.set(this.normalizeUser(user))));
+    return this.getCurrentUser().pipe(
+      tap((user) => {
+        const existingUserId = this.getCurrentUserId();
+        const normalizedUser = this.normalizeUser(user);
+
+        this.currentUser.set({
+          ...normalizedUser,
+          id: normalizedUser.id || existingUserId,
+        });
+      }),
+    );
   }
 
   private resolveBaseUrl(value: string | undefined, fallback: string): string {
@@ -135,7 +150,7 @@ export class AuthService {
     }
 
     return this.normalizeUser({
-      id: this.asString(claims['sub']),
+      id: this.firstString(claims['sub'], claims[USER_ID_CLAIM], claims['userId'], claims['uid'], claims['oid']),
       email: this.firstString(claims['email'], claims[EMAIL_CLAIM], claims['unique_name'], claims['preferred_username']),
       displayName: this.firstString(
         claims['displayName'],
@@ -160,6 +175,7 @@ export class AuthService {
   }
 
   private normalizeUser(user: CurrentUser): CurrentUser {
+    const id = this.resolveUserId(user);
     const email = this.firstString(user.email, user['Email'], user['emailAddress'], user['mail'], user[EMAIL_CLAIM]);
     const displayName = this.firstString(
       user.displayName,
@@ -180,9 +196,27 @@ export class AuthService {
 
     return {
       ...user,
+      id,
       email,
       displayName,
     };
+  }
+
+  private resolveUserId(user: CurrentUser | null): string {
+    if (!user) {
+      return '';
+    }
+
+    return this.firstString(
+      user.id,
+      user['Id'],
+      user['userId'],
+      user['UserId'],
+      user['uid'],
+      user['oid'],
+      user['sub'],
+      user[USER_ID_CLAIM],
+    );
   }
 
   private decodeJwtClaims(token: string | null): JwtClaims | null {

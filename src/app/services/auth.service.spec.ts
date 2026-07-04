@@ -64,4 +64,23 @@ describe('AuthService', () => {
       displayName: 'Candidate',
     });
   });
+
+  it('keeps the token user id when refreshing a profile response without an id', () => {
+    authService.storeToken(jwtToken({ sub: 'user-1', email: 'candidate@example.test' }));
+
+    authService.refreshCurrentUser().subscribe();
+
+    const currentUserRequest = httpTesting.expectOne('https://gateway.example.test/api/auth/me');
+    currentUserRequest.flush({
+      email: 'candidate@example.test',
+      displayName: 'Candidate',
+    });
+
+    expect(authService.getCurrentUserId()).toBe('user-1');
+  });
 });
+
+function jwtToken(claims: Record<string, unknown>): string {
+  const payload = btoa(JSON.stringify(claims)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `header.${payload}.signature`;
+}

@@ -2,14 +2,21 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
+import { AuthService } from './auth.service';
 import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
 import { ResumeApi, ResumePreviewResponse } from './resume-api';
 
 describe('ResumeApi', () => {
   let resumeApi: ResumeApi;
   let httpTesting: HttpTestingController;
+  let authService: {
+    getCurrentUserId: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
+    authService = {
+      getCurrentUserId: vi.fn(() => 'user-1'),
+    };
     window.__RESUME_GENERATOR_CONFIG__ = {
       apiGatewayUrl: 'https://gateway.example.test',
       parserApiUrl: 'https://parser.example.test',
@@ -17,7 +24,12 @@ describe('ResumeApi', () => {
     };
 
     TestBed.configureTestingModule({
-      providers: [ResumeApi, provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        ResumeApi,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authService },
+      ],
     });
 
     resumeApi = TestBed.inject(ResumeApi);
@@ -45,18 +57,20 @@ describe('ResumeApi', () => {
     const modernRequest = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/html' &&
+        request.params.get('userId') === 'user-1' &&
         request.params.get('templateId') === 'modern-minimal' &&
-        Boolean(request.params.get('_')),
+        !request.params.has('_'),
     );
     expect(modernRequest.request.responseType).toBe('text');
 
     const darkRequest = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/html' &&
+        request.params.get('userId') === 'user-1' &&
         request.params.get('templateId') === 'professional-dark-blue' &&
-        Boolean(request.params.get('_')),
+        !request.params.has('_'),
     );
     expect(darkRequest.request.responseType).toBe('text');
 
@@ -101,9 +115,10 @@ describe('ResumeApi', () => {
     const request = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/html' &&
+        request.params.get('userId') === 'user-1' &&
         request.params.get('templateId') === 'modern-minimal' &&
-        Boolean(request.params.get('_')),
+        !request.params.has('_'),
     );
 
     request.flush(
@@ -149,7 +164,8 @@ describe('ResumeApi', () => {
     const request = httpTesting.expectOne(
       (request) =>
         request.method === 'GET' &&
-        request.url === 'https://gateway.example.test/api/Resumes/resume-1/html' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/html' &&
+        request.params.get('userId') === 'user-1' &&
         request.params.get('templateId') === 'modern-minimal' &&
         !request.headers.has('Cache-Control') &&
         !request.headers.has('Pragma'),
@@ -179,7 +195,12 @@ describe('ResumeApi', () => {
       expect(response.id).toBe('resume-1');
     });
 
-    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/resume-1');
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1' &&
+        request.params.get('userId') === 'user-1',
+    );
     expect(request.request.method).toBe('GET');
 
     request.flush({
@@ -200,7 +221,12 @@ describe('ResumeApi', () => {
     });
 
     const request = httpTesting.expectOne(
-      (request) => request.method === 'GET' && request.url === 'https://gateway.example.test/api/Resumes',
+      (request) =>
+        request.method === 'GET' &&
+        request.url === 'https://gateway.example.test/api/resumes' &&
+        request.params.get('userId') === 'user-1' &&
+        request.params.get('limit') === '100' &&
+        request.params.get('skip') === '0',
     );
 
     request.flush({
@@ -250,9 +276,19 @@ describe('ResumeApi', () => {
         savedId = response.id;
       });
 
-    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/resume-1/edits');
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'POST' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/edits' &&
+        request.params.get('userId') === 'user-1',
+    );
 
     expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({
+      candidateProfile: {
+        fullName: 'Jane Candidate',
+      },
+    });
 
     request.flush({
       data: {
@@ -280,7 +316,12 @@ describe('ResumeApi', () => {
       uploadedAvatar = String(response.profile['data'] && (response.profile['data'] as Record<string, unknown>)['avatar']);
     });
 
-    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/resume-1/image');
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'POST' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/image' &&
+        request.params.get('userId') === 'user-1',
+    );
 
     expect(request.request.method).toBe('POST');
     expect(request.request.body instanceof FormData).toBe(true);
@@ -292,6 +333,23 @@ describe('ResumeApi', () => {
     });
 
     expect(uploadedAvatar).toBe('https://cdn.example.test/avatar.png');
+  });
+
+  it('parses resumes with the current user id in form data', () => {
+    const resumeFile = new File(['resume-bytes'], 'resume.pdf', { type: 'application/pdf' });
+
+    resumeApi.parseResume(resumeFile, ' Build APIs ').subscribe();
+
+    const request = httpTesting.expectOne('https://gateway.example.test/api/resumes/parse');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body instanceof FormData).toBe(true);
+    expect(request.request.body.get('file')).toBe(resumeFile);
+    expect(request.request.body.get('userId')).toBe('user-1');
+    expect(request.request.body.get('jobDescription')).toBe('Build APIs');
+
+    request.flush({
+      resumeId: 'resume-1',
+    });
   });
 
   it('saves rendered edits through the template edited document endpoint', () => {
@@ -316,9 +374,13 @@ describe('ResumeApi', () => {
         savedId = response.id || '';
       });
 
-    const request = httpTesting.expectOne('https://gateway.example.test/api/Resumes/edited/resume-1');
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'POST' &&
+        request.url === 'https://gateway.example.test/api/resumes/edited/resume-1' &&
+        request.params.get('userId') === 'user-1',
+    );
 
-    expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({
       resumeId: 'resume-1',
       template: 'modern-minimal',
@@ -339,6 +401,31 @@ describe('ResumeApi', () => {
     });
 
     expect(savedId).toBe('edited-1');
+  });
+
+  it('downloads rendered PDF and Word documents with the current user id', () => {
+    resumeApi.downloadResumePdf('resume-1', 'modern-minimal').subscribe();
+    resumeApi.downloadResumeWord('resume-1', 'modern-minimal').subscribe();
+
+    const pdfRequest = httpTesting.expectOne('https://gateway.example.test/api/resumes/pdf');
+    expect(pdfRequest.request.method).toBe('POST');
+    expect(pdfRequest.request.responseType).toBe('blob');
+    expect(pdfRequest.request.body).toEqual({
+      resumeId: 'resume-1',
+      userId: 'user-1',
+      templateId: 'modern-minimal',
+    });
+    pdfRequest.flush(new Blob());
+
+    const wordRequest = httpTesting.expectOne('https://gateway.example.test/api/resumes/word');
+    expect(wordRequest.request.method).toBe('POST');
+    expect(wordRequest.request.responseType).toBe('blob');
+    expect(wordRequest.request.body).toEqual({
+      resumeId: 'resume-1',
+      userId: 'user-1',
+      templateId: 'modern-minimal',
+    });
+    wordRequest.flush(new Blob());
   });
 
   it('sends resume text to the parser rephrase endpoint with scoped resume prompt context', () => {
