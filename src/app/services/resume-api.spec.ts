@@ -3,7 +3,6 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { AuthService } from './auth.service';
-import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
 import { ResumeApi, ResumePreviewResponse } from './resume-api';
 
 describe('ResumeApi', () => {
@@ -433,7 +432,7 @@ describe('ResumeApi', () => {
     wordRequest.flush(new Blob());
   });
 
-  it('sends resume text to the parser rephrase endpoint with scoped resume prompt context', () => {
+  it('sends only resume text to the parser rephrase endpoint', () => {
     let rephrasedText = '';
 
     resumeApi.rephraseResumeText('Built and maintained APIs.').subscribe((response) => {
@@ -445,7 +444,6 @@ describe('ResumeApi', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({
       text: 'Built and maintained APIs.',
-      prompt: RESUME_REPHRASE_PROMPT,
     });
 
     request.flush({

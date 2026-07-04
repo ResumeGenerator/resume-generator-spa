@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { Observable, forkJoin, map, of } from 'rxjs';
 
 import { AuthService } from './auth.service';
-import { RESUME_REPHRASE_PROMPT } from './resume-ai-prompts';
 
 declare global {
   interface Window {
@@ -126,7 +125,6 @@ export interface SavedResumesResponse {
 
 export interface ResumeRephraseRequest {
   text: string;
-  prompt: string;
 }
 
 @Injectable({
@@ -233,7 +231,6 @@ export class ResumeApi {
   rephraseResumeText(text: string): Observable<string> {
     const request: ResumeRephraseRequest = {
       text,
-      prompt: RESUME_REPHRASE_PROMPT,
     };
 
     return this.http
