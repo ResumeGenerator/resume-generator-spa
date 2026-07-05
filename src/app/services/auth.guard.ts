@@ -7,6 +7,8 @@ export const authGuard: CanActivateFn = (_route, state) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  authService.clearExpiredSession();
+
   if (authService.isAuthenticated()) {
     return true;
   }

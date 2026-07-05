@@ -109,23 +109,25 @@ export class AuthService {
     const token = localStorage.getItem(this.tokenStorageKey);
 
     if (!token) {
-      this.authenticated.set(false);
-      this.currentUser.set(null);
       return null;
     }
 
     if (this.isTokenExpired(token)) {
-      this.logout();
       return null;
     }
 
-    this.authenticated.set(true);
+    return token;
+  }
 
-    if (!this.currentUser()) {
-      this.currentUser.set(this.getUserFromToken(token));
+  clearExpiredSession(): boolean {
+    const token = localStorage.getItem(this.tokenStorageKey);
+
+    if (!token || !this.isTokenExpired(token)) {
+      return false;
     }
 
-    return token;
+    this.logout();
+    return true;
   }
 
   getCurrentUserId(): string {

@@ -35,11 +35,11 @@ describe('ResumeUpload', () => {
 
   it('shows a single saved tailoring action for previewing and editing', () => {
     const compiled = fixture.nativeElement as HTMLElement;
-    const actions = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.resume-actions button')).map((button) =>
-      button.textContent?.trim(),
+    const actions = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.resume-open-button')).map((button) =>
+      button.getAttribute('aria-label'),
     );
 
-    expect(actions).toEqual(['Preview and edit']);
+    expect(actions).toEqual(['Preview and edit Product Manager']);
     expect(compiled.textContent).not.toContain('Update resume fields');
   });
 

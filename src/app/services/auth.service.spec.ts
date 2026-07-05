@@ -1,5 +1,6 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { computed } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { AuthService } from './auth.service';
@@ -79,7 +80,7 @@ describe('AuthService', () => {
     expect(authService.getCurrentUserId()).toBe('user-1');
   });
 
-  it('clears expired stored tokens and reports the user as logged out', () => {
+  it('reports expired stored tokens as logged out without mutating during reads', () => {
     localStorage.setItem(
       'resumeGeneratorAuthToken',
       jwtToken({
@@ -89,8 +90,24 @@ describe('AuthService', () => {
       }),
     );
 
+    const authenticated = computed(() => authService.isAuthenticated());
+
     expect(authService.getToken()).toBeNull();
-    expect(authService.isAuthenticated()).toBe(false);
+    expect(authenticated()).toBe(false);
+    expect(localStorage.getItem('resumeGeneratorAuthToken')).toBeTruthy();
+  });
+
+  it('clears expired stored tokens when explicitly asked to clear the session', () => {
+    localStorage.setItem(
+      'resumeGeneratorAuthToken',
+      jwtToken({
+        sub: 'user-1',
+        email: 'candidate@example.test',
+        exp: Math.floor(Date.now() / 1000) - 60,
+      }),
+    );
+
+    expect(authService.clearExpiredSession()).toBe(true);
     expect(localStorage.getItem('resumeGeneratorAuthToken')).toBeNull();
   });
 

@@ -10,6 +10,7 @@ describe('authInterceptor', () => {
   let http: HttpClient;
   let httpTesting: HttpTestingController;
   let authService: {
+    clearExpiredSession: ReturnType<typeof vi.fn>;
     getToken: ReturnType<typeof vi.fn>;
     logout: ReturnType<typeof vi.fn>;
   };
@@ -20,6 +21,7 @@ describe('authInterceptor', () => {
 
   beforeEach(() => {
     authService = {
+      clearExpiredSession: vi.fn(() => false),
       getToken: vi.fn(() => 'jwt-token'),
       logout: vi.fn(),
     };
@@ -83,6 +85,24 @@ describe('authInterceptor', () => {
 
     const request = httpTesting.expectOne('/api/resumes');
     expect(request.request.headers.has('Authorization')).toBe(false);
+
+    request.flush({});
+  });
+
+  it('clears and redirects immediately when a stored token is already expired', () => {
+    authService.clearExpiredSession.mockReturnValueOnce(true);
+    authService.getToken.mockReturnValueOnce(null);
+
+    http.get('/api/resumes').subscribe();
+
+    const request = httpTesting.expectOne('/api/resumes');
+    expect(request.request.headers.has('Authorization')).toBe(false);
+    expect(router.navigate).toHaveBeenCalledWith(['/login'], {
+      queryParams: {
+        authError: 'session-expired',
+        returnUrl: '/upload',
+      },
+    });
 
     request.flush({});
   });

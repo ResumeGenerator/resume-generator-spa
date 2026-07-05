@@ -8,8 +8,15 @@ import { AuthService } from './auth.service';
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
-  const token = authService.getToken();
   const requiresAuth = !isAnonymousAuthRequest(request.url);
+
+  if (requiresAuth && authService.clearExpiredSession()) {
+    void router.navigate(['/login'], {
+      queryParams: sessionExpiredQueryParams(router.url),
+    });
+  }
+
+  const token = authService.getToken();
   const authenticatedRequest =
     token && requiresAuth
       ? request.clone({

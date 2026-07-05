@@ -71,7 +71,7 @@
           <button type="submit" class="primary-button" [disabled]="!selectedFile() || uploadState() === 'uploading'">
             {{ uploadState() === 'uploading' ? 'Tailoring...' : 'Begin Tailoring My Resume' }}
           </button>
-          <button type="button" class="secondary-button" (click)="clearForm(fileInput)">Clear</button>
+          <button type="button" class="secondary-button clear-button" (click)="clearForm(fileInput)">Clear</button>
         </div>
 
         @if (uploadState() === 'uploading') {
@@ -163,6 +163,7 @@
                 <span class="thumb-line"></span>
                 <span class="thumb-line"></span>
               </button>
+
               <div class="resume-content">
                 <button type="button" class="resume-main" (click)="openResumeBuilder(resume.id)">
                   <span class="resume-title-line">
@@ -176,23 +177,20 @@
                     <small>Uploaded: {{ resumeCardUploadedAt(resume) }}</small>
                   }
                 </button>
-                <div class="resume-actions">
-                  <button
-                    type="button"
-                    class="history-preview-link"
-                    title="Preview and edit tailoring"
-                    (click)="openResumeBuilder(resume.id)"
-                  >
-                    <span class="action-icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" focusable="false">
-                        <path d="M5 12h14" />
-                        <path d="m13 6 6 6-6 6" />
-                      </svg>
-                    </span>
-                    <span>Preview and edit</span>
-                  </button>
-                </div>
               </div>
+
+              <button
+                type="button"
+                class="resume-open-button"
+                title="Preview and edit tailoring"
+                aria-label="Preview and edit {{ resumeCardTitle(resume) }}"
+                (click)="openResumeBuilder(resume.id)"
+              >
+                <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                  <path d="M5 12h14" />
+                  <path d="m13 6 6 6-6 6" />
+                </svg>
+              </button>
             </article>
           }
         </div>

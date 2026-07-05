@@ -2,7 +2,7 @@
   display: block;
   min-height: 100vh;
   --app-container: 940px;
-  --theme-screen: #f7f2ff;
+  --theme-screen: #f8fafc;
   --theme-accent: #6d28d9;
   --theme-accent-strong: #7c3aed;
   --theme-accent-soft: #f2eaff;
@@ -17,7 +17,7 @@
   --theme-muted: #5f536f;
   --theme-gradient-a: rgba(109, 40, 217, 0.12);
   --theme-gradient-b: rgba(238, 120, 221, 0.08);
-  background: #f7f2ff;
+  background: #f8fafc;
 }
 
 .site-header {
