@@ -29,6 +29,7 @@ type TestableResumeBuilder = {
   pendingAiWorkSummaryIndex: () => number | null;
   photoUploadState: () => string;
   previewResume: (templateIds?: string[]) => void;
+  loadSavedResumes: () => void;
   previewResponse: {
     (): {
       resumeId: string;
@@ -45,8 +46,10 @@ type TestableResumeBuilder = {
 describe('ResumeBuilder', () => {
   let fixture: ComponentFixture<ResumeBuilder>;
   let component: TestableResumeBuilder;
+  let routeParamMapGet: ReturnType<typeof vi.fn>;
   let resumeApi: {
     getTemplateSavedResumes: ReturnType<typeof vi.fn>;
+    getTemplateResume: ReturnType<typeof vi.fn>;
     previewResume: ReturnType<typeof vi.fn>;
     rephraseResumeText: ReturnType<typeof vi.fn>;
     saveRenderedResume: ReturnType<typeof vi.fn>;
@@ -54,8 +57,19 @@ describe('ResumeBuilder', () => {
   };
 
   beforeEach(async () => {
+    routeParamMapGet = vi.fn(() => null);
     resumeApi = {
       getTemplateSavedResumes: vi.fn(() => of({ items: [] })),
+      getTemplateResume: vi.fn(() =>
+        of({
+          id: 'resume-1',
+          profile: {},
+          metadata: {},
+          source: {},
+          createdAt: '',
+          updatedAt: '',
+        }),
+      ),
       previewResume: vi.fn(() =>
         of({
           resumeId: 'resume-1',
@@ -101,7 +115,7 @@ describe('ResumeBuilder', () => {
           useValue: {
             snapshot: {
               paramMap: {
-                get: () => null,
+                get: routeParamMapGet,
               },
             },
           },
@@ -138,6 +152,44 @@ describe('ResumeBuilder', () => {
       },
     });
     expect(resumeApi.previewResume).not.toHaveBeenCalled();
+  });
+
+  it('previews the first saved resume without loading the parser resume document', () => {
+    resumeApi.getTemplateSavedResumes.mockReturnValueOnce(
+      of({
+        items: [
+          {
+            id: 'resume-1',
+            filename: 'resume.pdf',
+          },
+        ],
+      }),
+    );
+
+    component.loadSavedResumes();
+
+    expect(resumeApi.previewResume).toHaveBeenCalledWith({
+      resumeId: 'resume-1',
+      templateId: 'modern-minimal',
+      templateIds: ['modern-minimal'],
+    });
+    expect(resumeApi.getTemplateResume).not.toHaveBeenCalled();
+  });
+
+  it('previews route resume ids without loading the parser resume document', () => {
+    routeParamMapGet.mockReturnValue('resume-from-route');
+    resumeApi.getTemplateSavedResumes.mockClear();
+    resumeApi.getTemplateResume.mockClear();
+    resumeApi.previewResume.mockClear();
+
+    fixture.componentInstance.ngOnInit();
+
+    expect(resumeApi.previewResume).toHaveBeenCalledWith({
+      resumeId: 'resume-from-route',
+      templateId: 'modern-minimal',
+      templateIds: ['modern-minimal'],
+    });
+    expect(resumeApi.getTemplateResume).not.toHaveBeenCalled();
   });
 
   it('uses short section labels in the compact editor stepper', () => {
