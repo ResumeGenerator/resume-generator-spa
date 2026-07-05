@@ -78,6 +78,34 @@ describe('AuthService', () => {
 
     expect(authService.getCurrentUserId()).toBe('user-1');
   });
+
+  it('clears expired stored tokens and reports the user as logged out', () => {
+    localStorage.setItem(
+      'resumeGeneratorAuthToken',
+      jwtToken({
+        sub: 'user-1',
+        email: 'candidate@example.test',
+        exp: Math.floor(Date.now() / 1000) - 60,
+      }),
+    );
+
+    expect(authService.getToken()).toBeNull();
+    expect(authService.isAuthenticated()).toBe(false);
+    expect(localStorage.getItem('resumeGeneratorAuthToken')).toBeNull();
+  });
+
+  it('keeps valid tokens authenticated until they expire', () => {
+    authService.storeToken(
+      jwtToken({
+        sub: 'user-1',
+        email: 'candidate@example.test',
+        exp: Math.floor(Date.now() / 1000) + 60,
+      }),
+    );
+
+    expect(authService.isAuthenticated()).toBe(true);
+    expect(authService.getCurrentUserId()).toBe('user-1');
+  });
 });
 
 function jwtToken(claims: Record<string, unknown>): string {

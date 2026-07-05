@@ -21,6 +21,7 @@ export interface CurrentUser {
 interface JwtClaims {
   email?: string;
   displayName?: string;
+  exp?: number | string;
   fullName?: string;
   userName?: string;
   name?: string;
@@ -61,8 +62,9 @@ export class AuthService {
   );
   private readonly authRedirectUri =
     this.runtimeConfig?.authRedirectUri?.trim() || `${window.location.origin}/auth/auth-callback`;
-  private readonly authenticated = signal(Boolean(this.getToken()));
-  readonly currentUser = signal<CurrentUser | null>(this.getUserFromToken());
+  private readonly initialToken = this.resolveInitialToken();
+  private readonly authenticated = signal(Boolean(this.initialToken));
+  readonly currentUser = signal<CurrentUser | null>(this.getUserFromToken(this.initialToken));
 
   readonly googleLoginUrl = `${this.authApiUrl}/api/auth/google-login?redirectUri=${encodeURIComponent(
     this.authRedirectUri,
@@ -100,11 +102,30 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    return this.authenticated();
+    return Boolean(this.getToken());
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenStorageKey);
+    const token = localStorage.getItem(this.tokenStorageKey);
+
+    if (!token) {
+      this.authenticated.set(false);
+      this.currentUser.set(null);
+      return null;
+    }
+
+    if (this.isTokenExpired(token)) {
+      this.logout();
+      return null;
+    }
+
+    this.authenticated.set(true);
+
+    if (!this.currentUser()) {
+      this.currentUser.set(this.getUserFromToken(token));
+    }
+
+    return token;
   }
 
   getCurrentUserId(): string {
@@ -112,6 +133,11 @@ export class AuthService {
   }
 
   storeToken(token: string): void {
+    if (this.isTokenExpired(token)) {
+      this.logout();
+      return;
+    }
+
     localStorage.setItem(this.tokenStorageKey, token);
     this.authenticated.set(true);
     this.currentUser.set(this.getUserFromToken(token));
@@ -140,6 +166,21 @@ export class AuthService {
   private resolveOptionalBaseUrl(value: string | undefined): string | undefined {
     const trimmed = value?.trim();
     return trimmed ? this.resolveBaseUrl(trimmed, trimmed) : undefined;
+  }
+
+  private resolveInitialToken(): string | null {
+    const token = localStorage.getItem(this.tokenStorageKey);
+
+    if (!token) {
+      return null;
+    }
+
+    if (this.isTokenExpired(token)) {
+      localStorage.removeItem(this.tokenStorageKey);
+      return null;
+    }
+
+    return token;
   }
 
   private getUserFromToken(token = this.getToken()): CurrentUser | null {
@@ -237,6 +278,20 @@ export class AuthService {
 
   private firstString(...values: unknown[]): string {
     return values.map((value) => this.asString(value)).find(Boolean) || '';
+  }
+
+  private isTokenExpired(token: string): boolean {
+    const claims = this.decodeJwtClaims(token);
+    const expiresAt = this.asExpirationTime(claims?.exp);
+
+    return expiresAt !== null && expiresAt <= Date.now();
+  }
+
+  private asExpirationTime(value: unknown): number | null {
+    const seconds =
+      typeof value === 'number' ? value : typeof value === 'string' && value.trim() ? Number(value) : Number.NaN;
+
+    return Number.isFinite(seconds) ? seconds * 1000 : null;
   }
 
   private joinName(first: unknown, last: unknown): string {

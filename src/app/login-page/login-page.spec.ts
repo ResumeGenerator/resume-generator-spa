@@ -21,6 +21,7 @@ describe('LoginPage', () => {
     login: ReturnType<typeof vi.fn>;
     register: ReturnType<typeof vi.fn>;
   };
+  let queryParamMapGet: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     authService = {
@@ -28,6 +29,7 @@ describe('LoginPage', () => {
       login: vi.fn(() => of({ token: 'token' })),
       register: vi.fn(() => of({ token: 'token' })),
     };
+    queryParamMapGet = vi.fn(() => null);
 
     await TestBed.configureTestingModule({
       imports: [LoginPage],
@@ -39,7 +41,7 @@ describe('LoginPage', () => {
           useValue: {
             snapshot: {
               queryParamMap: {
-                get: () => null,
+                get: queryParamMapGet,
               },
             },
           },
@@ -75,6 +77,19 @@ describe('LoginPage', () => {
     expect(updatedPasswordInput?.type).toBe('text');
     expect(toggle?.getAttribute('aria-label')).toBe('Hide password');
     expect(toggle?.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('shows a session expired message from the auth redirect query param', () => {
+    queryParamMapGet.mockImplementation((param: string) => (param === 'authError' ? 'session-expired' : null));
+
+    const expiredFixture = TestBed.createComponent(LoginPage);
+    expiredFixture.detectChanges();
+
+    const component = expiredFixture.componentInstance as unknown as TestableLoginPage;
+    const compiled = expiredFixture.nativeElement as HTMLElement;
+
+    expect(component.errorMessage).toBe('Your session has expired. Please sign in again.');
+    expect(compiled.querySelector('#login-error')?.textContent).toContain('Your session has expired.');
   });
 
   it('shows a spinner and busy state while email sign in is pending', () => {

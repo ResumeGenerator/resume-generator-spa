@@ -30,6 +30,8 @@ export class LoginPage {
   ) {
     if (this.route.snapshot.queryParamMap.get('authError') === 'missing-token') {
       this.errorMessage = 'Google sign in did not return a valid token. Please try again.';
+    } else if (this.route.snapshot.queryParamMap.get('authError') === 'session-expired') {
+      this.errorMessage = 'Your session has expired. Please sign in again.';
     }
   }
 
