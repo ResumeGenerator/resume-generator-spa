@@ -153,6 +153,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected editJobDescription = '';
   protected editProfessionalSummary = '';
   protected editAvatar = '';
+  private avatarRemoved = false;
   protected editTechnicalHighlights = '';
   protected editLeadershipHighlights = '';
   protected editProjectHighlights = '';
@@ -343,6 +344,24 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           this.photoUploadState.set('error');
         },
       });
+  }
+
+  protected avatarPreviewUrl(): string {
+    return this.resolveAvatarUrl(this.editAvatar);
+  }
+
+  protected removeAvatar(): void {
+    if (!this.editAvatar && this.avatarRemoved) {
+      return;
+    }
+
+    this.editAvatar = '';
+    this.avatarRemoved = true;
+    this.photoUploadState.set('idle');
+    this.photoUploadErrorMessage.set(null);
+    this.editingResume.update((resume) => (resume ? this.withoutAvatar(resume) : resume));
+    this.previewResponse.update((preview) => (preview ? this.withoutPreviewAvatar(preview) : preview));
+    this.markUnsavedChanges();
   }
 
   protected submitResume(): void {
@@ -1039,6 +1058,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     const avatar = this.extractAvatar(response);
     const mergedResume = this.mergeUploadedImageResponse(response, savedResumeId, avatar);
 
+    this.avatarRemoved = false;
     this.resumeId = savedResumeId;
     this.selectedSavedResumeId.set(savedResumeId);
     this.editingResume.set(mergedResume);
@@ -1141,6 +1161,108 @@ export class ResumeBuilder implements OnInit, OnDestroy {
       this.asString(dataProfileData['avatar']) ||
       this.asString(dataCandidateProfile['avatar'])
     );
+  }
+
+  private withoutAvatar(resume: ResumeDocumentResponse): ResumeDocumentResponse {
+    return {
+      ...resume,
+      profile: this.withoutAvatarData(resume.profile) as ResumeDocumentResponse['profile'],
+    };
+  }
+
+  private withoutPreviewAvatar(preview: ResumePreviewResponse): ResumePreviewResponse {
+    return {
+      ...preview,
+      data: this.withoutAvatarData(preview.data),
+      templates: preview.templates.map((template) => ({
+        ...template,
+        data: this.withoutAvatarData(template.data),
+      })),
+    };
+  }
+
+  private withoutAvatarData(value: unknown): unknown {
+    const record = this.asRecord(value);
+
+    if (!Object.keys(record).length) {
+      return value;
+    }
+
+    const dataRecord = this.asRecord(record['data']);
+    const profile = this.asRecord(record['profile']);
+    const profileData = this.asRecord(profile['data']);
+    const candidateProfile = this.asRecord(profile['candidateProfile']);
+
+    return {
+      ...record,
+      avatar: '',
+      ...(Object.keys(dataRecord).length
+        ? {
+            data: {
+              ...dataRecord,
+              avatar: '',
+            },
+          }
+        : {}),
+      ...(Object.keys(profile).length
+        ? {
+            profile: {
+              ...profile,
+              avatar: '',
+              ...(Object.keys(profileData).length
+                ? {
+                    data: {
+                      ...profileData,
+                      avatar: '',
+                    },
+                  }
+                : {}),
+              ...(Object.keys(candidateProfile).length
+                ? {
+                    candidateProfile: {
+                      ...candidateProfile,
+                      avatar: null,
+                    },
+                  }
+                : {}),
+            },
+          }
+        : {}),
+    };
+  }
+
+  private resolveAvatarUrl(value: string): string {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return '';
+    }
+
+    if (/^[a-z][a-z\d+\-.]*:/i.test(trimmed)) {
+      return trimmed;
+    }
+
+    if (trimmed.startsWith('//')) {
+      return `${window.location.protocol}${trimmed}`;
+    }
+
+    const path = trimmed.startsWith('/') ? trimmed : `/${trimmed.replace(/^\/+/, '')}`;
+    return `${this.resolveAvatarBaseUrl()}${path}`;
+  }
+
+  private resolveAvatarBaseUrl(): string {
+    const runtimeConfig = window.__RESUME_GENERATOR_CONFIG__;
+    const configuredBase =
+      runtimeConfig?.apiGatewayUrl?.trim() ||
+      runtimeConfig?.templateApiUrl?.trim() ||
+      runtimeConfig?.parserApiUrl?.trim() ||
+      window.location.origin;
+
+    const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(configuredBase)
+      ? configuredBase
+      : `https://${configuredBase}`;
+
+    return withProtocol.replace(/\/+$/, '');
   }
 
   private activeTemplateId(): string {
@@ -1585,7 +1707,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   private buildRenderedResumeData(): Record<string, unknown> {
     const baseData = this.currentRenderedData();
     const summary = this.editProfessionalSummary.trim() || this.editProfessionalHeadline.trim();
-    const avatar = this.editAvatar || this.asString(baseData['avatar']);
+    const avatar = this.avatarRemoved ? '' : this.editAvatar || this.asString(baseData['avatar']);
 
     return {
       ...baseData,
@@ -1970,6 +2092,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editCurrentTitle = this.asString(candidateProfile['currentTitle']);
     this.editProfessionalHeadline = this.asString(candidateProfile['professionalHeadline']);
     this.editAvatar = this.extractAvatar(resume);
+    this.avatarRemoved = false;
     this.editTotalExperienceYears = this.asEditableNumber(candidateProfile['totalExperienceYears']);
     this.editCareerLevel = this.asString(careerProgression['careerLevel']) || this.asString(careerClassification['seniorityLevel']);
     this.editIndustry = this.asString(careerClassification['industry']);
@@ -2036,6 +2159,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.editCurrentTitle = this.asString(data['title']);
     this.editProfessionalHeadline = summary;
     this.editAvatar = this.extractAvatar(data) || this.extractAvatar(resume);
+    this.avatarRemoved = false;
     this.editTotalExperienceYears = '';
     this.editCareerLevel = '';
     this.editIndustry = this.asString(data['address']);

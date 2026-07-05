@@ -6,6 +6,14 @@ import { Subject, of } from 'rxjs';
 import { ResumeApi } from '../services/resume-api';
 import { ResumeBuilder } from './resume-builder';
 
+interface RuntimeConfigWindow extends Window {
+  __RESUME_GENERATOR_CONFIG__?: {
+    apiGatewayUrl?: string;
+    parserApiUrl?: string;
+    templateApiUrl?: string;
+  };
+}
+
 type TestableResumeBuilder = {
   handleRenderedSaveResponse: (response: unknown, fallbackResumeId: string) => void;
   activeTemplateIndex: { set: (index: number) => void; (): number };
@@ -57,6 +65,9 @@ describe('ResumeBuilder', () => {
   };
 
   beforeEach(async () => {
+    (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__ = {
+      apiGatewayUrl: 'https://gateway.example.test',
+    };
     routeParamMapGet = vi.fn(() => null);
     resumeApi = {
       getTemplateSavedResumes: vi.fn(() => of({ items: [] })),
@@ -126,6 +137,10 @@ describe('ResumeBuilder', () => {
     fixture = TestBed.createComponent(ResumeBuilder);
     component = fixture.componentInstance as unknown as TestableResumeBuilder;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    delete (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__;
   });
 
   it('uses rendered HTML returned from save instead of refetching stale preview HTML', () => {
@@ -252,6 +267,55 @@ describe('ResumeBuilder', () => {
     expect(request.avatar).toBe('https://cdn.example.test/avatar.png');
     expect(request.data['avatar']).toBe('https://cdn.example.test/avatar.png');
     expect(request.profile?.data?.['avatar']).toBe('https://cdn.example.test/avatar.png');
+  });
+
+  it('renders an existing avatar thumbnail and removes it from the next save payload', () => {
+    component.resumeId = 'resume-1';
+    component.editAvatar = 's/images/avatar.png';
+    component.previewResponse.set({
+      resumeId: 'resume-1',
+      templateId: 'modern-minimal',
+      html: '<article>Preview</article>',
+      data: {
+        avatar: 's/images/avatar.png',
+      },
+      templates: [
+        {
+          templateId: 'modern-minimal',
+          html: '<article>Preview</article>',
+          data: {
+            avatar: 's/images/avatar.png',
+          },
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const thumbnail = fixture.nativeElement.querySelector('.photo-thumbnail img') as HTMLImageElement | null;
+    expect(thumbnail?.getAttribute('src')).toBe('https://gateway.example.test/s/images/avatar.png');
+
+    const removeButton = fixture.nativeElement.querySelector('.photo-remove-button') as HTMLButtonElement | null;
+    removeButton?.click();
+    fixture.detectChanges();
+
+    expect(component.editAvatar).toBe('');
+    expect(fixture.nativeElement.querySelector('.photo-thumbnail')).toBeNull();
+
+    component.saveRenderedResume();
+
+    const request = resumeApi.saveRenderedResume.mock.calls[0][1] as {
+      avatar?: string;
+      withPhoto?: boolean;
+      data: Record<string, unknown>;
+      profile?: {
+        data?: Record<string, unknown>;
+      };
+    };
+
+    expect(request.withPhoto).toBe(false);
+    expect(request.avatar).toBe('');
+    expect(request.data['avatar']).toBe('');
+    expect(request.profile?.data?.['avatar']).toBe('');
   });
 
   it('renders only skills provided by the resume data in the skills step', () => {

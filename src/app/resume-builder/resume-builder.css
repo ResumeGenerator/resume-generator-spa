@@ -363,6 +363,69 @@
   color: #8a8c91;
 }
 
+.photo-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.photo-control.has-avatar {
+  align-items: flex-start;
+}
+
+.photo-thumbnail {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+  margin: 0;
+  overflow: visible;
+  border: 1px solid #dccdf6;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.12);
+}
+
+.photo-thumbnail img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 13px;
+  object-fit: cover;
+}
+
+.photo-remove-button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  padding: 0;
+  background: #ffffff;
+  color: #b91c1c;
+  box-shadow: 0 6px 14px rgba(127, 29, 29, 0.16);
+  cursor: pointer;
+}
+
+.photo-remove-button:hover {
+  background: #fff1f2;
+}
+
+.photo-remove-button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+}
+
 .photo-button {
   display: inline-flex;
   align-items: center;
@@ -372,6 +435,11 @@
   font-size: 0.98rem;
   font-weight: 900;
   cursor: pointer;
+}
+
+.photo-button.uploading {
+  pointer-events: none;
+  opacity: 0.72;
 }
 
 .photo-button input {
@@ -412,6 +480,17 @@
 .photo-copy {
   display: grid;
   gap: 2px;
+}
+
+.photo-status {
+  margin: -6px 0 0;
+  color: #15803d;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.photo-status.error {
+  color: #b91c1c;
 }
 
 .experience-card {
