@@ -249,7 +249,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     if (resumeId) {
       this.selectedSavedResumeId.set(resumeId);
       this.resumeId = resumeId;
-      this.loadResumeIntoEditor(resumeId);
       this.previewResumeById(resumeId);
     }
 
@@ -281,7 +280,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           if (firstResume && !this.selectedSavedResumeId()) {
             this.selectedSavedResumeId.set(firstResume.id);
             this.resumeId = firstResume.id;
-            this.loadResumeIntoEditor(firstResume.id);
             this.previewResumeById(firstResume.id);
           }
         },
@@ -917,17 +915,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.previewErrorMessage.set(null);
     this.previewState.set('idle');
     this.previewResume(templateIds, options);
-  }
-
-  private loadResumeIntoEditor(resumeId: string): void {
-    this.resumeApi.getTemplateResume(resumeId).subscribe({
-      next: (response) => {
-        this.editingResume.set(response);
-        this.populateEditForm(response);
-        this.hasUnsavedChanges.set(false);
-      },
-      error: () => undefined,
-    });
   }
 
   protected downloadWordTemplate(templateId: string): void {
