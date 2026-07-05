@@ -1,6 +1,5 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
-import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { Component, computed, signal } from '@angular/core';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 
 import { AuthService } from './services/auth.service';
 
@@ -10,7 +9,7 @@ import { AuthService } from './services/auth.service';
   templateUrl: './app.html',
   styleUrl: './app.css',
 })
-export class App implements OnInit {
+export class App {
   protected readonly isMenuOpen = signal(false);
   protected readonly isProfileOpen = signal(false);
   protected readonly profileName = computed(() => {
@@ -42,16 +41,6 @@ export class App implements OnInit {
     private readonly router: Router,
   ) {}
 
-  ngOnInit(): void {
-    this.loadCurrentUser();
-
-    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe(() => {
-      if (this.authService.isAuthenticated() && !this.authService.currentUser()) {
-        this.loadCurrentUser();
-      }
-    });
-  }
-
   protected toggleMenu(): void {
     this.isMenuOpen.update((isOpen) => !isOpen);
     this.closeProfileMenu();
@@ -75,16 +64,6 @@ export class App implements OnInit {
     this.closeMenu();
     this.closeProfileMenu();
     void this.router.navigate(['/login']);
-  }
-
-  private loadCurrentUser(): void {
-    if (!this.authService.isAuthenticated()) {
-      return;
-    }
-
-    this.authService.refreshCurrentUser().subscribe({
-      error: () => undefined,
-    });
   }
 
   private asDisplayString(value: unknown): string {

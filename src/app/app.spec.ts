@@ -2,7 +2,6 @@ import { signal } from '@angular/core';
 import type { WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 
 import { App } from './app';
 import { AuthService } from './services/auth.service';
@@ -25,7 +24,7 @@ describe('App', () => {
       currentUser,
       isAuthenticated: vi.fn(() => isAuthenticated),
       logout: vi.fn(),
-      refreshCurrentUser: vi.fn(() => of({})),
+      refreshCurrentUser: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -45,6 +44,15 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
+  });
+
+  it('does not refresh the current user profile during shell rendering', () => {
+    isAuthenticated = true;
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(authService.refreshCurrentUser).not.toHaveBeenCalled();
   });
 
   it('shows public header actions without the hamburger menu when signed out', () => {
