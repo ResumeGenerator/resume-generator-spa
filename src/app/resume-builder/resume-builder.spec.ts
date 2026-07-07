@@ -318,6 +318,41 @@ describe('ResumeBuilder', () => {
     expect(request.profile?.data?.['avatar']).toBe('');
   });
 
+  it('hydrates the existing photo thumbnail from preview data avatar', () => {
+    component.resumeId = 'resume-1';
+    resumeApi.previewResume.mockReturnValueOnce(
+      of({
+        resumeId: 'resume-1',
+        templateId: 'modern-minimal',
+        html: '<article>Preview with photo</article>',
+        data: {
+          name: 'Candidate With Photo',
+          avatar: 's/images/avatar.png',
+        },
+        templates: [
+          {
+            templateId: 'modern-minimal',
+            html: '<article>Preview with photo</article>',
+            data: {
+              name: 'Candidate With Photo',
+              avatar: 's/images/avatar.png',
+            },
+          },
+        ],
+      }),
+    );
+
+    component.previewResume(['modern-minimal']);
+    fixture.detectChanges();
+
+    const thumbnail = fixture.nativeElement.querySelector('.photo-thumbnail img') as HTMLImageElement | null;
+    const removeButton = fixture.nativeElement.querySelector('.photo-remove-button') as HTMLButtonElement | null;
+
+    expect(component.editAvatar).toBe('s/images/avatar.png');
+    expect(thumbnail?.getAttribute('src')).toBe('https://gateway.example.test/s/images/avatar.png');
+    expect(removeButton?.getAttribute('aria-label')).toBe('Remove resume photo');
+  });
+
   it('renders only skills provided by the resume data in the skills step', () => {
     component.activeEditorStep.set('skills');
     component.editHardSkills = 'Angular\nTypeScript';

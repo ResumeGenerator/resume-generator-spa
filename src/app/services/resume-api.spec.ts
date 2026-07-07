@@ -189,6 +189,52 @@ describe('ResumeApi', () => {
     });
   });
 
+  it('preserves avatar from nested rendered preview wrappers', () => {
+    let response: ResumePreviewResponse | undefined;
+    const renderedData = {
+      name: 'Candidate With Photo',
+      title: 'Senior Engineer',
+    };
+
+    resumeApi
+      .previewResume({
+        resumeId: 'resume-1',
+        templateId: 'modern-minimal',
+        templateIds: ['modern-minimal'],
+      })
+      .subscribe((value) => {
+        response = value;
+      });
+
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/html' &&
+        request.params.get('userId') === 'user-1' &&
+        request.params.get('templateId') === 'modern-minimal',
+    );
+
+    request.flush(
+      JSON.stringify({
+        data: {
+          templateId: 'modern-minimal',
+          renderedHtml: '<article>Rendered resume with photo</article>',
+          avatar: 'https://cdn.example.test/avatar.png',
+          data: renderedData,
+        },
+      }),
+    );
+
+    expect(response?.data).toEqual({
+      ...renderedData,
+      avatar: 'https://cdn.example.test/avatar.png',
+    });
+    expect(response?.templates[0].data).toEqual({
+      ...renderedData,
+      avatar: 'https://cdn.example.test/avatar.png',
+    });
+  });
+
   it('loads structured resume data from the parser API', () => {
     resumeApi.getTemplateResume('resume-1').subscribe((response) => {
       expect(response.id).toBe('resume-1');

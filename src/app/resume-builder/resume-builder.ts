@@ -1148,18 +1148,27 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     return (
       this.asString(record['avatar']) ||
+      this.asString(record['avtar']) ||
       this.asString(record['photo']) ||
       this.asString(record['imageUrl']) ||
       this.asString(dataRecord['avatar']) ||
+      this.asString(dataRecord['avtar']) ||
       this.asString(dataRecord['photo']) ||
       this.asString(dataRecord['imageUrl']) ||
       this.asString(profile['avatar']) ||
+      this.asString(profile['avtar']) ||
       this.asString(profileData['avatar']) ||
+      this.asString(profileData['avtar']) ||
       this.asString(profileDataData['avatar']) ||
+      this.asString(profileDataData['avtar']) ||
       this.asString(candidateProfile['avatar']) ||
+      this.asString(candidateProfile['avtar']) ||
       this.asString(dataProfile['avatar']) ||
+      this.asString(dataProfile['avtar']) ||
       this.asString(dataProfileData['avatar']) ||
-      this.asString(dataCandidateProfile['avatar'])
+      this.asString(dataProfileData['avtar']) ||
+      this.asString(dataCandidateProfile['avatar']) ||
+      this.asString(dataCandidateProfile['avtar'])
     );
   }
 
@@ -1707,7 +1716,9 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   private buildRenderedResumeData(): Record<string, unknown> {
     const baseData = this.currentRenderedData();
     const summary = this.editProfessionalSummary.trim() || this.editProfessionalHeadline.trim();
-    const avatar = this.avatarRemoved ? '' : this.editAvatar || this.asString(baseData['avatar']);
+    const avatar = this.avatarRemoved
+      ? ''
+      : this.editAvatar || this.asString(baseData['avatar']) || this.asString(baseData['avtar']);
 
     return {
       ...baseData,
@@ -2064,6 +2075,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
         this.asString(data['title']) ||
         this.asString(data['email']) ||
         this.asString(data['avatar']) ||
+        this.asString(data['avtar']) ||
         this.asRecordArray(data['sections']).length,
     );
   }

@@ -408,8 +408,35 @@ export class ResumeApi {
     return {
       templateId: this.asString(record['templateId']) || this.asString(dataRecord['templateId']) || fallbackTemplateId,
       html,
-      data: dataRecord['data'] ?? record['data'],
+      data: this.normalizeRenderedPreviewData(record, dataRecord),
     };
+  }
+
+  private normalizeRenderedPreviewData(
+    record: Record<string, unknown>,
+    dataRecord: Record<string, unknown>,
+  ): unknown {
+    const renderedData = dataRecord['data'] ?? record['data'];
+    const renderedRecord = this.asRecord(renderedData);
+
+    if (!Object.keys(renderedRecord).length) {
+      return renderedData;
+    }
+
+    const avatar =
+      this.asString(renderedRecord['avatar']) ||
+      this.asString(renderedRecord['avtar']) ||
+      this.asString(dataRecord['avatar']) ||
+      this.asString(dataRecord['avtar']) ||
+      this.asString(record['avatar']) ||
+      this.asString(record['avtar']);
+
+    return avatar
+      ? {
+          ...renderedRecord,
+          avatar,
+        }
+      : renderedData;
   }
 
   private resolveHtml(record: Record<string, unknown>): string {
