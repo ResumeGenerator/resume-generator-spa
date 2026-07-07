@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
 import {
+  AtsScoreResponse,
   ParsedResumeResponse,
   ResumeApi,
   ResumeDocumentResponse,
@@ -16,6 +17,7 @@ type UploadState = 'idle' | 'uploading' | 'success' | 'error';
 type PreviewState = 'idle' | 'loading' | 'success' | 'error';
 type SavedResumesState = 'idle' | 'loading' | 'success' | 'error';
 type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
+type AtsScoreState = 'idle' | 'loading' | 'success' | 'error';
 
 interface WorkExperienceEditItem {
   companyOrOrganization: string;
@@ -67,6 +69,9 @@ export class ResumeUpload implements OnInit, OnDestroy {
   protected readonly editErrorMessage = signal<string | null>(null);
   protected readonly editSuccessMessage = signal<string | null>(null);
   protected readonly latestEditedResumeIds = signal<Record<string, string>>({});
+  protected readonly atsScores = signal<Record<string, AtsScoreResponse>>({});
+  protected readonly atsScoreStates = signal<Record<string, AtsScoreState>>({});
+  protected readonly atsScoreErrors = signal<Record<string, string | null>>({});
   protected readonly activeTemplateIndex = signal(0);
   protected readonly displayedSavedResumes = computed(() => {
     const parsedResume = this.parsedResumeListItem();
@@ -339,6 +344,49 @@ export class ResumeUpload implements OnInit, OnDestroy {
     window.location.href = this.resumeBuilderUrl(resumeId);
   }
 
+  protected generateResumeAtsScore(resume: SavedResume, event?: Event): void {
+    event?.stopPropagation();
+
+    if (this.resumeAtsState(resume) === 'loading') {
+      return;
+    }
+
+    this.atsScoreStates.update((states) => ({
+      ...states,
+      [resume.id]: 'loading',
+    }));
+    this.atsScoreErrors.update((errors) => ({
+      ...errors,
+      [resume.id]: null,
+    }));
+
+    this.resumeApi
+      .getAtsScore(resume.id, 'edited')
+      .pipe(finalize(() => this.setResumeAtsStateIfLoading(resume.id, 'idle')))
+      .subscribe({
+        next: (response) => {
+          this.atsScores.update((scores) => ({
+            ...scores,
+            [resume.id]: response,
+          }));
+          this.atsScoreStates.update((states) => ({
+            ...states,
+            [resume.id]: 'success',
+          }));
+        },
+        error: (error) => {
+          this.atsScoreErrors.update((errors) => ({
+            ...errors,
+            [resume.id]: this.resolveErrorMessage(error, 'ats'),
+          }));
+          this.atsScoreStates.update((states) => ({
+            ...states,
+            [resume.id]: 'error',
+          }));
+        },
+      });
+  }
+
   protected addWorkExperience(): void {
     this.editWorkExperience.push({
       companyOrOrganization: '',
@@ -519,6 +567,9 @@ export class ResumeUpload implements OnInit, OnDestroy {
     this.editErrorMessage.set(null);
     this.editSuccessMessage.set(null);
     this.selectedSavedResumeId.set(null);
+    this.atsScores.set({});
+    this.atsScoreStates.set({});
+    this.atsScoreErrors.set({});
     this.isPreviewModalOpen.set(false);
     this.isEditModalOpen.set(false);
     this.activeTemplateIndex.set(0);
@@ -555,6 +606,83 @@ export class ResumeUpload implements OnInit, OnDestroy {
 
   protected resumeCardUploadedAt(resume: SavedResume): string {
     return this.formatDate(resume.createdAt || resume.updatedAt);
+  }
+
+  protected resumeAtsScore(resume: SavedResume): AtsScoreResponse | null {
+    return this.atsScores()[resume.id] ?? null;
+  }
+
+  protected resumeAtsState(resume: SavedResume): AtsScoreState {
+    return this.atsScoreStates()[resume.id] ?? 'idle';
+  }
+
+  protected resumeAtsError(resume: SavedResume): string {
+    return this.atsScoreErrors()[resume.id] ?? '';
+  }
+
+  protected resumeAtsScoreValue(resume: SavedResume): number | null {
+    return this.resumeAtsScore(resume)?.atsScore ?? null;
+  }
+
+  protected resumeAtsScoreText(resume: SavedResume): string {
+    const score = this.resumeAtsScoreValue(resume);
+    return score === null ? '--' : String(Math.round(score));
+  }
+
+  protected resumeAtsLevel(resume: SavedResume): string {
+    const score = this.resumeAtsScore(resume);
+
+    if (score?.scoreLevel) {
+      return score.scoreLevel;
+    }
+
+    if (this.resumeAtsState(resume) === 'loading') {
+      return 'Generating';
+    }
+
+    return 'Generate';
+  }
+
+  protected resumeAtsTone(resume: SavedResume): string {
+    const score = this.resumeAtsScoreValue(resume);
+
+    if (score === null) {
+      return 'neutral';
+    }
+
+    return score >= 75 ? 'good' : score >= 55 ? 'moderate' : 'low';
+  }
+
+  protected resumeAtsRingBackground(resume: SavedResume): string {
+    const score = this.clampScore(this.resumeAtsScoreValue(resume) ?? 0);
+    const color = score >= 80 ? '#22c55e' : score >= 60 ? '#f97316' : '#ef4444';
+
+    return `conic-gradient(${color} ${score * 3.6}deg, #e5e7eb 0deg)`;
+  }
+
+  protected resumeJdMatchText(resume: SavedResume): string {
+    const matchScore = this.resumeJdMatchScore(resume);
+    return matchScore === null ? '--' : `${Math.round(matchScore)}%`;
+  }
+
+  protected resumeJdMatchLevel(resume: SavedResume): string {
+    const matchScore = this.resumeJdMatchScore(resume);
+
+    if (matchScore === null) {
+      return 'Pending';
+    }
+
+    return matchScore >= 75 ? 'Good' : matchScore >= 55 ? 'Moderate' : 'Low';
+  }
+
+  protected resumeJdMatchTone(resume: SavedResume): string {
+    const matchScore = this.resumeJdMatchScore(resume);
+
+    if (matchScore === null) {
+      return 'neutral';
+    }
+
+    return matchScore >= 75 ? 'good' : matchScore >= 55 ? 'moderate' : 'low';
   }
 
   private extractResumeId(response: ParsedResumeResponse): string {
@@ -682,6 +810,49 @@ export class ResumeUpload implements OnInit, OnDestroy {
 
   private asString(value: unknown): string {
     return typeof value === 'string' ? value : '';
+  }
+
+  private asOptionalNumber(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    return null;
+  }
+
+  private clampScore(value: number): number {
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  private resumeJdMatchScore(resume: SavedResume): number | null {
+    const score = this.resumeAtsScore(resume);
+
+    if (!score) {
+      return null;
+    }
+
+    return (
+      this.asOptionalNumber(score['jdMatch']) ??
+      this.asOptionalNumber(score['jobDescriptionMatch']) ??
+      this.asOptionalNumber(score['jobDescriptionMatchScore']) ??
+      this.asOptionalNumber(score['matchScore'])
+    );
+  }
+
+  private setResumeAtsStateIfLoading(resumeId: string, state: AtsScoreState): void {
+    this.atsScoreStates.update((states) =>
+      states[resumeId] === 'loading'
+        ? {
+            ...states,
+            [resumeId]: state,
+          }
+        : states,
+    );
   }
 
   private populateEditForm(resume: ResumeDocumentResponse): void {
@@ -1007,7 +1178,10 @@ export class ResumeUpload implements OnInit, OnDestroy {
     URL.revokeObjectURL(url);
   }
 
-  private resolveErrorMessage(error: unknown, action: 'upload' | 'preview' | 'saved' | 'edit' = 'upload'): string {
+  private resolveErrorMessage(
+    error: unknown,
+    action: 'upload' | 'preview' | 'saved' | 'edit' | 'ats' = 'upload',
+  ): string {
     if (typeof error === 'object' && error !== null && 'error' in error) {
       const payload = (error as { error?: unknown }).error;
       const status = (error as { status?: unknown }).status;
@@ -1041,6 +1215,10 @@ export class ResumeUpload implements OnInit, OnDestroy {
 
     if (action === 'edit') {
       return 'Unable to save the edited resume copy. Please check the API gateway and parser route, then try again.';
+    }
+
+    if (action === 'ats') {
+      return 'Unable to generate the ATS score. Please check the API gateway and parser route, then try again.';
     }
 
     return 'Unable to upload the resume. Please check the API gateway and parser route, then try again.';

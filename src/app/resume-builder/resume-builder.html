@@ -710,80 +710,19 @@
     </section>
 
     <section class="preview-stage" aria-label="Resume preview">
-      <div class="preview-controls">
       <header class="preview-toolbar">
-        <div class="score-chip" [class.loading]="atsScoreState() === 'loading'">
-          <span class="score-chip-label">ATS</span>
-          <strong>{{ atsScoreDisplay() }}</strong>
+        <div class="score-chip">
+          <span class="score-chip-label">Draft</span>
         </div>
         <div class="score-progress">
-          <strong>{{ atsScoreSummary() }}</strong>
-          <span><i [style.width]="atsProgressWidth()"></i></span>
+          <strong>{{ suggestionText() }}</strong>
+          <span><i></i></span>
         </div>
-        <button
-          type="button"
-          class="ats-button"
-          [disabled]="atsScoreState() === 'loading' || !hasActiveResume()"
-          (click)="generateAtsScore()"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M4 19V5"></path>
-            <path d="M8 19V9"></path>
-            <path d="M12 19V7"></path>
-            <path d="M16 19v-5"></path>
-            <path d="M20 19V4"></path>
-          </svg>
-          {{ atsScoreState() === 'loading' ? 'Generating...' : 'Generate ATS' }}
-        </button>
         <button type="button" class="template-button">
           <span aria-hidden="true">◉</span>
           Change template
         </button>
       </header>
-
-      @if (atsScoreErrorMessage()) {
-        <p class="ats-status error">{{ atsScoreErrorMessage() }}</p>
-      }
-
-      @if (atsScore(); as score) {
-        <section class="ats-score-panel" aria-label="ATS score details">
-          <header>
-            <div>
-              <span>{{ score.source || 'edited' }}</span>
-              <strong>{{ score.scoreLevel || 'ATS score' }}</strong>
-            </div>
-            <b>{{ atsScoreDisplay() }}</b>
-          </header>
-
-          @if (atsBreakdownItems().length > 0) {
-            <div class="ats-breakdown">
-              @for (item of atsBreakdownItems(); track item.key) {
-                <div class="ats-breakdown-item">
-                  <span>{{ item.label }}</span>
-                  <strong>{{ item.value }}</strong>
-                </div>
-              }
-            </div>
-          }
-
-          @if (atsInsightGroups().length > 0) {
-            <div class="ats-insights">
-              @for (group of atsInsightGroups(); track group.title) {
-                <section>
-                  <strong>{{ group.title }}</strong>
-                  <ul>
-                    @for (item of group.items; track item) {
-                      <li>{{ item }}</li>
-                    }
-                  </ul>
-                </section>
-              }
-            </div>
-          }
-        </section>
-      }
-
-      </div>
 
       <div class="resume-preview-frame">
         <iframe

@@ -8,7 +8,7 @@ describe('ResumeUpload', () => {
   let fixture: ComponentFixture<ResumeUpload>;
 
   const resumeApi = {
-    getTemplateSavedResumes: () =>
+    getTemplateSavedResumes: vi.fn(() =>
       of({
         items: [
           {
@@ -21,9 +21,32 @@ describe('ResumeUpload', () => {
           },
         ],
       }),
+    ),
+    getAtsScore: vi.fn(() =>
+      of({
+        resumeId: 'resume-1',
+        source: 'edited',
+        atsScore: 84,
+        scoreLevel: 'Good',
+        summary: 'Resume is ATS-friendly.',
+        scoreBreakdown: {
+          contactInfo: 10,
+          keywords: 13,
+        },
+        strengths: [],
+        weakAreas: [],
+        missingSections: [],
+        keywordGaps: [],
+        formattingRisks: [],
+        improvementSuggestions: [],
+      }),
+    ),
   };
 
   beforeEach(async () => {
+    resumeApi.getTemplateSavedResumes.mockClear();
+    resumeApi.getAtsScore.mockClear();
+
     await TestBed.configureTestingModule({
       imports: [ResumeUpload],
       providers: [{ provide: ResumeApi, useValue: resumeApi }],
@@ -41,6 +64,25 @@ describe('ResumeUpload', () => {
 
     expect(actions).toEqual(['Preview and edit Product Manager']);
     expect(compiled.textContent).not.toContain('Update resume fields');
+  });
+
+  it('generates ATS score from the saved tailoring card', () => {
+    const compiled = fixture.nativeElement as HTMLElement;
+
+    expect(compiled.textContent).toContain('ATS Score');
+    expect(compiled.textContent).toContain('JD Match');
+    expect(compiled.textContent).toContain('Generate');
+    expect(compiled.querySelector('.resume-score-ring')?.textContent).toContain('--');
+
+    const generateButton = compiled.querySelector<HTMLButtonElement>('.score-generate-button');
+    generateButton?.click();
+    fixture.detectChanges();
+
+    expect(resumeApi.getAtsScore).toHaveBeenCalledWith('resume-1', 'edited');
+    expect(compiled.querySelector('.resume-score-ring')?.textContent).toContain('84');
+    expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('84/100');
+    expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('Good');
+    expect(compiled.textContent).toContain('Improve your chances');
   });
 
   it('shows user-focused upload guidance and visual progress', () => {

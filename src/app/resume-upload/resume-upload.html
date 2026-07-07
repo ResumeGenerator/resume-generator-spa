@@ -179,6 +179,22 @@
                 </button>
               </div>
 
+              <div
+                class="resume-score-ring"
+                [class.pending]="!resumeAtsScore(resume)"
+                [style.background]="resumeAtsRingBackground(resume)"
+                aria-label="ATS score {{ resumeAtsScoreText(resume) }} out of 100"
+              >
+                <span>
+                  @if (resumeAtsState(resume) === 'loading') {
+                    ...
+                  } @else {
+                    {{ resumeAtsScoreText(resume) }}
+                  }
+                </span>
+                <small>/100</small>
+              </div>
+
               <button
                 type="button"
                 class="resume-open-button"
@@ -191,9 +207,64 @@
                   <path d="m13 6 6 6-6 6" />
                 </svg>
               </button>
+
+              <div class="resume-score-strip">
+                <div class="score-strip-metric">
+                  <span>ATS Score</span>
+                  <strong>{{ resumeAtsScoreText(resume) }}/100</strong>
+                  @if (resumeAtsScore(resume)) {
+                    <em
+                      class="score-level"
+                      [class.good]="resumeAtsTone(resume) === 'good'"
+                      [class.moderate]="resumeAtsTone(resume) === 'moderate'"
+                    >
+                      {{ resumeAtsLevel(resume) }}
+                    </em>
+                  } @else {
+                    <button
+                      type="button"
+                      class="score-generate-button"
+                      [disabled]="resumeAtsState(resume) === 'loading'"
+                      (click)="generateResumeAtsScore(resume, $event)"
+                    >
+                      {{ resumeAtsState(resume) === 'loading' ? 'Generating...' : 'Generate' }}
+                    </button>
+                  }
+                </div>
+                <span class="score-strip-divider" aria-hidden="true"></span>
+                <div class="score-strip-metric">
+                  <span>JD Match</span>
+                  <strong>{{ resumeJdMatchText(resume) }}</strong>
+                  <em class="score-level" [class.good]="resumeJdMatchTone(resume) === 'good'" [class.moderate]="resumeJdMatchTone(resume) === 'moderate'">
+                    {{ resumeJdMatchLevel(resume) }}
+                  </em>
+                </div>
+                @if (resumeAtsError(resume)) {
+                  <p class="resume-score-error">{{ resumeAtsError(resume) }}</p>
+                }
+              </div>
             </article>
           }
         </div>
+        <section class="score-benefits-panel" aria-label="Resume scoring benefits">
+          <span class="score-benefits-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <circle cx="12" cy="12" r="8"></circle>
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M14.5 9.5 20 4"></path>
+              <path d="M17 4h3v3"></path>
+            </svg>
+          </span>
+          <div>
+            <h3>Improve your chances. Get a higher score.</h3>
+            <p>AI tailoring helps align your resume with the job description and pass ATS systems.</p>
+          </div>
+          <ul>
+            <li>Keyword Optimization</li>
+            <li>Content Enhancement</li>
+            <li>ATS Friendly Format</li>
+          </ul>
+        </section>
       } @else if (savedResumesState() !== 'loading') {
         <div class="empty-state">
           <strong>No saved resumes found</strong>

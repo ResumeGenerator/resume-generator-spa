@@ -6,7 +6,6 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import {
-  AtsScoreResponse,
   ParsedResumeResponse,
   RenderedResumeSaveRequest,
   ResumeApi,
@@ -22,7 +21,6 @@ type EditState = 'idle' | 'loading' | 'saving' | 'success' | 'error';
 type RenderedSaveState = 'idle' | 'saving' | 'success' | 'error';
 type AiEnhanceState = 'idle' | 'loading' | 'success' | 'error';
 type PhotoUploadState = 'idle' | 'uploading' | 'success' | 'error';
-type AtsScoreState = 'idle' | 'loading' | 'success' | 'error';
 type EditorStepId = 'personal' | 'contact' | 'experience' | 'skills' | 'education' | 'courses' | 'languages' | 'summary';
 
 interface EditorStep {
@@ -77,17 +75,6 @@ interface PreviewOptions {
   preserveCurrentPreview?: boolean;
 }
 
-interface AtsBreakdownItem {
-  key: string;
-  label: string;
-  value: number;
-}
-
-interface AtsInsightGroup {
-  title: string;
-  items: string[];
-}
-
 @Component({
   selector: 'app-resume-builder',
   imports: [CommonModule, FormsModule, RouterLink],
@@ -117,9 +104,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly aiEnhanceErrorMessage = signal<string | null>(null);
   protected readonly photoUploadState = signal<PhotoUploadState>('idle');
   protected readonly photoUploadErrorMessage = signal<string | null>(null);
-  protected readonly atsScoreState = signal<AtsScoreState>('idle');
-  protected readonly atsScore = signal<AtsScoreResponse | null>(null);
-  protected readonly atsScoreErrorMessage = signal<string | null>(null);
   protected readonly pendingAiWorkSummaryIndex = signal<number | null>(null);
   protected readonly aiWorkSummarySuggestion = signal<AiWorkSummarySuggestion | null>(null);
   protected readonly aiProfessionalSummarySuggestion = signal('');
@@ -210,50 +194,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
   protected readonly activeStepHeading = computed(() => this.resolveStepHeading(this.activeEditorStep()));
   protected readonly activeStepDescription = computed(() => this.resolveStepDescription(this.activeEditorStep()));
   protected readonly suggestionText = computed(() => this.resolveSuggestionText(this.activeEditorStep()));
-  protected readonly atsScoreValue = computed(() => this.atsScore()?.atsScore ?? null);
-  protected readonly atsScoreDisplay = computed(() => {
-    const score = this.atsScoreValue();
-    return score === null ? '--' : `${Math.round(score)}%`;
-  });
-  protected readonly atsProgressWidth = computed(() => `${this.clampScore(this.atsScoreValue() ?? 0)}%`);
-  protected readonly atsScoreSummary = computed(() => {
-    const score = this.atsScore();
-
-    if (this.atsScoreState() === 'loading') {
-      return 'Generating ATS score...';
-    }
-
-    if (score?.summary) {
-      return score.summary;
-    }
-
-    return this.hasActiveResume() ? 'Generate ATS score for the edited resume.' : 'Select a resume to generate ATS score.';
-  });
-  protected readonly atsBreakdownItems = computed<AtsBreakdownItem[]>(() => {
-    const breakdown = this.atsScore()?.scoreBreakdown ?? {};
-
-    return Object.entries(breakdown).map(([key, value]) => ({
-      key,
-      label: this.formatAtsBreakdownLabel(key),
-      value,
-    }));
-  });
-  protected readonly atsInsightGroups = computed<AtsInsightGroup[]>(() => {
-    const score = this.atsScore();
-
-    if (!score) {
-      return [];
-    }
-
-    return [
-      { title: 'Strengths', items: score.strengths },
-      { title: 'Weak areas', items: score.weakAreas },
-      { title: 'Missing sections', items: score.missingSections },
-      { title: 'Keyword gaps', items: score.keywordGaps },
-      { title: 'Formatting risks', items: score.formattingRisks },
-      { title: 'Suggestions', items: score.improvementSuggestions },
-    ].filter((group) => group.items.length > 0);
-  });
   protected readonly currentResumePreview = computed(() => {
     const template = this.previewResponse()?.templates[this.activeTemplateIndex()];
     return template?.html ? this.asPreviewDocument(template.html) : this.buildFallbackPreviewHtml();
@@ -452,7 +392,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
           this.parsedResume.set(response);
           this.resumeId = this.extractResumeId(response);
           this.selectedSavedResumeId.set(this.resumeId || null);
-          this.resetAtsScore();
           this.uploadState.set('success');
           this.loadSavedResumes();
         },
@@ -991,7 +930,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     options: PreviewOptions = {},
   ): void {
     this.resumeId = resumeId;
-    this.resetAtsScore();
     this.parsedResume.set(null);
     this.previewErrorMessage.set(null);
     this.previewState.set('idle');
@@ -1040,41 +978,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private activeResumeId(): string {
     return this.resumeId.trim() || this.editingResume()?.id || this.selectedSavedResumeId() || '';
-  }
-
-  protected hasActiveResume(): boolean {
-    return Boolean(this.activeResumeId());
-  }
-
-  protected generateAtsScore(): void {
-    if (this.atsScoreState() === 'loading') {
-      return;
-    }
-
-    const resumeId = this.activeResumeId();
-
-    if (!resumeId) {
-      this.atsScoreErrorMessage.set('Select or save a resume before generating an ATS score.');
-      this.atsScoreState.set('error');
-      return;
-    }
-
-    this.atsScoreState.set('loading');
-    this.atsScoreErrorMessage.set(null);
-
-    this.resumeApi
-      .getAtsScore(resumeId, 'edited')
-      .pipe(finalize(() => this.atsScoreState.update((state) => (state === 'loading' ? 'idle' : state))))
-      .subscribe({
-        next: (response) => {
-          this.atsScore.set(response);
-          this.atsScoreState.set('success');
-        },
-        error: (error) => {
-          this.atsScoreErrorMessage.set(this.resolveErrorMessage(error, 'ats'));
-          this.atsScoreState.set('error');
-        },
-      });
   }
 
   protected saveRenderedResume(): void {
@@ -1672,12 +1575,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
     this.isProfessionalSummaryAiActive.set(false);
   }
 
-  private resetAtsScore(): void {
-    this.atsScore.set(null);
-    this.atsScoreErrorMessage.set(null);
-    this.atsScoreState.set('idle');
-  }
-
   protected markUnsavedChanges(): void {
     if (this.renderedSaveState() === 'saving') {
       return;
@@ -1717,15 +1614,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private asString(value: unknown): string {
     return typeof value === 'string' ? value : '';
-  }
-
-  private clampScore(value: number): number {
-    return Math.max(0, Math.min(100, Math.round(value)));
-  }
-
-  private formatAtsBreakdownLabel(value: string): string {
-    const label = value.replace(/([A-Z])/g, ' $1').replace(/[_-]+/g, ' ').trim();
-    return label ? label.charAt(0).toUpperCase() + label.slice(1).toLowerCase() : 'Score item';
   }
 
   protected firstName(): string {
@@ -3068,7 +2956,7 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
   private resolveErrorMessage(
     error: unknown,
-    action: 'upload' | 'preview' | 'saved' | 'edit' | 'ai' | 'image' | 'ats' = 'upload',
+    action: 'upload' | 'preview' | 'saved' | 'edit' | 'ai' | 'image' = 'upload',
   ): string {
     if (typeof error === 'object' && error !== null && 'error' in error) {
       const payload = (error as { error?: unknown }).error;
@@ -3111,10 +2999,6 @@ export class ResumeBuilder implements OnInit, OnDestroy {
 
     if (action === 'image') {
       return 'Unable to upload the resume photo. Please check the API gateway and parser route, then try again.';
-    }
-
-    if (action === 'ats') {
-      return 'Unable to generate the ATS score. Please check the API gateway and parser route, then try again.';
     }
 
     return 'Unable to upload the resume. Please check the API gateway and parser route, then try again.';
