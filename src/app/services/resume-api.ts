@@ -74,6 +74,22 @@ export interface ResumePreviewResponse {
   data?: unknown;
 }
 
+export interface AtsScoreResponse {
+  resumeId: string;
+  source: string;
+  atsScore: number;
+  scoreLevel: string;
+  summary: string;
+  scoreBreakdown: Record<string, number>;
+  strengths: string[];
+  weakAreas: string[];
+  missingSections: string[];
+  keywordGaps: string[];
+  formattingRisks: string[];
+  improvementSuggestions: string[];
+  [key: string]: unknown;
+}
+
 export interface RenderedResumeSaveRequest {
   resumeId?: string;
   template: string;
@@ -183,6 +199,19 @@ export class ResumeApi {
 
   getTemplateResume(resumeId: string): Observable<ResumeDocumentResponse> {
     return this.getResume(resumeId);
+  }
+
+  getAtsScore(resumeId: string, source = 'edited'): Observable<AtsScoreResponse> {
+    const userId = this.resolveCurrentUserId();
+
+    return this.http
+      .get<unknown>(`${this.parserResumesUrl}/${encodeURIComponent(resumeId)}/ats-score`, {
+        params: {
+          source,
+          userId,
+        },
+      })
+      .pipe(map((response) => this.normalizeAtsScoreResponse(response, resumeId, source)));
   }
 
   saveEditedResume(resumeId: string, request: ResumeEditRequest): Observable<ResumeDocumentResponse> {
@@ -568,6 +597,38 @@ export class ResumeApi {
     };
   }
 
+  private normalizeAtsScoreResponse(value: unknown, fallbackResumeId: string, fallbackSource: string): AtsScoreResponse {
+    const record = this.unwrapDataDocument(value);
+    const scoreBreakdown = Object.entries(this.asRecord(record['scoreBreakdown'])).reduce<Record<string, number>>(
+      (breakdown, [key, score]) => {
+        const numericScore = this.asFiniteNumber(score);
+
+        if (numericScore !== undefined) {
+          breakdown[key] = numericScore;
+        }
+
+        return breakdown;
+      },
+      {},
+    );
+
+    return {
+      ...record,
+      resumeId: this.asString(record['resumeId']) || fallbackResumeId,
+      source: this.asString(record['source']) || fallbackSource,
+      atsScore: this.asFiniteNumber(record['atsScore']) ?? 0,
+      scoreLevel: this.asString(record['scoreLevel']),
+      summary: this.asString(record['summary']),
+      scoreBreakdown,
+      strengths: this.asStringArray(record['strengths']),
+      weakAreas: this.asStringArray(record['weakAreas']),
+      missingSections: this.asStringArray(record['missingSections']),
+      keywordGaps: this.asStringArray(record['keywordGaps']),
+      formattingRisks: this.asStringArray(record['formattingRisks']),
+      improvementSuggestions: this.asStringArray(record['improvementSuggestions']),
+    };
+  }
+
   private unwrapDataDocument(value: unknown): Record<string, unknown> {
     const record = this.asRecord(value);
     const data = this.asRecord(record['data']);
@@ -579,7 +640,8 @@ export class ResumeApi {
         data['_id'] !== undefined ||
         data['sections'] !== undefined ||
         data['name'] !== undefined ||
-        data['avatar'] !== undefined)
+        data['avatar'] !== undefined ||
+        data['atsScore'] !== undefined)
     ) {
       return data;
     }
@@ -606,8 +668,25 @@ export class ResumeApi {
     return typeof value === 'string' ? value : '';
   }
 
+  private asStringArray(value: unknown): string[] {
+    return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+  }
+
   private asNumber(value: unknown): number | undefined {
     return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  }
+
+  private asFiniteNumber(value: unknown): number | undefined {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : undefined;
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+
+    return undefined;
   }
 
   private asDateString(value: unknown): string {

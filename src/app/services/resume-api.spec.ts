@@ -258,6 +258,48 @@ describe('ResumeApi', () => {
     });
   });
 
+  it('generates ATS score from the parser API for edited resumes', () => {
+    let responseScore = 0;
+    let responseBreakdown: Record<string, number> = {};
+
+    resumeApi.getAtsScore('resume-1', 'edited').subscribe((response) => {
+      responseScore = response.atsScore;
+      responseBreakdown = response.scoreBreakdown;
+    });
+
+    const request = httpTesting.expectOne(
+      (request) =>
+        request.method === 'GET' &&
+        request.url === 'https://gateway.example.test/api/resumes/resume-1/ats-score' &&
+        request.params.get('source') === 'edited' &&
+        request.params.get('userId') === 'user-1',
+    );
+
+    request.flush({
+      resumeId: 'resume-1',
+      source: 'edited',
+      atsScore: 84,
+      scoreLevel: 'Good',
+      summary: 'Resume is ATS-friendly.',
+      scoreBreakdown: {
+        contactInfo: 10,
+        keywords: '13',
+      },
+      strengths: ['Clear contact details'],
+      weakAreas: [],
+      missingSections: [],
+      keywordGaps: [],
+      formattingRisks: [],
+      improvementSuggestions: ['Add measurable achievements'],
+    });
+
+    expect(responseScore).toBe(84);
+    expect(responseBreakdown).toEqual({
+      contactInfo: 10,
+      keywords: 13,
+    });
+  });
+
   it('normalizes flat saved resume rows from a paged resumes response', () => {
     let responseItems: unknown[] = [];
 

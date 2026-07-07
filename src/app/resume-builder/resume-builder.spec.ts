@@ -32,8 +32,10 @@ type TestableResumeBuilder = {
   }[];
   editProfessionalSummary: string;
   editWorkExperience: { responsibilities: string }[];
+  generateAtsScore: () => void;
   nextEditorStep: () => void;
   onPhotoSelected: (event: Event) => void;
+  atsScoreState: () => string;
   pendingAiWorkSummaryIndex: () => number | null;
   photoUploadState: () => string;
   previewResume: (templateIds?: string[]) => void;
@@ -58,6 +60,7 @@ describe('ResumeBuilder', () => {
   let resumeApi: {
     getTemplateSavedResumes: ReturnType<typeof vi.fn>;
     getTemplateResume: ReturnType<typeof vi.fn>;
+    getAtsScore: ReturnType<typeof vi.fn>;
     previewResume: ReturnType<typeof vi.fn>;
     rephraseResumeText: ReturnType<typeof vi.fn>;
     saveRenderedResume: ReturnType<typeof vi.fn>;
@@ -79,6 +82,27 @@ describe('ResumeBuilder', () => {
           source: {},
           createdAt: '',
           updatedAt: '',
+        }),
+      ),
+      getAtsScore: vi.fn(() =>
+        of({
+          resumeId: 'resume-1',
+          source: 'edited',
+          atsScore: 84,
+          scoreLevel: 'Good',
+          summary: 'Resume is ATS-friendly but can be improved.',
+          scoreBreakdown: {
+            contactInfo: 10,
+            professionalSummary: 8,
+            skills: 14,
+            keywords: 13,
+          },
+          strengths: ['Clear contact details'],
+          weakAreas: [],
+          missingSections: [],
+          keywordGaps: ['Angular'],
+          formattingRisks: [],
+          improvementSuggestions: ['Add measurable achievements'],
         }),
       ),
       previewResume: vi.fn(() =>
@@ -233,6 +257,26 @@ describe('ResumeBuilder', () => {
 
     expect(previewFrame?.getAttribute('sandbox')).toBe('allow-same-origin');
     expect(previewFrame?.getAttribute('scrolling')).toBe('no');
+  });
+
+  it('generates and renders ATS score on demand', () => {
+    component.resumeId = 'resume-1';
+    fixture.detectChanges();
+
+    const generateButton = fixture.nativeElement.querySelector('.ats-button') as HTMLButtonElement | null;
+    expect(generateButton?.textContent).toContain('Generate ATS');
+
+    generateButton?.click();
+    fixture.detectChanges();
+
+    expect(resumeApi.getAtsScore).toHaveBeenCalledWith('resume-1', 'edited');
+    expect(component.atsScoreState()).toBe('success');
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('.score-chip')?.textContent).toContain('84%');
+    expect(compiled.querySelector('.ats-score-panel')?.textContent).toContain('Good');
+    expect(compiled.querySelector('.ats-score-panel')?.textContent).toContain('Contact info');
+    expect(compiled.querySelector('.ats-score-panel')?.textContent).toContain('Add measurable achievements');
   });
 
   it('uploads the personal photo to the parser image endpoint and saves the returned avatar', () => {
