@@ -309,7 +309,6 @@ export class ResumeUpload implements OnInit, OnDestroy {
             ...ids,
             [resume.id]: response.id,
           }));
-          this.editSuccessMessage.set(`Edited copy saved to edited_resumes with id ${response.id}.`);
           this.editState.set('success');
 
           if (regenerate) {
