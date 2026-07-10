@@ -360,7 +360,7 @@ export class ResumeUpload implements OnInit, OnDestroy {
     }));
 
     this.resumeApi
-      .getAtsScore(resume.id, 'edited')
+      .getAtsScore(resume.id, 'parsed')
       .pipe(finalize(() => this.setResumeAtsStateIfLoading(resume.id, 'idle')))
       .subscribe({
         next: (response) => {

@@ -201,7 +201,7 @@ export class ResumeApi {
     return this.getResume(resumeId);
   }
 
-  getAtsScore(resumeId: string, source = 'edited'): Observable<AtsScoreResponse> {
+  getAtsScore(resumeId: string, source = 'parsed'): Observable<AtsScoreResponse> {
     const userId = this.resolveCurrentUserId();
 
     return this.http

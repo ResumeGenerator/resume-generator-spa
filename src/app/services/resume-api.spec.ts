@@ -262,7 +262,7 @@ describe('ResumeApi', () => {
     let responseScore = 0;
     let responseBreakdown: Record<string, number> = {};
 
-    resumeApi.getAtsScore('resume-1', 'edited').subscribe((response) => {
+    resumeApi.getAtsScore('resume-1', 'parsed').subscribe((response) => {
       responseScore = response.atsScore;
       responseBreakdown = response.scoreBreakdown;
     });
@@ -271,13 +271,13 @@ describe('ResumeApi', () => {
       (request) =>
         request.method === 'GET' &&
         request.url === 'https://gateway.example.test/api/resumes/resume-1/ats-score' &&
-        request.params.get('source') === 'edited' &&
+        request.params.get('source') === 'parsed' &&
         request.params.get('userId') === 'user-1',
     );
 
     request.flush({
       resumeId: 'resume-1',
-      source: 'edited',
+      source: 'parsed',
       atsScore: 84,
       scoreLevel: 'Good',
       summary: 'Resume is ATS-friendly.',

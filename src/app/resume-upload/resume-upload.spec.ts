@@ -25,7 +25,7 @@ describe('ResumeUpload', () => {
     getAtsScore: vi.fn(() =>
       of({
         resumeId: 'resume-1',
-        source: 'edited',
+        source: 'parsed',
         atsScore: 84,
         scoreLevel: 'Good',
         summary: 'Resume is ATS-friendly.',
@@ -78,7 +78,7 @@ describe('ResumeUpload', () => {
     generateButton?.click();
     fixture.detectChanges();
 
-    expect(resumeApi.getAtsScore).toHaveBeenCalledWith('resume-1', 'edited');
+    expect(resumeApi.getAtsScore).toHaveBeenCalledWith('resume-1', 'parsed');
     expect(compiled.querySelector('.resume-score-ring')?.textContent).toContain('84');
     expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('84/100');
     expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('Good');
