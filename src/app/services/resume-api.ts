@@ -130,6 +130,7 @@ export interface SavedResume {
   currentTitle?: string;
   createdAt?: string;
   updatedAt?: string;
+  atsAnalysis?: AtsScoreResponse;
 }
 
 export interface SavedResumesResponse {
@@ -547,6 +548,7 @@ export class ResumeApi {
     const candidateProfile = this.asRecord(profile['candidateProfile']);
     const metadata = this.asRecord(record['metadata']);
     const id = this.resolveDocumentId(record);
+    const atsAnalysisRecord = this.asRecord(record['ats_analysis'] ?? record['atsAnalysis']);
 
     if (!id) {
       return null;
@@ -580,6 +582,9 @@ export class ResumeApi {
       currentTitle,
       createdAt: this.asDateString(record['createdAt']) || this.asDateString(metadata['createdAt']),
       updatedAt: this.asDateString(record['updatedAt']) || this.asDateString(metadata['updatedAt']),
+      atsAnalysis: Object.keys(atsAnalysisRecord).length
+        ? this.normalizeAtsScoreResponse(atsAnalysisRecord, id, 'parsed')
+        : undefined,
     };
   }
 

@@ -176,7 +176,9 @@ export class ResumeUpload implements OnInit, OnDestroy {
       .pipe(finalize(() => this.savedResumesState.update((state) => (state === 'loading' ? 'idle' : state))))
       .subscribe({
         next: (response) => {
-          this.savedResumes.set(response.items ?? []);
+          const resumes = response.items ?? [];
+          this.savedResumes.set(resumes);
+          this.bindSavedResumeAtsScores(resumes);
           this.savedResumesState.set('success');
         },
         error: (error) => {
@@ -372,6 +374,7 @@ export class ResumeUpload implements OnInit, OnDestroy {
             ...states,
             [resume.id]: 'success',
           }));
+          this.loadSavedResumes();
         },
         error: (error) => {
           this.atsScoreErrors.update((errors) => ({
@@ -608,7 +611,22 @@ export class ResumeUpload implements OnInit, OnDestroy {
   }
 
   protected resumeAtsScore(resume: SavedResume): AtsScoreResponse | null {
-    return this.atsScores()[resume.id] ?? null;
+    return this.atsScores()[resume.id] ?? resume.atsAnalysis ?? null;
+  }
+
+  private bindSavedResumeAtsScores(resumes: SavedResume[]): void {
+    const scores = resumes.reduce<Record<string, AtsScoreResponse>>((boundScores, resume) => {
+      if (resume.atsAnalysis) {
+        boundScores[resume.id] = resume.atsAnalysis;
+      }
+
+      return boundScores;
+    }, {});
+
+    this.atsScores.update((currentScores) => ({
+      ...currentScores,
+      ...scores,
+    }));
   }
 
   protected resumeAtsState(resume: SavedResume): AtsScoreState {

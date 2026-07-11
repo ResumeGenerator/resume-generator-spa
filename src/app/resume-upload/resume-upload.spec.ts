@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 
-import { ResumeApi } from '../services/resume-api';
+import { AtsScoreResponse, ResumeApi } from '../services/resume-api';
 import { ResumeUpload } from './resume-upload';
 
 describe('ResumeUpload', () => {
@@ -18,6 +18,7 @@ describe('ResumeUpload', () => {
             candidateEmail: 'jane@example.com',
             currentTitle: 'Product Manager',
             createdAt: '2026-06-22T00:00:00.000Z',
+            atsAnalysis: undefined as AtsScoreResponse | undefined,
           },
         ],
       }),
@@ -83,6 +84,46 @@ describe('ResumeUpload', () => {
     expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('84/100');
     expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('Good');
     expect(compiled.textContent).toContain('Improve your chances');
+    expect(resumeApi.getTemplateSavedResumes).toHaveBeenCalledTimes(2);
+  });
+
+  it('binds ATS analysis returned with saved resumes', () => {
+    resumeApi.getTemplateSavedResumes.mockReturnValueOnce(
+      of({
+        items: [
+          {
+            id: 'resume-2',
+            filename: 'bound-resume.pdf',
+            candidateName: 'Jane Candidate',
+            candidateEmail: 'jane@example.com',
+            currentTitle: 'Engineer',
+            createdAt: '2026-06-22T00:00:00.000Z',
+            atsAnalysis: {
+              resumeId: 'resume-2',
+              source: 'parsed',
+              atsScore: 86,
+              scoreLevel: 'Excellent',
+              summary: 'Strong resume.',
+              scoreBreakdown: {},
+              strengths: [],
+              weakAreas: [],
+              missingSections: [],
+              keywordGaps: [],
+              formattingRisks: [],
+              improvementSuggestions: [],
+            },
+          },
+        ],
+      }),
+    );
+
+    const reloadedFixture = TestBed.createComponent(ResumeUpload);
+    reloadedFixture.detectChanges();
+    const compiled = reloadedFixture.nativeElement as HTMLElement;
+
+    expect(compiled.querySelector('.resume-score-ring')?.textContent).toContain('86');
+    expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('Excellent');
+    expect(compiled.querySelector('.score-generate-button')).toBeNull();
   });
 
   it('shows user-focused upload guidance and visual progress', () => {
