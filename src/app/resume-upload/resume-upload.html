@@ -279,33 +279,35 @@
   @if (atsInsightsResume(); as resume) {
     @if (resumeAtsScore(resume); as ats) {
       <section class="modal-backdrop" aria-label="ATS insights">
-        <div class="edit-modal" role="dialog" aria-modal="true" aria-labelledby="ats-insights-title">
-          <header class="modal-header">
+        <div class="ats-modal" role="dialog" aria-modal="true" aria-labelledby="ats-insights-title">
+          <header class="modal-header ats-modal-header">
             <div>
-              <p class="eyebrow">ATS analysis · {{ resumeAtsScoreText(resume) }}/100 · {{ resumeAtsLevel(resume) }}</p>
-              <h2 id="ats-insights-title">Improve {{ resumeCardTitle(resume) }}</h2>
+              <p class="eyebrow">ATS insights</p>
+              <h2 id="ats-insights-title">{{ resumeCardTitle(resume) }}</h2>
             </div>
-            <button type="button" class="secondary-button" (click)="closeAtsInsights()">Close</button>
+            <button type="button" class="ats-close-button" aria-label="Close ATS insights" (click)="closeAtsInsights()">&times;</button>
           </header>
-          <div class="edit-form">
-            @if (ats.summary) {
-              <section class="edit-section">
+          <div class="ats-modal-content">
+            <section class="ats-score-hero">
+              <div class="ats-modal-score"><strong>{{ resumeAtsScoreText(resume) }}</strong><span>/100</span></div>
+              <div>
+                <span class="score-level" [class.good]="resumeAtsTone(resume) === 'good'" [class.moderate]="resumeAtsTone(resume) === 'moderate'">{{ resumeAtsLevel(resume) }}</span>
                 <h3>Your ATS overview</h3>
-                <p>{{ ats.summary }}</p>
-              </section>
-            }
+                <p>{{ ats.summary || 'Review the recommendations below to improve this resume.' }}</p>
+              </div>
+            </section>
             @if (ats.improvementSuggestions.length) {
-              <section class="edit-section">
-                <div><p class="eyebrow">Start here</p><h3>Priority improvements</h3></div>
-                <ol class="edit-stack">
+              <section class="ats-insight-card priority">
+                <header><span>1</span><div><p class="eyebrow">Start here</p><h3>Priority improvements</h3></div></header>
+                <ol class="ats-action-list">
                   @for (suggestion of ats.improvementSuggestions; track suggestion) { <li>{{ suggestion }}</li> }
                 </ol>
               </section>
             }
             @if (ats.weakAreas.length || ats.keywordGaps.length || ats.formattingRisks.length) {
-              <section class="edit-section">
-                <h3>Needs attention</h3>
-                <ul class="edit-stack">
+              <section class="ats-insight-card attention">
+                <header><span>!</span><h3>Needs attention</h3></header>
+                <ul class="ats-bullet-list">
                   @for (item of ats.weakAreas; track item) { <li>{{ item }}</li> }
                   @for (item of ats.keywordGaps; track item) { <li>Missing keyword: {{ item }}</li> }
                   @for (item of ats.formattingRisks; track item) { <li>Formatting risk: {{ item }}</li> }
@@ -313,9 +315,9 @@
               </section>
             }
             @if (ats.strengths.length) {
-              <section class="edit-section">
-                <h3>What already works well</h3>
-                <ul class="edit-stack">
+              <section class="ats-insight-card strengths">
+                <header><span>&check;</span><h3>What already works well</h3></header>
+                <ul class="ats-bullet-list">
                   @for (strength of ats.strengths; track strength) { <li>{{ strength }}</li> }
                 </ul>
               </section>
