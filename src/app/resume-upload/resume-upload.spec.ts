@@ -124,7 +124,14 @@ describe('ResumeUpload', () => {
     expect(compiled.querySelector('.resume-score-ring')?.textContent).toContain('86');
     expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('Excellent');
     expect(compiled.querySelector('.score-generate-button')).toBeNull();
-    expect(compiled.querySelector('.ats-insights')?.textContent).toContain('Strong resume.');
+    const insightsButton = Array.from(compiled.querySelectorAll<HTMLButtonElement>('.text-button')).find((button) =>
+      button.textContent?.includes('View insights'),
+    );
+    insightsButton?.click();
+    reloadedFixture.detectChanges();
+
+    expect(compiled.querySelector('[aria-label="ATS insights"]')?.textContent).toContain('Strong resume.');
+    expect(compiled.querySelector('[aria-label="ATS insights"]')?.textContent).toContain('86/100');
   });
 
   it('shows user-focused upload guidance and visual progress', () => {

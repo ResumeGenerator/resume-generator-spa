@@ -220,6 +220,7 @@
                     >
                       {{ resumeAtsLevel(resume) }}
                     </em>
+                    <button type="button" class="text-button" (click)="openAtsInsights(resume, $event)">View insights</button>
                   } @else {
                     <button
                       type="button"
@@ -244,49 +245,6 @@
                 }
               </div>
 
-              @if (resumeAtsScore(resume); as ats) {
-                <details class="ats-insights">
-                  <summary>View ATS insights</summary>
-                  <div class="ats-insights-content">
-                    @if (ats.summary) {
-                      <p class="ats-summary">{{ ats.summary }}</p>
-                    }
-
-                    @if (ats.improvementSuggestions.length) {
-                      <section class="ats-insight-group improvements">
-                        <h4>Recommended improvements</h4>
-                        <ul>
-                          @for (suggestion of ats.improvementSuggestions; track suggestion) {
-                            <li>{{ suggestion }}</li>
-                          }
-                        </ul>
-                      </section>
-                    }
-
-                    @if (ats.weakAreas.length || ats.keywordGaps.length || ats.formattingRisks.length) {
-                      <section class="ats-insight-group attention">
-                        <h4>Needs attention</h4>
-                        <ul>
-                          @for (item of ats.weakAreas; track item) { <li>{{ item }}</li> }
-                          @for (item of ats.keywordGaps; track item) { <li>Keyword gap: {{ item }}</li> }
-                          @for (item of ats.formattingRisks; track item) { <li>Formatting: {{ item }}</li> }
-                        </ul>
-                      </section>
-                    }
-
-                    @if (ats.strengths.length) {
-                      <section class="ats-insight-group strengths">
-                        <h4>What works well</h4>
-                        <ul>
-                          @for (strength of ats.strengths; track strength) {
-                            <li>{{ strength }}</li>
-                          }
-                        </ul>
-                      </section>
-                    }
-                  </div>
-                </details>
-              }
             </article>
           }
         </div>
@@ -317,6 +275,56 @@
       }
     </section>
   </main>
+
+  @if (atsInsightsResume(); as resume) {
+    @if (resumeAtsScore(resume); as ats) {
+      <section class="modal-backdrop" aria-label="ATS insights">
+        <div class="edit-modal" role="dialog" aria-modal="true" aria-labelledby="ats-insights-title">
+          <header class="modal-header">
+            <div>
+              <p class="eyebrow">ATS analysis · {{ resumeAtsScoreText(resume) }}/100 · {{ resumeAtsLevel(resume) }}</p>
+              <h2 id="ats-insights-title">Improve {{ resumeCardTitle(resume) }}</h2>
+            </div>
+            <button type="button" class="secondary-button" (click)="closeAtsInsights()">Close</button>
+          </header>
+          <div class="edit-form">
+            @if (ats.summary) {
+              <section class="edit-section">
+                <h3>Your ATS overview</h3>
+                <p>{{ ats.summary }}</p>
+              </section>
+            }
+            @if (ats.improvementSuggestions.length) {
+              <section class="edit-section">
+                <div><p class="eyebrow">Start here</p><h3>Priority improvements</h3></div>
+                <ol class="edit-stack">
+                  @for (suggestion of ats.improvementSuggestions; track suggestion) { <li>{{ suggestion }}</li> }
+                </ol>
+              </section>
+            }
+            @if (ats.weakAreas.length || ats.keywordGaps.length || ats.formattingRisks.length) {
+              <section class="edit-section">
+                <h3>Needs attention</h3>
+                <ul class="edit-stack">
+                  @for (item of ats.weakAreas; track item) { <li>{{ item }}</li> }
+                  @for (item of ats.keywordGaps; track item) { <li>Missing keyword: {{ item }}</li> }
+                  @for (item of ats.formattingRisks; track item) { <li>Formatting risk: {{ item }}</li> }
+                </ul>
+              </section>
+            }
+            @if (ats.strengths.length) {
+              <section class="edit-section">
+                <h3>What already works well</h3>
+                <ul class="edit-stack">
+                  @for (strength of ats.strengths; track strength) { <li>{{ strength }}</li> }
+                </ul>
+              </section>
+            }
+          </div>
+        </div>
+      </section>
+    }
+  }
 
   @if (previewResponse(); as preview) {
     @if (isPreviewModalOpen()) {

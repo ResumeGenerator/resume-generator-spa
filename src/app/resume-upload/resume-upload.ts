@@ -64,6 +64,7 @@ export class ResumeUpload implements OnInit, OnDestroy {
   protected readonly selectedSavedResumeId = signal<string | null>(null);
   protected readonly isPreviewModalOpen = signal(false);
   protected readonly isEditModalOpen = signal(false);
+  protected readonly atsInsightsResume = signal<SavedResume | null>(null);
   protected readonly editState = signal<EditState>('idle');
   protected readonly editingResume = signal<ResumeDocumentResponse | null>(null);
   protected readonly editErrorMessage = signal<string | null>(null);
@@ -389,6 +390,15 @@ export class ResumeUpload implements OnInit, OnDestroy {
       });
   }
 
+  protected openAtsInsights(resume: SavedResume, event?: Event): void {
+    event?.stopPropagation();
+    this.atsInsightsResume.set(resume);
+  }
+
+  protected closeAtsInsights(): void {
+    this.atsInsightsResume.set(null);
+  }
+
   protected addWorkExperience(): void {
     this.editWorkExperience.push({
       companyOrOrganization: '',
@@ -574,6 +584,7 @@ export class ResumeUpload implements OnInit, OnDestroy {
     this.atsScoreErrors.set({});
     this.isPreviewModalOpen.set(false);
     this.isEditModalOpen.set(false);
+    this.atsInsightsResume.set(null);
     this.activeTemplateIndex.set(0);
     this.uploadState.set('idle');
     this.clearUploadLoaderTimer();
