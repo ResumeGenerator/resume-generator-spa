@@ -243,6 +243,50 @@
                   <p class="resume-score-error">{{ resumeAtsError(resume) }}</p>
                 }
               </div>
+
+              @if (resumeAtsScore(resume); as ats) {
+                <details class="ats-insights">
+                  <summary>View ATS insights</summary>
+                  <div class="ats-insights-content">
+                    @if (ats.summary) {
+                      <p class="ats-summary">{{ ats.summary }}</p>
+                    }
+
+                    @if (ats.improvementSuggestions.length) {
+                      <section class="ats-insight-group improvements">
+                        <h4>Recommended improvements</h4>
+                        <ul>
+                          @for (suggestion of ats.improvementSuggestions; track suggestion) {
+                            <li>{{ suggestion }}</li>
+                          }
+                        </ul>
+                      </section>
+                    }
+
+                    @if (ats.weakAreas.length || ats.keywordGaps.length || ats.formattingRisks.length) {
+                      <section class="ats-insight-group attention">
+                        <h4>Needs attention</h4>
+                        <ul>
+                          @for (item of ats.weakAreas; track item) { <li>{{ item }}</li> }
+                          @for (item of ats.keywordGaps; track item) { <li>Keyword gap: {{ item }}</li> }
+                          @for (item of ats.formattingRisks; track item) { <li>Formatting: {{ item }}</li> }
+                        </ul>
+                      </section>
+                    }
+
+                    @if (ats.strengths.length) {
+                      <section class="ats-insight-group strengths">
+                        <h4>What works well</h4>
+                        <ul>
+                          @for (strength of ats.strengths; track strength) {
+                            <li>{{ strength }}</li>
+                          }
+                        </ul>
+                      </section>
+                    }
+                  </div>
+                </details>
+              }
             </article>
           }
         </div>

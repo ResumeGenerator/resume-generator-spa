@@ -124,6 +124,7 @@ describe('ResumeUpload', () => {
     expect(compiled.querySelector('.resume-score-ring')?.textContent).toContain('86');
     expect(compiled.querySelector('.resume-score-strip')?.textContent).toContain('Excellent');
     expect(compiled.querySelector('.score-generate-button')).toBeNull();
+    expect(compiled.querySelector('.ats-insights')?.textContent).toContain('Strong resume.');
   });
 
   it('shows user-focused upload guidance and visual progress', () => {

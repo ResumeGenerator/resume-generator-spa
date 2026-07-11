@@ -329,6 +329,18 @@ describe('ResumeApi', () => {
           currentTitle: 'Strategic Senior Software Engineer',
           createdAt: '2026-06-30T17:44:57.726000Z',
           updatedAt: '2026-06-30T17:44:57.726000Z',
+          atsCalculation: {
+            atsScore: 86,
+            scoreLevel: 'Excellent',
+            summary: 'Resume is highly ATS-ready.',
+            scoreBreakdown: { skills: 11 },
+            strengths: ['Strong structure'],
+            weakAreas: ['Skills need clearer grouping'],
+            missingSections: [],
+            keywordGaps: [],
+            formattingRisks: [],
+            improvementSuggestions: ['Group core skills into categories'],
+          },
         },
       ],
     });
@@ -342,6 +354,11 @@ describe('ResumeApi', () => {
         currentTitle: 'Strategic Senior Software Engineer',
         createdAt: '2026-06-30T17:44:57.726000Z',
         updatedAt: '2026-06-30T17:44:57.726000Z',
+        atsAnalysis: expect.objectContaining({
+          atsScore: 86,
+          scoreLevel: 'Excellent',
+          improvementSuggestions: ['Group core skills into categories'],
+        }),
       },
     ]);
   });

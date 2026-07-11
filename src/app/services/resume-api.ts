@@ -548,7 +548,9 @@ export class ResumeApi {
     const candidateProfile = this.asRecord(profile['candidateProfile']);
     const metadata = this.asRecord(record['metadata']);
     const id = this.resolveDocumentId(record);
-    const atsAnalysisRecord = this.asRecord(record['ats_analysis'] ?? record['atsAnalysis']);
+    const atsAnalysisRecord = this.asRecord(
+      record['atsCalculation'] ?? record['ats_analysis'] ?? record['atsAnalysis'],
+    );
 
     if (!id) {
       return null;
