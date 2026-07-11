@@ -9,7 +9,7 @@
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
-  padding: 14px 24px 24px;
+  padding: 12px clamp(14px, 1.25vw, 24px) 18px;
   background:
     linear-gradient(135deg, rgba(109, 40, 217, 0.1), transparent 32%),
     linear-gradient(315deg, rgba(238, 120, 221, 0.08), transparent 38%),
@@ -99,7 +99,7 @@
 
 .builder-grid {
   display: grid;
-  grid-template-columns:minmax(480px,1fr) minmax(380px,0.9fr);
+  grid-template-columns: minmax(500px, 1.04fr) minmax(440px, 0.96fr);
   grid-template-rows: auto minmax(0, 1fr);
   gap: 10px 18px;
   min-height: 0;
@@ -113,6 +113,7 @@
   gap: 4px;
   overflow-x: auto;
   padding: 0 0 1px;
+  justify-content: space-between;
 }
 
 .step-item {
@@ -690,7 +691,7 @@
   align-items: center;
   gap: 9px;
   min-height: 44px;
-  border-radius: 8px;
+  border-radius: 12px;
   border-color: #c4b5fd;
   color: #4c1d95;
 }
@@ -947,7 +948,8 @@
   min-height: 0;
   overflow: hidden;
   box-sizing: border-box;
-  padding: 12px 16px 18px;
+  padding: 10px 12px 14px;
+  border-radius: 12px;
   background: #675874;
 }
 
@@ -1096,6 +1098,10 @@ button:disabled {
   .preview-toolbar {
     flex-wrap: wrap;
     gap: 12px;
+  }
+
+  .step-rail {
+    justify-content: flex-start;
   }
 
 }

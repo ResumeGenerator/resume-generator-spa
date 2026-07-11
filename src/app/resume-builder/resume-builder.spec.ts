@@ -143,6 +143,13 @@ describe('ResumeBuilder', () => {
     delete (window as RuntimeConfigWindow).__RESUME_GENERATOR_CONFIG__;
   });
 
+  it('links the back button to the resume upload workspace', () => {
+    const backButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.back-button');
+
+    expect(backButton?.getAttribute('href')).toBe('/upload');
+    expect(backButton?.getAttribute('aria-label')).toBe('Back to resume upload');
+  });
+
   it('uses rendered HTML returned from save instead of refetching stale preview HTML', () => {
     component.handleRenderedSaveResponse(
       {
